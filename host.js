@@ -4,9 +4,3 @@ if(typeof FileReader == "undefined")
 
 
 var chunksize = 65536
-
-
-function Host(db)
-{
-    EventTarget.call(this)
-}
