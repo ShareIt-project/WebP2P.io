@@ -38,13 +38,13 @@ function Transport_Signaling_init(signaling, peersManager)
         // Send answer
         var answer = pc.createAnswer(pc.remoteDescription.toSdp());
 
-        signaling.emit("answer", socketId, answer.toSdp());
+        signaling.emit("answer", answer.toSdp(), socketId);
 
         pc.setLocalDescription(pc.SDP_ANSWER, answer);
     }
 
 
-    signaling.addEventListener('connectTo', function(socketId, sdp)
+    signaling.addEventListener('connectTo', function(sdp, socketId)
     {
         console.debug('connectTo() is called')
 
@@ -64,7 +64,7 @@ function Transport_Signaling_init(signaling, peersManager)
         processOffer(pc, sdp, socketId)
     })
 
-    signaling.addEventListener('offer', function(socketId, sdp)
+    signaling.addEventListener('offer', function(sdp, socketId)
     {
         console.debug('offer() is called')
 
@@ -74,7 +74,7 @@ function Transport_Signaling_init(signaling, peersManager)
             processOffer(pc, sdp, socketId)
     })
 
-    signaling.addEventListener('answer', function(socketId, sdp)
+    signaling.addEventListener('answer', function(sdp, socketId)
     {
         // Search the peer between the list of currently connected peers
         var pc = getPeer(socketId)
