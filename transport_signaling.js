@@ -32,6 +32,7 @@ function Transport_Signaling_init(transport)
             pc._channel = channel
 
             Transport_Peer_init(channel, db, host)
+            Transport_Host_init(channel, db)
 
             if(onsuccess)
                 onsuccess(channel)
