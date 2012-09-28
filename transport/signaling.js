@@ -57,6 +57,9 @@ function Transport_Signaling_init(signaling, peersManager)
             {
                 _initDataChannel(pc, event.channel)
             }
+
+            if(peersManager.setPeer)
+                peersManager.setPeer(socketId, pc)
         }
 
         processOffer(pc, sdp, socketId)
