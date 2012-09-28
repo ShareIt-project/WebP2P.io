@@ -44,10 +44,8 @@ function Transport_Signaling_init(signaling, peersManager)
     }
 
 
-    signaling.addEventListener('connectTo', function(sdp, socketId)
+    signaling.addEventListener('offer', function(sdp, socketId)
     {
-        console.debug('connectTo() is called')
-
         // Search the peer between the list of currently connected peers
         var pc = getPeer(socketId)
 
@@ -62,16 +60,6 @@ function Transport_Signaling_init(signaling, peersManager)
         }
 
         processOffer(pc, sdp, socketId)
-    })
-
-    signaling.addEventListener('offer', function(sdp, socketId)
-    {
-        console.debug('offer() is called')
-
-        // Search the peer between the list of currently connected peers
-        var pc = getPeer(socketId)
-        if(pc)
-            processOffer(pc, sdp, socketId)
     })
 
     signaling.addEventListener('answer', function(sdp, socketId)
