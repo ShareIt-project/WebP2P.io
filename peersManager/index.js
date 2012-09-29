@@ -7,13 +7,13 @@ function _createPeerConnection()
     return new PeerConnection(STUN_SERVER, function(){});
 }
 
-function _initDataChannel(pc, channel)
+function _initDataChannel(pc, channel, peersManager)
 {
     Transport_init(channel, function(channel)
     {
         pc._channel = channel
 
-        Transport_Peer_init(channel, db, host)
+        Transport_Peer_init(channel, db, peersManager)
         Transport_Host_init(channel, db)
     })
 }

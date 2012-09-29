@@ -1,5 +1,7 @@
 function PeersManager_single()
 {
+    EventTarget.call(this)
+
     var peer
 
     this.getPeer = function()

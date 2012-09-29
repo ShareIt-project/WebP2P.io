@@ -1,7 +1,7 @@
 var chunksize = 65536
 
 
-function Transport_Peer_init(transport, db, host)
+function Transport_Peer_init(transport, db, peersManager)
 {
     // fileslist
 
@@ -28,7 +28,8 @@ function Transport_Peer_init(transport, db, host)
                     }
             }
 
-            host.dispatchEvent({type:"fileslist_peer.update", data:files})
+            // Notify about fileslist update
+            peersManager.dispatchEvent({type:"fileslist_peer.update", data:files})
         })
     })
 
@@ -95,8 +96,9 @@ function Transport_Peer_init(transport, db, host)
                 if(chunks % 1 != 0)
                     chunks = Math.floor(chunks) + 1;
 
-                host.dispatchEvent({type:"transfer.update",
-                                    data:[file, 1 - pending_chunks/chunks]})
+                // Notify about transfer update
+                peersManager.dispatchEvent({type:"transfer.update",
+                                            data:[file, 1 - pending_chunks/chunks]})
 
                 // Demand more data from one of the pending chunks
                 db.sharepoints_put(file, function()
@@ -115,7 +117,8 @@ function Transport_Peer_init(transport, db, host)
                     // Auto-save downloaded file
                     _savetodisk(file)
 
-                    host.dispatchEvent({type:"transfer.end", file:file})
+                    // Notify about transfer end
+                    peersManager.dispatchEvent({type:"transfer.end", file:file})
                     console.log("Transfer of "+file.name+" finished!");
                 })
             }

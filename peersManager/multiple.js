@@ -1,5 +1,7 @@
 function PeersManager_multiple()
 {
+    EventTarget.call(this)
+
     var peers = {}
 
     this.connectTo = function(uid, onsuccess, onerror)
@@ -45,7 +47,7 @@ function PeersManager_multiple()
         var peer = peers[socketId] = _createPeerConnection()
 	        peer.ondatachannel = function(event)
 	        {
-	            _initDataChannel(peer, event.channel)
+	            _initDataChannel(peer, event.channel, this)
 	        }
 
         return peer
