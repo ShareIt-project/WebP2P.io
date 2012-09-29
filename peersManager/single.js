@@ -2,12 +2,12 @@ function PeersManager_single()
 {
     var peer
 
-    this.getPeer()
+    this.getPeer = function()
     {
         return peer
     }
 
-    this.createPeer()
+    this.createPeer = function()
     {
         peer = _createPeerConnection()
         peer.ondatachannel = function(event)

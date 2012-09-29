@@ -35,12 +35,12 @@ function PeersManager_multiple()
             onsuccess(peer._channel)
     }
 
-    this.getPeer(socketId)
+    this.getPeer = function(socketId)
     {
         return peers[socketId]
     }
 
-    this.createPeer(socketId)
+    this.createPeer = function(socketId)
     {
         var peer = peers[socketId] = _createPeerConnection()
 	        peer.ondatachannel = function(event)
