@@ -2,6 +2,8 @@
 //
 // Copyright 2012 Jesus Leganes Combarro "Piranna"
 
+(function(module){
+
 if(FileWriter != undefined)
     return;
 
@@ -86,3 +88,5 @@ FileWriter.prototype =
       this.blob_ = new Blob([this.blob_, ArrayBuffer(size - this.length)])
   }
 }
+
+})(this)
