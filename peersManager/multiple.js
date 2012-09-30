@@ -1,4 +1,4 @@
-function PeersManager_multiple()
+function PeersManager_multiple(signaling)
 {
     EventTarget.call(this)
 
@@ -16,7 +16,8 @@ function PeersManager_multiple()
             peer = peers[uid] = _createPeerConnection();
             peer.open = function()
             {
-                _initDataChannel(peer, peer.createDataChannel())
+                console.log("peer.open")
+                _initDataChannel(peer, peer.createDataChannel(), this, onsuccess)
             }
             peer.onerror = function()
             {
@@ -27,7 +28,7 @@ function PeersManager_multiple()
             // Send offer to new PeerConnection
             var offer = peer.createOffer();
 
-            signaling.emit("offer", offer.toSdp(), uid);
+            signaling.emit("offer", uid, offer.toSdp());
 
             peer.setLocalDescription(peer.SDP_OFFER, offer);
         }
@@ -47,6 +48,7 @@ function PeersManager_multiple()
         var peer = peers[socketId] = _createPeerConnection()
 	        peer.ondatachannel = function(event)
 	        {
+                console.log("createPeer")
 	            _initDataChannel(peer, event.channel, this)
 	        }
 
