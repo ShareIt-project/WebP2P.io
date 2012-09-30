@@ -37,8 +37,11 @@ function Transport_Host_init(transport, db)
 
     // transfer
 
-    transport.addEventListener('transfer.query', function(filename, chunk)
+    transport.addEventListener('transfer.query', function(event)
     {
+        var filename = event.data[0]
+        var chunk = event.data[1]
+
         var reader = new FileReader();
             reader.onerror = function(evt)
             {

@@ -5,8 +5,10 @@ function Transport_Peer_init(transport, db, peersManager)
 {
     // fileslist
 
-    transport.addEventListener('fileslist.send', function(files)
+    transport.addEventListener('fileslist.send', function(event)
     {
+        var files = event.data[0]
+
         // Check if we have already any of the files
         // It's stupid to try to download it... and also give errors
         db.sharepoints_getAll(null, function(filelist)
@@ -29,7 +31,8 @@ function Transport_Peer_init(transport, db, peersManager)
             }
 
             // Notify about fileslist update
-            peersManager.dispatchEvent({type:"fileslist_peer.update", data:files})
+            peersManager.dispatchEvent({type:"fileslist_peer.update",
+                                        data:[files]})
         })
     })
 
@@ -65,9 +68,11 @@ function Transport_Peer_init(transport, db, peersManager)
         return file.channel
     }
 
-    transport.addEventListener('transfer.send', function(filename, chunk, data)
+    transport.addEventListener('transfer.send', function(event)
     {
-        chunk = parseInt(chunk)
+        var filename = event.data[0]
+        var chunk = parseInt(event.data[1])
+        var data = event.data[2]
 
         db.sharepoints_get(filename, function(file)
         {
