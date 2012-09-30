@@ -187,7 +187,7 @@ function Host_init(db, protocol, onsuccess)
 	        var padding = start-head.size
 	        if(padding < 0)
 	        	padding = 0;
-		    file.blob = new Blob([head, ArrayBuffer(padding),
+		    file.blob = new Blob([head, new Uint8Array(padding),
 		                          byteArray.buffer, blob.slice(stop)],
 		                         {"type": blob.type})
 
