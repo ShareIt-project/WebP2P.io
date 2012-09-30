@@ -1,4 +1,4 @@
-function Protocol_init(transport, onsuccess)
+function Transport_init(transport, onsuccess)
 {
     function onopen()
     {
