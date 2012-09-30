@@ -8,13 +8,11 @@ function DB_init(onsuccess)
 	{
 	    // Create an objectStore to hold information about the share points.
 	    db.createObjectStore("sharepoints", { keyPath: "name" });
-	
+
 	    // Create an objectStore to hold information about the shared files.
 	    // We're going to use "hash" as our key path because it's guaranteed to
 	    // be unique.
 	    db.createObjectStore("files", { keyPath: "hash" });
-	
-	    console.debug("upgradedb");
 	}
 
 	var request = indexedDB.open("ShareIt", version);
@@ -25,7 +23,7 @@ function DB_init(onsuccess)
 	    request.onsuccess = function(event)
 	    {
 	        var db = request.result;
-	
+
 	        // Hack for old versions of Chrome/Chromium
 	        if(version != db.version)
 	        {
@@ -40,9 +38,9 @@ function DB_init(onsuccess)
 	        {
 	            var transaction = db.transaction(objectStore, "readwrite");
 	            var objectStore = transaction.objectStore(objectStore);
-	
+
 	            // [To-Do] Check current objectStore and update files on duplicates
-	
+
 	            var request = objectStore.add(data);
 	            if(onsuccess != undefined)
 	                request.onsuccess = function(event)
@@ -80,8 +78,8 @@ function DB_init(onsuccess)
 	            var transaction = db.transaction(objectStore);
 	            var objectStore = transaction.objectStore(objectStore);
 
-		        var cursor = objectStore.openCursor(range)
-                    cursor.onsuccess = function(event)
+		        var request = objectStore.openCursor(range)
+                    request.onsuccess = function(event)
                     {
                         var cursor = event.target.result;
                         if(cursor)
@@ -93,7 +91,7 @@ function DB_init(onsuccess)
                             onsuccess(result);
                     };
                 if(onerror != undefined)
-                    cursor.onerror = function(event)
+                    request.onerror = function(event)
                     {
                         onerror(event.target.errorCode);
                     };
@@ -103,9 +101,9 @@ function DB_init(onsuccess)
 	        {
 	            var transaction = db.transaction(objectStore, "readwrite");
 	            var objectStore = transaction.objectStore(objectStore);
-	
+
 	            // [To-Do] Check current sharepoints and update files on duplicates
-	
+
 	            var request = objectStore.put(data);
 	            if(onsuccess != undefined)
 	                request.onsuccess = function(event)
