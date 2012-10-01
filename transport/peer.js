@@ -1,7 +1,7 @@
 var chunksize = 65536
 
 
-function Transport_Peer_init(transport, db, host)
+function Transport_Peer_init(transport, db, peersManager)
 {
     // fileslist
 
@@ -33,8 +33,8 @@ function Transport_Peer_init(transport, db, host)
             }
 
             // Notify about fileslist update
-            host.dispatchEvent({type: "fileslist_peer.update",
-                                data: [socketId, files]})
+            peersManager.dispatchEvent({type: "fileslist_peer.update",
+                                        data: [socketId, files]})
         })
     })
 
@@ -54,15 +54,6 @@ function Transport_Peer_init(transport, db, host)
         save.dispatchEvent(evt);
 
         window.URL.revokeObjectURL(save.href)
-    }
-
-    // Get the channel of one of the peers that have the file from its hash.
-    // Since the hash and the tracker system are currently not implemented we'll
-    // get just the channel of the peer where we got the file that we added
-    // ad-hoc before
-    function getChannel(file)
-    {
-        return file.channel
     }
 
     transport.addEventListener('transfer.send', function(event)
@@ -101,13 +92,13 @@ function Transport_Peer_init(transport, db, host)
                     chunks = Math.floor(chunks) + 1;
 
                 // Notify about transfer update
-                host.dispatchEvent({type: "transfer.update",
-                                     data: [file, 1 - pending_chunks/chunks]})
+                peersManager.dispatchEvent({type: "transfer.update",
+                                            data: [file, 1 - pending_chunks/chunks]})
 
                 // Demand more data from one of the pending chunks
                 db.sharepoints_put(file, function()
                 {
-                    getChannel(file).emit('transfer.query', socketId,
+                    peersManager.getChannel(file).emit('transfer.query', socketId,
                                           file.name, getRandom(file.bitmap));
                 })
             }
@@ -122,38 +113,11 @@ function Transport_Peer_init(transport, db, host)
                     _savetodisk(file)
 
                     // Notify about transfer end
-                    host.dispatchEvent({type: "transfer.end", data: [file]})
+                    peersManager.dispatchEvent({type: "transfer.end",
+                                                data: [file]})
                     console.log("Transfer of "+file.name+" finished!");
                 })
             }
         })
     })
-
-    host._transferbegin = function(file)
-    {
-        // Calc number of necesary chunks to download
-        var chunks = file.size/chunksize;
-        if(chunks % 1 != 0)
-            chunks = Math.floor(chunks) + 1;
-
-        // Add a blob container and a bitmap to our file stub
-        file.blob = new Blob([''], {"type": file.type})
-        file.bitmap = Bitmap(chunks)
-
-        // Insert new "file" inside IndexedDB
-        db.sharepoints_add(file,
-        function()
-        {
-            host.dispatchEvent({type: "transfer.begin", data: [file]})
-            console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
-
-            // Demand data from the begining of the file
-            getChannel(file).emit('transfer.query', file.socketId, file.name,
-                                                    getRandom(file.bitmap))
-        },
-        function(errorCode)
-        {
-            console.error("Transfer begin: '"+file.name+"' is already in database.")
-        })
-    }
 }
