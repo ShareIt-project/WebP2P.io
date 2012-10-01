@@ -10,12 +10,9 @@ if(typeof FileReader == "undefined")
 var chunksize = 65536
 
 
-function Host_init(db, protocol, onsuccess)
+function Host(db, protocol)
 {
-	var host = new EventTarget()
-
-	if(onsuccess)
-		onsuccess(host);
+	EventTarget.call(this)
 
 	// Host
 
@@ -40,6 +37,8 @@ function Host_init(db, protocol, onsuccess)
             protocol.emit('fileslist.send', socketId, files_send);
         })
     })
+
+    var self = this
 
     protocol.addEventListener('fileslist.send', function(event)
     {
@@ -67,7 +66,7 @@ function Host_init(db, protocol, onsuccess)
                     }
             }
 
-            host.dispatchEvent({'type': "fileslist_peer.update",
+            self.dispatchEvent({'type': "fileslist_peer.update",
                                 'data': [socketId, files]})
         })
     })
@@ -159,8 +158,8 @@ function Host_init(db, protocol, onsuccess)
 				if(chunks % 1 != 0)
 					chunks = Math.floor(chunks) + 1;
 
-                host.dispatchEvent({type: "transfer.update",
-                                    data: [file, 1 - pending_chunks/chunks]})
+                self.dispatchEvent({type: "transfer.update",
+                                     data: [file, 1 - pending_chunks/chunks]})
 
 			    // Demand more data from one of the pending chunks
 		        db.sharepoints_put(file, function()
@@ -179,7 +178,7 @@ function Host_init(db, protocol, onsuccess)
 				    // Auto-save downloaded file
 				    _savetodisk(file)
 
-                    host.dispatchEvent({type: "transfer.end", data: [file]})
+                    self.dispatchEvent({type: "transfer.end", data: [file]})
                     console.log("Transfer of "+file.name+" finished!");
 		        })
 			}
@@ -195,7 +194,7 @@ function Host_init(db, protocol, onsuccess)
         return file.socketId
     }
 
-    host._transferbegin = function(file)
+    this._transferbegin = function(file)
     {
         // Calc number of necesary chunks to download
         var chunks = file.size/chunksize;
@@ -210,7 +209,7 @@ function Host_init(db, protocol, onsuccess)
         db.sharepoints_add(file,
         function()
         {
-            host.dispatchEvent({type: "transfer.begin", data: [file]})
+            self.dispatchEvent({type: "transfer.begin", data: [file]})
             console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
 
             // Demand data from the begining of the file
