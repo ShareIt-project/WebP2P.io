@@ -106,7 +106,7 @@ function PeersManager(signaling, db)
         {
             // Create PeerConnection
             peer = createPeerConnection(uid);
-            peer.open = function()
+            peer.onopen = function()
             {
                 console.log("peer.open")
                 initDataChannel(peer, peer.createDataChannel(), onsuccess)
