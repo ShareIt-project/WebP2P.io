@@ -38,6 +38,11 @@ function Transport_Peer_init(transport, db, peersManager)
         })
     })
 
+    transport.fileslist_query = function(uid)
+    {
+        transport.emit('fileslist.query', uid);
+    }
+
     // transfer
 
     function _savetodisk(file)
