@@ -16,9 +16,10 @@ function Transport_Peer_init(transport, db, host)
         {
             for(var i=0, file; file = files[i]; i++)
             {
-                // We add here ad-hoc the socketId of the peer where we got the
-                // file since we currently don't have support for hashes nor
-                // tracker systems
+                // We add here ad-hoc the channel of the peer where we got
+                // the file since we currently don't have support for hashes
+                // nor tracker systems
+                file.channel = transport
                 file.socketId = socketId
 
                 for(var j=0, file_hosted; file_hosted = filelist[j]; j++)
@@ -53,13 +54,13 @@ function Transport_Peer_init(transport, db, host)
         window.URL.revokeObjectURL(save.href)
     }
 
-    // Get the socketId of one of the peers that have the file from its hash.
+    // Get the channel of one of the peers that have the file from its hash.
     // Since the hash and the tracker system are currently not implemented we'll
-    // get just the socketId of the peer where we got the file that we added
+    // get just the channel of the peer where we got the file that we added
     // ad-hoc before
-    function getSocketId(file)
+    function getChannel(file)
     {
-        return file.socketId
+        return file.channel
     }
 
     transport.addEventListener('transfer.send', function(event)
@@ -104,8 +105,8 @@ function Transport_Peer_init(transport, db, host)
                 // Demand more data from one of the pending chunks
                 db.sharepoints_put(file, function()
                 {
-                    transport.emit('transfer.query', socketId, file.name,
-                                                     getRandom(file.bitmap));
+                    getChannel(file).emit('transfer.query', socketId,
+                                          file.name, getRandom(file.bitmap));
                 })
             }
             else
@@ -144,8 +145,8 @@ function Transport_Peer_init(transport, db, host)
             console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
 
             // Demand data from the begining of the file
-            transport.emit('transfer.query', getSocketId(file), file.name,
-                                             getRandom(file.bitmap))
+            getChannel(file).emit('transfer.query', file.socketId, file.name,
+                                                    getRandom(file.bitmap))
         },
         function(errorCode)
         {
