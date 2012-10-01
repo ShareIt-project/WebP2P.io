@@ -1,22 +1,13 @@
-Blob.slice = Blob.slice || Blob.webkitSlice || Blob.mozSlice
-if(Blob.slice != undefined)
-	alert("It won't work in your browser. Please use Chrome or Firefox.");
-
-// Filereader support (be able to host files from the filesystem)
-if(typeof FileReader == "undefined")
-	oldBrowser();
-
-
 var chunksize = 65536
 
 
-function Host(db, protocol)
+function Host(transport, db)
 {
 	EventTarget.call(this)
 
-	// Host
+    // filelist
 
-    protocol.addEventListener('fileslist.query', function(event)
+    transport.addEventListener('fileslist.query', function(event)
     {
         var socketId = event.data[0]
 
@@ -34,18 +25,16 @@ function Host(db, protocol)
 			    files_send.push({"name": file.name, "size": file.size,
 			                     "type": file.type});
 
-            protocol.emit('fileslist.send', socketId, files_send);
+            transport.emit('fileslist.send', socketId, files_send);
         })
     })
-
-    var self = this
 
 	// Filereader support (be able to host files from the filesystem)
 	if(typeof FileReader == "undefined")
 		console.warn("'Filereader' is not available, can't be able to host files");
 
 	else
-		protocol.addEventListener('transfer.query', function(event)
+		transport.addEventListener('transfer.query', function(event)
 		{
 		    var socketId = event.data[0]
 		    var filename = event.data[1]
@@ -58,7 +47,7 @@ function Host(db, protocol)
 				}
 				reader.onload = function(evt)
 				{
-				    protocol.emit('transfer.send', socketId, filename, chunk, evt.target.result);
+				    transport.emit('transfer.send', socketId, filename, chunk, evt.target.result);
 				}
 
 			var start = chunk * chunksize;
