@@ -1,6 +1,15 @@
+// Fallbacks for vendor-specific variables until the spec is finalized.
+var PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
+
+// Holds the STUN server to use for PeerConnections.
+var STUN_SERVER = "STUN stun.l.google.com:19302";
+
+
 function PeersManager(db)
 {
     EventTarget.call(this)
+
+    var peers = {}
 
     // Get the channel of one of the peers that have the file from its hash.
     // Since the hash and the tracker system are currently not implemented we'll
@@ -12,6 +21,34 @@ function PeersManager(db)
     }
 
     var self = this
+
+
+	function createPeerConnection(id)
+	{
+	    var pc = peers[id] = new PeerConnection(STUN_SERVER, function(){});
+
+		return pc
+	}
+
+	function initDataChannel(pc, channel, onsuccess)
+	{
+    	Transport_init(channel, function(channel)
+    	{
+	        Transport_Peer_init(channel, db, self)
+    	    Transport_Host_init(channel, db)
+
+			channel.onclose = function()
+  			{
+    			delete pc._channel
+  			}
+
+        	pc._channel = channel
+
+	        if(onsuccess)
+    	        onsuccess(channel)
+    	})
+	}
+
 
     this._transferbegin = function(file)
     {
@@ -43,8 +80,18 @@ function PeersManager(db)
 
     this.connectTo = function(uid, onsuccess, onerror)
     {
+        // Search the peer between the list of currently connected peers
+        var peer = peers[uid]
+
+        // Peer is not connected, create a new channel
+        if(!peer)
+        {
+        }
+
+        // Peer is connected and we have defined an 'onsucess' callback
+//        else if(onsuccess)
+//            onsuccess(peer._channel)
         if(onsuccess)
             onsuccess()
-//            onsuccess(channel)
     }
 }
