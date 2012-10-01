@@ -14,7 +14,7 @@ function PeersManager_multiple(signaling)
         {
             // Create PeerConnection
             peer = peers[uid] = _createPeerConnection();
-            peer.open = function()
+            peer.onopen = function()
             {
                 console.log("peer.open")
                 _initDataChannel(peer, peer.createDataChannel(), this, onsuccess)
