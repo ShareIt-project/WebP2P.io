@@ -167,8 +167,8 @@ function Host_init(db, protocol, onsuccess)
 	        var padding = start-head.size
 	        if(padding < 0)
 	        	padding = 0;
-		    file.blob = new Blob([head, new Uint8Array(padding),
-		                          byteArray.buffer, blob.slice(stop)],
+		    file.blob = new Blob([head, new Uint8Array(padding), byteArray,
+		                          blob.slice(stop)],
 		                         {"type": blob.type})
 
 			var pending_chunks = file.bitmap.length
@@ -178,8 +178,8 @@ function Host_init(db, protocol, onsuccess)
 				if(chunks % 1 != 0)
 					chunks = Math.floor(chunks) + 1;
 
-                host.dispatchEvent("transfer.update", file,
-                                   1 - pending_chunks/chunks)
+                host.dispatchEvent({type: "transfer.update",
+                                    data: [file, 1 - pending_chunks/chunks]})
 
 			    // Demand more data from one of the pending chunks
 		        db.sharepoints_put(file, function()
@@ -198,7 +198,7 @@ function Host_init(db, protocol, onsuccess)
 				    // Auto-save downloaded file
 				    _savetodisk(file)
 
-                    host.dispatchEvent("transfer.end", file)
+                    host.dispatchEvent({type: "transfer.end", data: [file]})
                     console.log("Transfer of "+file.name+" finished!");
 		        })
 			}
@@ -229,7 +229,7 @@ function Host_init(db, protocol, onsuccess)
         db.sharepoints_add(file,
         function()
         {
-            host.dispatchEvent("transfer.begin", file)
+            host.dispatchEvent({type: "transfer.begin", data: [file]})
             console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
 
             // Demand data from the begining of the file
