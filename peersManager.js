@@ -19,18 +19,14 @@ function PeersManager(signaling, db)
 	    return new PeerConnection(STUN_SERVER, function(){});
 	}
 	
-	function initDataChannel(pc, channel, onsuccess)
+	function initDataChannel(pc, channel)
 	{
-	    Transport_init(channel, function(channel)
-	    {
-	        pc._channel = channel
+        pc._channel = channel
 
-	        Transport_Peer_init(channel, db, self)
-	        Transport_Host_init(channel, db)
+	    Transport_init(channel)
 
-	        if(onsuccess)
-	            onsuccess(channel)
-	    })
+        Transport_Peer_init(channel, db, self)
+        Transport_Host_init(channel, db)
 	}
 
 
@@ -47,7 +43,15 @@ function PeersManager(signaling, db)
             peer.onopen = function()
             {
                 console.log("peer.open")
-                initDataChannel(peer, peer.createDataChannel(), onsuccess)
+
+                var channel = peer.createDataChannel()
+                channel.onopen = function()
+                {
+	                initDataChannel(peer, channel)
+
+	                if(onsuccess)
+	                    onsuccess(channel)
+                }
             }
             peer.onerror = function()
             {

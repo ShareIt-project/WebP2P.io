@@ -13,7 +13,7 @@ function Transport_Host_init(transport, db)
 
     // filelist
 
-    transport._send_files_list = function(filelist)
+    transport._send_files_list = function(fileslist)
     {
         // Stupid conversion because JSON.stringify() doesn't parse
         // File objects (use them as plain objects in the best case)
@@ -23,15 +23,17 @@ function Transport_Host_init(transport, db)
         // I miss you Python :-(
         var files_send = []
 
-        for(var i = 0, file; file = filelist[i]; i++)
+        for(var i = 0, file; file = fileslist[i]; i++)
             files_send.push({"name": file.name, "size": file.size,
                              "type": file.type});
 
+        console.log(files_send)
         transport.emit('fileslist.send', files_send);
     }
 
     transport.addEventListener('fileslist.query', function()
     {
+        console.log('fileslist.query')
         db.sharepoints_getAll(null, transport._send_files_list)
     })
 
