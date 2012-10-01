@@ -33,10 +33,12 @@ function Transport_Peer_init(transport, db, host)
             }
 
             // Notify about fileslist update
-            host.dispatchEvent({'type': "fileslist_peer.update",
-                                'data': [socketId, files]})
+            host.dispatchEvent({type: "fileslist_peer.update",
+                                data: [socketId, files]})
         })
     })
+
+    // transfer
 
     function _savetodisk(file)
     {
@@ -119,6 +121,7 @@ function Transport_Peer_init(transport, db, host)
                     // Auto-save downloaded file
                     _savetodisk(file)
 
+                    // Notify about transfer end
                     host.dispatchEvent({type: "transfer.end", data: [file]})
                     console.log("Transfer of "+file.name+" finished!");
                 })
