@@ -5,7 +5,7 @@ var PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || w
 var STUN_SERVER = "STUN stun.l.google.com:19302";
 
 
-function PeersManager(db)
+function PeersManager(signaling, db)
 {
     EventTarget.call(this)
 
@@ -104,12 +104,30 @@ function PeersManager(db)
         // Peer is not connected, create a new channel
         if(!peer)
         {
+            // Create PeerConnection
+            peer = createPeerConnection(uid);
+            peer.open = function()
+            {
+                console.log("peer.open")
+                initDataChannel(peer, peer.createDataChannel(), onsuccess)
+            }
+            peer.onerror = function()
+            {
+                console.log("peer.error")
+                if(onerror)
+                    onerror()
+            }
+
+            // Send offer to new PeerConnection
+            var offer = peer.createOffer();
+
+            signaling.emit("offer", uid, offer.toSdp());
+
+            peer.setLocalDescription(peer.SDP_OFFER, offer);
         }
 
         // Peer is connected and we have defined an 'onsucess' callback
-//        else if(onsuccess)
-//            onsuccess(peer._channel)
-        if(onsuccess)
-            onsuccess()
+        else if(onsuccess)
+            onsuccess(peer._channel)
     }
 }
