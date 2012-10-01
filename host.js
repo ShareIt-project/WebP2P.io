@@ -31,48 +31,17 @@ function remove(bitmap, item)
 
 function Host_init(db, protocol, onsuccess)
 {
-	var host = {}
-
-    // EventTarget interface
-    host._events = {};
-
-    host.addEventListener = function(type, listener)
-    {
-      host._events[type] = host._events[type] || [];
-      host._events[type].push(listener);
-    };
-
-    host.dispatchEvent = function(type)
-    {
-      var events = host._events[type];
-      if(!events)
-        return;
-
-      var args = Array.prototype.slice.call(arguments, 1);
-
-      for(var i = 0, len = events.length; i < len; i++)
-        events[i].apply(null, args);
-    };
-
-    host.removeEventListener = function(type, listener)
-    {
-      var events = host._events[type];
-      if(!events)
-        return;
-
-      events.splice(events.indexOf(listener), 1)
-
-      if(!events.length)
-        delete host._events[type]
-    };
+	var host = new EventTarget()
 
 	if(onsuccess)
 		onsuccess(host);
 
 	// Host
 
-    protocol.addEventListener('fileslist.query', function(socketId)
+    protocol.addEventListener('fileslist.query', function(event)
     {
+        var socketId = event.data[0]
+
         db.sharepoints_getAll(null, function(fileslist)
         {
             // Stupid conversion because JSON.stringify() doesn't parse File
@@ -91,8 +60,11 @@ function Host_init(db, protocol, onsuccess)
         })
     })
 
-    protocol.addEventListener('fileslist.send', function(socketId, files)
+    protocol.addEventListener('fileslist.send', function(event)
     {
+        var socketId = event.data[0]
+        var files = event.data[1]
+
         // Check if we have already any of the files
         // It's stupid to try to download it... and also give errors
         db.sharepoints_getAll(null, function(filelist)
@@ -114,7 +86,8 @@ function Host_init(db, protocol, onsuccess)
                     }
             }
 
-            host.dispatchEvent("fileslist_peer.update", socketId, files)
+            host.dispatchEvent({'type': "fileslist_peer.update",
+                                'data': [socketId, files]})
         })
     })
 
@@ -123,8 +96,12 @@ function Host_init(db, protocol, onsuccess)
 		console.warn("'Filereader' is not available, can't be able to host files");
 
 	else
-		protocol.addEventListener('transfer.query', function(socketId, filename, chunk)
+		protocol.addEventListener('transfer.query', function(event)
 		{
+		    var socketId = event.data[0]
+		    var filename = event.data[1]
+		    var chunk = event.data[2]
+
 			var reader = new FileReader();
 				reader.onerror = function(evt)
 				{
@@ -166,9 +143,12 @@ function Host_init(db, protocol, onsuccess)
 		window.URL.revokeObjectURL(save.href)
 	}
 
-	protocol.addEventListener('transfer.send', function(socketId, filename, chunk, data)
+	protocol.addEventListener('transfer.send', function(event)
 	{
-	    chunk = parseInt(chunk)
+	    var socketId = event.data[0]
+	    var filename = event.data[1]
+	    var chunk = parseInt(event.data[2])
+	    var data = event.data[3]
 
 		db.sharepoints_get(filename, function(file)
 		{
