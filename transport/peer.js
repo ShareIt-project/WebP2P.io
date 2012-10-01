@@ -73,21 +73,16 @@ function Transport_Peer_init(transport, db, peersManager)
             remove(file.bitmap, chunk)
 
             // Update blob
-            var start = chunk * chunksize;
-            var stop  = start + chunksize;
+            var pos = chunk * chunksize;
 
-            var byteArray = new Uint8Array(data.length);
-            for(var i = 0; i < data.length; i++)
-                byteArray[i] = data.charCodeAt(i) & 0xff;
+            var fw = new FileWriter(file.blob)
+            if(fw.length < pos)
+                fw.truncate(pos)
+            fw.seek(pos)
 
-            var blob = file.blob
-            var head = blob.slice(0, start)
-            var padding = start-head.size
-            if(padding < 0)
-                padding = 0;
-            file.blob = new Blob([head, new Uint8Array(padding), byteArray,
-                                  blob.slice(stop)],
-                                 {"type": blob.type})
+            var blob = fw.write(data)
+            if(blob != undefined)
+                file.blob = blob
 
             var pending_chunks = file.bitmap.length
             if(pending_chunks)
