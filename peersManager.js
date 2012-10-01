@@ -1,8 +1,38 @@
-function PeersManager_multiple(signaling)
+// Fallbacks for vendor-specific variables until the spec is finalized.
+var PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
+
+// Holds the STUN server to use for PeerConnections.
+var STUN_SERVER = "STUN stun.l.google.com:19302";
+
+
+function PeersManager(signaling, db)
 {
     EventTarget.call(this)
 
     var peers = {}
+
+    var self = this
+
+
+	function createPeerConnection()
+	{
+	    return new PeerConnection(STUN_SERVER, function(){});
+	}
+	
+	function initDataChannel(pc, channel, onsuccess)
+	{
+	    Transport_init(channel, function(channel)
+	    {
+	        pc._channel = channel
+
+	        Transport_Peer_init(channel, db, self)
+	        Transport_Host_init(channel, db)
+
+	        if(onsuccess)
+	            onsuccess(channel)
+	    })
+	}
+
 
     this.connectTo = function(uid, onsuccess, onerror)
     {
@@ -13,11 +43,11 @@ function PeersManager_multiple(signaling)
         if(!peer)
         {
             // Create PeerConnection
-            peer = peers[uid] = _createPeerConnection();
+            peer = peers[uid] = createPeerConnection();
             peer.onopen = function()
             {
                 console.log("peer.open")
-                _initDataChannel(peer, peer.createDataChannel(), this, onsuccess)
+                initDataChannel(peer, peer.createDataChannel(), onsuccess)
             }
             peer.onerror = function()
             {
@@ -45,11 +75,11 @@ function PeersManager_multiple(signaling)
 
     this.createPeer = function(socketId)
     {
-        var peer = peers[socketId] = _createPeerConnection()
+        var peer = peers[socketId] = createPeerConnection()
 	        peer.ondatachannel = function(event)
 	        {
                 console.log("createPeer")
-	            _initDataChannel(peer, event.channel, this)
+	            initDataChannel(peer, event.channel)
 	        }
 
         return peer
