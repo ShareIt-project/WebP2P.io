@@ -40,4 +40,11 @@ function PeersManager(db)
             console.error("Transfer begin: '"+file.name+"' is already in database.")
         })
     }
+
+    this.connectTo = function(uid, onsuccess, onerror)
+    {
+        if(onsuccess)
+            onsuccess()
+//            onsuccess(channel)
+    }
 }
