@@ -1,10 +1,8 @@
 var chunksize = 65536
 
 
-function Host(transport, db)
+function Transport_Host_init(transport, db)
 {
-	EventTarget.call(this)
-
     // Filereader support (be able to host files from the filesystem)
     if(typeof FileReader == "undefined")
     {
