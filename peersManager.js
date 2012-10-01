@@ -50,6 +50,24 @@ function PeersManager(db)
 	}
 
 
+    this.getPeer = function(socketId)
+    {
+        return peers[socketId]
+    }
+
+    this.createPeer = function(socketId)
+    {
+        var peer = createPeerConnection(socketId)
+	        peer.ondatachannel = function(event)
+	        {
+                console.log("createPeer")
+	            initDataChannel(peer, event.channel)
+	        }
+
+        return peer
+    }
+
+
     this._transferbegin = function(file)
     {
         // Calc number of necesary chunks to download
