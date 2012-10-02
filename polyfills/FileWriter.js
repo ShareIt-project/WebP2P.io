@@ -85,7 +85,7 @@ FileWriter.prototype =
     if(size < this.length)
       this.blob_ = this.blob_.slice(size)
     else
-      this.blob_ = new Blob([this.blob_, ArrayBuffer(size - this.length)])
+      this.blob_ = new Blob([this.blob_, new Uint8Array(size - this.length)])
   }
 }
 
