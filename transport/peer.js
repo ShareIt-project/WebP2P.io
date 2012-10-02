@@ -80,7 +80,12 @@ function Transport_Peer_init(transport, db, peersManager)
                 fw.truncate(pos)
             fw.seek(pos)
 
-            var blob = fw.write(data)
+            var byteArray = new Uint8Array(data.length);
+            for(var i = 0; i < data.length; i++)
+                byteArray[i] = data.charCodeAt(i) & 0xff;
+
+            var blob = fw.write(byteArray)
+//            var blob = fw.write(data)
             if(blob != undefined)
                 file.blob = blob
 
