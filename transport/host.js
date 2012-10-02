@@ -13,7 +13,7 @@ function Transport_Host_init(transport, db)
 
     // filelist
 
-    transport._send_files_list = function(socketId, fileslist)
+    transport._send_files_list = function(fileslist)
     {
         // Stupid conversion because JSON.stringify() doesn't parse
         // File objects (use them as plain objects in the best case)
@@ -27,34 +27,29 @@ function Transport_Host_init(transport, db)
             files_send.push({"name": file.name, "size": file.size,
                              "type": file.type});
 
-        transport.emit('fileslist.send', socketId, files_send);
+        transport.emit('fileslist.send', files_send);
     }
 
     transport.addEventListener('fileslist.query', function(event)
     {
-        var socketId = event.data[0]
-        db.sharepoints_getAll(null, function(fileslist)
-		{
-			transport._send_files_list(socketId, fileslist)
-		})
+        db.sharepoints_getAll(null, transport._send_files_list)
     })
 
     // transfer
 
     transport.addEventListener('transfer.query', function(event)
     {
-        var socketId = event.data[0]
-        var filename = event.data[1]
-        var chunk = event.data[2]
+        var filename = event.data[0]
+        var chunk = event.data[1]
 
         var reader = new FileReader();
             reader.onerror = function(evt)
             {
-                console.error("host.transfer_query("+socketId+", "+filename+", "+chunk+") = '"+evt.target.result+"'")
+                console.error("host.transfer_query("+filename+", "+chunk+") = '"+evt.target.result+"'")
             }
             reader.onload = function(evt)
             {
-                transport.emit('transfer.send', socketId, filename, chunk, evt.target.result);
+                transport.emit('transfer.send', filename, chunk, evt.target.result);
             }
 
         var start = chunk * chunksize;

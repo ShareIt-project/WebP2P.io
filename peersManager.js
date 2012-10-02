@@ -18,7 +18,7 @@ function PeersManager(signaling, db)
     // Since the hash and the tracker system are currently not implemented we'll
     // get just the channel of the peer where we got the file that we added
     // ad-hoc before
-    this.getChannel = function(file)
+    function getChannel(file)
     {
         return file.channel
     }
@@ -42,8 +42,8 @@ function PeersManager(signaling, db)
             console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
 
             // Demand data from the begining of the file
-            self.getChannel(file).emit('transfer.query', file.socketId, file.name,
-                                                          getRandom(file.bitmap))
+            getChannel(file).emit('transfer.query', file.name,
+                                                    getRandom(file.bitmap))
         },
         function(errorCode)
         {

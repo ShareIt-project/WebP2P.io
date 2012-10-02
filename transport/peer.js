@@ -7,8 +7,7 @@ function Transport_Peer_init(transport, db, peersManager)
 
     transport.addEventListener('fileslist.send', function(event)
     {
-        var socketId = event.data[0]
-        var files = event.data[1]
+        var files = event.data[0]
 
         // Check if we have already any of the files
         // It's stupid to try to download it... and also give errors
@@ -20,7 +19,6 @@ function Transport_Peer_init(transport, db, peersManager)
                 // the file since we currently don't have support for hashes
                 // nor tracker systems
                 file.channel = transport
-                file.socketId = socketId
 
                 for(var j=0, file_hosted; file_hosted = filelist[j]; j++)
                     if(file.name == file_hosted.name)
@@ -34,13 +32,13 @@ function Transport_Peer_init(transport, db, peersManager)
 
             // Notify about fileslist update
             transport.dispatchEvent({type: "fileslist.send.filtered",
-                                     data: [socketId, files]})
+                                     data: [files]})
         })
     })
 
-    transport.fileslist_query = function(uid)
+    transport.fileslist_query = function()
     {
-        transport.emit('fileslist.query', uid);
+        transport.emit('fileslist.query');
     }
 
     // transfer
@@ -63,10 +61,9 @@ function Transport_Peer_init(transport, db, peersManager)
 
     transport.addEventListener('transfer.send', function(event)
     {
-        var socketId = event.data[0]
-        var filename = event.data[1]
-        var chunk = parseInt(event.data[2])
-        var data = event.data[3]
+        var filename = event.data[0]
+        var chunk = parseInt(event.data[1])
+        var data = event.data[2]
 
         db.sharepoints_get(filename, function(file)
         {
@@ -80,12 +77,7 @@ function Transport_Peer_init(transport, db, peersManager)
                 fw.truncate(pos)
             fw.seek(pos)
 
-            var byteArray = new Uint8Array(data.length);
-            for(var i = 0; i < data.length; i++)
-                byteArray[i] = data.charCodeAt(i) & 0xff;
-
-            var blob = fw.write(byteArray)
-//            var blob = fw.write(data)
+            var blob = fw.write(data)
             if(blob != undefined)
                 file.blob = blob
 
@@ -103,7 +95,7 @@ function Transport_Peer_init(transport, db, peersManager)
                 // Demand more data from one of the pending chunks
                 db.sharepoints_put(file, function()
                 {
-                    peersManager.getChannel(file).emit('transfer.query', socketId,
+                    peersManager.getChannel(file).emit('transfer.query',
                                           file.name, getRandom(file.bitmap));
                 })
             }
