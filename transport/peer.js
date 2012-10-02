@@ -31,8 +31,8 @@ function Transport_Peer_init(transport, db, peersManager)
             }
 
             // Notify about fileslist update
-            peersManager.dispatchEvent({type:"fileslist_peer.update",
-                                        data:[files]})
+            transport.dispatchEvent({type:"fileslist.send.filtered",
+                                     data:[files]})
         })
     })
 
@@ -57,15 +57,6 @@ function Transport_Peer_init(transport, db, peersManager)
         save.dispatchEvent(evt);
 
         window.URL.revokeObjectURL(save.href)
-    }
-
-    // Get the channel of one of the peers that have the file from its hash.
-    // Since the hash and the tracker system are currently not implemented we'll
-    // get just the channel of the peer where we got the file that we added
-    // ad-hoc before
-    function getChannel(file)
-    {
-        return file.channel
     }
 
     transport.addEventListener('transfer.send', function(event)
@@ -108,7 +99,7 @@ function Transport_Peer_init(transport, db, peersManager)
                 // Demand more data from one of the pending chunks
                 db.sharepoints_put(file, function()
                 {
-                    getChannel(file).emit('transfer.query',
+                    peersManager.getChannel(file).emit('transfer.query',
                                           file.name, getRandom(file.bitmap));
                 })
             }
@@ -129,34 +120,4 @@ function Transport_Peer_init(transport, db, peersManager)
             }
         })
     })
-
-    var self = this
-
-    transport._transferbegin = function(file)
-    {
-        // Calc number of necesary chunks to download
-        var chunks = file.size/chunksize;
-        if(chunks % 1 != 0)
-            chunks = Math.floor(chunks) + 1;
-
-        // Add a blob container and a bitmap to our file stub
-        file.blob = new Blob([''], {"type": file.type})
-        file.bitmap = Bitmap(chunks)
-
-        // Insert new "file" inside IndexedDB
-        db.sharepoints_add(file,
-        function()
-        {
-            self.dispatchEvent({type:"transfer.begin", data:file})
-            console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
-
-            // Demand data from the begining of the file
-            getChannel(file).emit('transfer.query', file.name,
-                                                    getRandom(file.bitmap))
-        },
-        function(errorCode)
-        {
-            console.error("Transfer begin: '"+file.name+"' is already in database.")
-        })
-    }
 }
