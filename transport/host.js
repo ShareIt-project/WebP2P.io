@@ -27,13 +27,11 @@ function Transport_Host_init(transport, db)
             files_send.push({"name": file.name, "size": file.size,
                              "type": file.type});
 
-        console.log(files_send)
         transport.emit('fileslist.send', files_send);
     }
 
-    transport.addEventListener('fileslist.query', function()
+    transport.addEventListener('fileslist.query', function(event)
     {
-        console.log('fileslist.query')
         db.sharepoints_getAll(null, transport._send_files_list)
     })
 
@@ -47,7 +45,7 @@ function Transport_Host_init(transport, db)
         var reader = new FileReader();
             reader.onerror = function(evt)
             {
-                console.error("peer.transfer_query("+filename+", "+chunk+") = '"+evt.target.result+"'")
+                console.error("host.transfer_query("+filename+", "+chunk+") = '"+evt.target.result+"'")
             }
             reader.onload = function(evt)
             {

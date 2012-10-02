@@ -38,7 +38,7 @@ function PeersManager(signaling, db)
         db.sharepoints_add(file,
         function()
         {
-            self.dispatchEvent({type:"transfer.begin", data:file})
+            self.dispatchEvent({type: "transfer.begin", data: [file]})
             console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
 
             // Demand data from the begining of the file
@@ -51,19 +51,26 @@ function PeersManager(signaling, db)
         })
     }
 
-	function createPeerConnection()
+	function createPeerConnection(id)
 	{
-	    return new PeerConnection(STUN_SERVER, function(){});
+	    var pc = peers[id] = new PeerConnection(STUN_SERVER, function(){});
+
+		return pc
 	}
 
 	function initDataChannel(pc, channel)
 	{
         pc._channel = channel
 
-	    Transport_init(channel)
+        Transport_init(channel)
 
         Transport_Peer_init(channel, db, self)
         Transport_Host_init(channel, db)
+
+		channel.onclose = function()
+		{
+   			delete pc._channel
+		}
 	}
 
 
@@ -76,11 +83,9 @@ function PeersManager(signaling, db)
         if(!peer)
         {
             // Create PeerConnection
-            peer = peers[uid] = createPeerConnection();
+            peer = createPeerConnection(uid);
             peer.onopen = function()
             {
-                console.log("peer.open")
-
                 var channel = peer.createDataChannel()
                 channel.onopen = function()
                 {
@@ -116,7 +121,7 @@ function PeersManager(signaling, db)
 
     this.createPeer = function(socketId)
     {
-        var peer = peers[socketId] = createPeerConnection()
+        var peer = createPeerConnection(socketId)
 	        peer.ondatachannel = function(event)
 	        {
                 console.log("createPeer")

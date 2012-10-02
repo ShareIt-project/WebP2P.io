@@ -31,15 +31,15 @@ function Transport_Peer_init(transport, db, peersManager)
             }
 
             // Notify about fileslist update
-            transport.dispatchEvent({type:"fileslist.send.filtered",
-                                     data:[files]})
+            transport.dispatchEvent({type: "fileslist.send.filtered",
+                                     data: [files]})
         })
     })
-
     transport.fileslist_query = function()
     {
         transport.emit('fileslist.query');
     }
+
 
     // transfer
 
@@ -89,14 +89,14 @@ function Transport_Peer_init(transport, db, peersManager)
                     chunks = Math.floor(chunks) + 1;
 
                 // Notify about transfer update
-                peersManager.dispatchEvent({type:"transfer.update",
-                                            data:[file, 1 - pending_chunks/chunks]})
+                peersManager.dispatchEvent({type: "transfer.update",
+                                            data: [file, 1 - pending_chunks/chunks]})
 
                 // Demand more data from one of the pending chunks
                 db.sharepoints_put(file, function()
                 {
                     peersManager.getChannel(file).emit('transfer.query',
-                                          file.name, getRandom(file.bitmap));
+                                            file.name, getRandom(file.bitmap));
                 })
             }
             else
@@ -110,7 +110,8 @@ function Transport_Peer_init(transport, db, peersManager)
                     _savetodisk(file)
 
                     // Notify about transfer end
-                    peersManager.dispatchEvent({type:"transfer.end", file:file})
+                    peersManager.dispatchEvent({type: "transfer.end",
+                                                data: [file]})
                     console.log("Transfer of "+file.name+" finished!");
                 })
             }

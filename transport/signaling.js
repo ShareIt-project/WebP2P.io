@@ -27,8 +27,8 @@ function Transport_Signaling_init(signaling, peersManager)
 
         processOffer(pc, socketId, sdp)
 
-        console.log("local: "+pc.localDescription.toSdp())
-        console.log("remote: "+pc.remoteDescription.toSdp())
+        console.log("offer.local: "+pc.localDescription.toSdp())
+        console.log("offer.remote: "+pc.remoteDescription.toSdp())
     })
 
     signaling.addEventListener('answer', function(event)
@@ -38,7 +38,7 @@ function Transport_Signaling_init(signaling, peersManager)
         var socketId = event.data[0]
         var sdp = event.data[1]
 
-        // Search the peer between the list of currently connected peers
+        // Search the peer on the list of currently connected peers
         var pc = peersManager.getPeer(socketId)
         if(pc)
             pc.setRemoteDescription(pc.SDP_ANSWER, new SessionDescription(sdp))
@@ -46,7 +46,7 @@ function Transport_Signaling_init(signaling, peersManager)
             console.error("[signaling.answer] PeerConnection '" + socketId +
                           "' not found");
 
-        console.log("local: "+pc.localDescription.toSdp())
-        console.log("remote: "+pc.remoteDescription.toSdp())
+        console.log("answer.local: "+pc.localDescription.toSdp())
+        console.log("answer.remote: "+pc.remoteDescription.toSdp())
     })
 }
