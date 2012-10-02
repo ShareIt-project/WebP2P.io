@@ -33,8 +33,8 @@ function Transport_Peer_init(transport, db, peersManager)
             }
 
             // Notify about fileslist update
-            peersManager.dispatchEvent({type: "fileslist_peer.update",
-                                        data: [socketId, files]})
+            transport.dispatchEvent({type: "fileslist.send.filtered",
+                                     data: [socketId, files]})
         })
     })
 

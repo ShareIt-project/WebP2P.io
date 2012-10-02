@@ -11,62 +11,17 @@ function PeersManager(signaling, db)
 
     var peers = {}
 
+    var self = this
+
+
     // Get the channel of one of the peers that have the file from its hash.
     // Since the hash and the tracker system are currently not implemented we'll
     // get just the channel of the peer where we got the file that we added
     // ad-hoc before
-    this.getChannel = function(file)
+    function getChannel(file)
     {
         return file.channel
     }
-
-    var self = this
-
-
-	function createPeerConnection(id)
-	{
-	    var pc = peers[id] = new PeerConnection(STUN_SERVER, function(){});
-
-		return pc
-	}
-
-	function initDataChannel(pc, channel, onsuccess)
-	{
-    	Transport_init(channel, function(channel)
-    	{
-	        Transport_Peer_init(channel, db, self)
-    	    Transport_Host_init(channel, db)
-
-			channel.onclose = function()
-  			{
-    			delete pc._channel
-  			}
-
-        	pc._channel = channel
-
-	        if(onsuccess)
-    	        onsuccess(channel)
-    	})
-	}
-
-
-    this.getPeer = function(socketId)
-    {
-        return peers[socketId]
-    }
-
-    this.createPeer = function(socketId)
-    {
-        var peer = createPeerConnection(socketId)
-	        peer.ondatachannel = function(event)
-	        {
-                console.log("createPeer")
-	            initDataChannel(peer, event.channel)
-	        }
-
-        return peer
-    }
-
 
     this._transferbegin = function(file)
     {
@@ -87,14 +42,37 @@ function PeersManager(signaling, db)
             console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
 
             // Demand data from the begining of the file
-            self.getChannel(file).emit('transfer.query', file.socketId, file.name,
-                                                         getRandom(file.bitmap))
+            getChannel(file).emit('transfer.query', file.socketId, file.name,
+                                                    getRandom(file.bitmap))
         },
         function(errorCode)
         {
             console.error("Transfer begin: '"+file.name+"' is already in database.")
         })
     }
+
+	function createPeerConnection(id)
+	{
+	    var pc = peers[id] = new PeerConnection(STUN_SERVER, function(){});
+
+		return pc
+	}
+
+	function initDataChannel(pc, channel)
+	{
+        pc._channel = channel
+
+        Transport_init(channel)
+
+        Transport_Peer_init(channel, db, self)
+        Transport_Host_init(channel, db)
+
+		channel.onclose = function()
+		{
+   			delete pc._channel
+		}
+	}
+
 
     this.connectTo = function(uid, onsuccess, onerror)
     {
@@ -108,12 +86,17 @@ function PeersManager(signaling, db)
             peer = createPeerConnection(uid);
             peer.onopen = function()
             {
-                console.log("peer.open")
-                initDataChannel(peer, peer.createDataChannel(), onsuccess)
+                var channel = peer.createDataChannel()
+                channel.onopen = function()
+                {
+	                initDataChannel(peer, channel)
+
+	                if(onsuccess)
+	                    onsuccess(channel)
+                }
             }
             peer.onerror = function()
             {
-                console.log("peer.error")
                 if(onerror)
                     onerror()
             }
@@ -129,5 +112,22 @@ function PeersManager(signaling, db)
         // Peer is connected and we have defined an 'onsucess' callback
         else if(onsuccess)
             onsuccess(peer._channel)
+    }
+
+    this.getPeer = function(socketId)
+    {
+        return peers[socketId]
+    }
+
+    this.createPeer = function(socketId)
+    {
+        var peer = createPeerConnection(socketId)
+	        peer.ondatachannel = function(event)
+	        {
+                console.log("createPeer")
+	            initDataChannel(peer, event.channel)
+	        }
+
+        return peer
     }
 }
