@@ -4,7 +4,7 @@
 
 (function(module){
 
-if(FileWriter != undefined)
+if(window.FileWriter != undefined)
     return;
 
 Blob.slice = Blob.slice || Blob.webkitSlice || Blob.mozSlice
@@ -20,7 +20,7 @@ if(Blob.slice != undefined)
  * @param {FileEntry} fileEntry The FileEntry associated with this writer.
  * @constructor
  */
-function FileWriter(blob)
+FileWriter = function(blob)
 {
   var position_ = 0;
   var blob_ = blob;
@@ -52,7 +52,7 @@ function FileWriter(blob)
     var stop = position_+data.size
 
     // Do the "write" --in fact, a full overwrite of the Blob
-    blob_ = new Blob([head, ArrayBuffer(padding), data, blob_.slice(stop)],
+    blob_ = new Blob([head, new Uint8Array(padding), data, blob_.slice(stop)],
                      {"type": blob_.type})
 
     // Set writer.position == write.length.

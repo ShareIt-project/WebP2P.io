@@ -72,16 +72,12 @@ function Transport_Peer_init(transport, db, peersManager)
             // Update blob
             var pos = chunk * chunksize;
 
-            var fw = FileWriter(file.blob)
+            var fw = new FileWriter(file.blob)
             if(fw.length < pos)
                 fw.truncate(pos)
             fw.seek(pos)
 
-//            var byteArray = new Uint8Array(data.length);
-//            for(var i = 0; i < data.length; i++)
-//                byteArray[i] = data.charCodeAt(i) & 0xff;
-
-            var blob = fw.write(byteArray.buffer)
+            var blob = fw.write(data)
             if(blob != undefined)
                 file.blob = blob
 
