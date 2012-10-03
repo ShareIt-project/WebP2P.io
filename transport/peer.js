@@ -70,6 +70,23 @@ function Transport_Peer_init(transport, db, peersManager)
             remove(file.bitmap, chunk)
 
             // Update blob
+            var start = chunk * chunksize;
+            var stop  = start + chunksize;
+
+            var byteArray = new Uint8Array(data.length);
+            for(var i = 0; i < data.length; i++)
+                byteArray[i] = data.charCodeAt(i) & 0xff;
+
+            var blob = file.blob
+            var head = blob.slice(0, start)
+            var padding = start-head.size
+            if(padding < 0)
+                padding = 0;
+            file.blob = new Blob([head, new Uint8Array(padding), byteArray,
+                                  blob.slice(stop)],
+                                 {"type": blob.type})
+/*
+            // Update blob
             var pos = chunk * chunksize;
 
             var fw = new FileWriter(file.blob)
@@ -77,10 +94,15 @@ function Transport_Peer_init(transport, db, peersManager)
                 fw.truncate(pos)
             fw.seek(pos)
 
-            var blob = fw.write(data)
+            // Fix back data transmited as UTF-8 to binary
+            var byteArray = new Uint8Array(data.length);
+            for(var i = 0; i < data.length; i++)
+                byteArray[i] = data.charCodeAt(i) & 0xff;
+
+            var blob = fw.write(byteArray)
             if(blob != undefined)
                 file.blob = blob
-
+*/
             var pending_chunks = file.bitmap.length
             if(pending_chunks)
             {
