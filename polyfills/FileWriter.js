@@ -22,52 +22,25 @@ if(Blob.slice != undefined)
  */
 FileWriter = function(blob)
 {
-  var position_ = 0;
-  var blob_ = blob;
+  if(!blob)
+    throw Error('Expected blob argument to write.');
 
-  this.__defineGetter__('position', function()
-  {
-    return position_;
-  });
-
-  this.__defineGetter__('length', function()
-  {
-    return blob.size;
-  });
-
-  this.write = function(data)
-  {
-    if(!blob)
-      throw Error('Expected blob argument to write.');
-
-    // Call onwritestart if it was defined.
-    if(this.onwritestart)
-      this.onwritestart();
-
-    // Calc the fragments
-    var head = blob_.slice(0, position_)
-    var padding = position_-head.size
-    if(padding < 0)
-        padding = 0;
-    var stop = position_+data.size
-
-    // Do the "write" --in fact, a full overwrite of the Blob
-    blob_ = new Blob([head, new Uint8Array(padding), data, blob_.slice(stop)],
-                     {"type": blob_.type})
-
-    // Set writer.position == write.length.
-    position_ += data.size;
-
-    if(self.onwriteend)
-      self.onwriteend();
-
-    // This is not standard, but it's the only way to get out the created blob
-    return blob_
-  };
+  this.position_ = 0;
+  this.blob_ = blob;
 }
 
 FileWriter.prototype =
 {
+  get position()
+  {
+    return this.position_;
+  },
+
+  get length()
+  {
+    return this.blob_.size;
+  },
+
   seek: function(offset)
   {
     this.position_ = offset
@@ -80,12 +53,43 @@ FileWriter.prototype =
     if(this.position_ < 0)
       this.position_ = 0
   },
+
   truncate: function(size)
   {
     if(size < this.length)
-      this.blob_ = this.blob_.slice(size)
+      this.blob_ = this.blob_.slice(0, size)
     else
-      this.blob_ = new Blob([this.blob_, new Uint8Array(size - this.length)])
+      this.blob_ = new Blob([this.blob_, new Uint8Array(size - this.length)],
+                             {"type": this.blob_.type})
+  },
+
+  write: function(data)
+  {
+    // Call onwritestart if it was defined.
+    if(this.onwritestart)
+      this.onwritestart();
+
+    // Calc the head and tail fragments
+    var head = this.blob_.slice(0, this.position_)
+    var tail = this.blob_.slice(this.position_+data.length)
+
+    // Calc the padding
+    var padding = this.position_-head.size
+    if(padding < 0)
+        padding = 0;
+
+    // Do the "write" --in fact, a full overwrite of the Blob
+    this.blob_ = new Blob([head, new Uint8Array(padding), data, tail],
+                           {"type": this.blob_.type})
+
+    // Set writer.position == write.length.
+    this.position_ += data.size;
+
+    if(self.onwriteend)
+      self.onwriteend();
+
+    // This is not standard, but it's the only way to get out the created blob
+    return this.blob_
   }
 }
 

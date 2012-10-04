@@ -65,44 +65,35 @@ function Transport_Peer_init(transport, db, peersManager)
         var chunk = parseInt(event.data[1])
         var data = event.data[2]
 
+        // Fix back data transmited as UTF-8 to binary
+        var byteArray = new Uint8Array(data.length);
+        for(var i = 0; i < data.length; i++)
+            byteArray[i] = data.charCodeAt(i) & 0xff;
+
+        data = byteArray
+
         db.sharepoints_get(filename, function(file)
         {
             remove(file.bitmap, chunk)
 
-            // Update blob
-            var start = chunk * chunksize;
-            var stop  = start + chunksize;
-
-            var byteArray = new Uint8Array(data.length);
-            for(var i = 0; i < data.length; i++)
-                byteArray[i] = data.charCodeAt(i) & 0xff;
-
-            var blob = file.blob
-            var head = blob.slice(0, start)
-            var padding = start-head.size
-            if(padding < 0)
-                padding = 0;
-            file.blob = new Blob([head, new Uint8Array(padding), byteArray,
-                                  blob.slice(stop)],
-                                 {"type": blob.type})
-/*
-            // Update blob
-            var pos = chunk * chunksize;
-
+            // Create new FileWriter
             var fw = new FileWriter(file.blob)
+
+            // Calc and set pos, and increase blob size if necesary
+            var pos = chunk * chunksize;
             if(fw.length < pos)
                 fw.truncate(pos)
             fw.seek(pos)
 
-            // Fix back data transmited as UTF-8 to binary
-            var byteArray = new Uint8Array(data.length);
-            for(var i = 0; i < data.length; i++)
-                byteArray[i] = data.charCodeAt(i) & 0xff;
+            // Write data to the blob
+            var blob = fw.write(data)
 
-            var blob = fw.write(byteArray)
+            // This is not standard, but it's the only way to get out the
+            // created blob
             if(blob != undefined)
                 file.blob = blob
-*/
+
+            // Check for pending chunks and require them or save the file
             var pending_chunks = file.bitmap.length
             if(pending_chunks)
             {
