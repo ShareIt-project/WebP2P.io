@@ -5,7 +5,7 @@ var chunksize = 65536
 if(typeof FileReader == "undefined")
 {
     console.warn("'Filereader' is not available, can't be able to host files");
-    oldBrowser()
+    No_FileReader()
 }
 
 
