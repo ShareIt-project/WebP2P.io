@@ -1,15 +1,19 @@
 var chunksize = 65536
 
 
+// Filereader support (be able to host files from the filesystem)
+if(typeof FileReader == "undefined")
+{
+    console.warn("'Filereader' is not available, can't be able to host files");
+    oldBrowser()
+}
+
+
 function Transport_Host_init(transport, db)
 {
     // Filereader support (be able to host files from the filesystem)
     if(typeof FileReader == "undefined")
-    {
-        console.warn("'Filereader' is not available, can't be able to host files");
-        oldBrowser()
         return
-    }
 
     // filelist
 
