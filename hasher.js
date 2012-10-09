@@ -8,9 +8,12 @@ importScripts('lib/sha512.js');
 var queue = []
 
 
-function hashFile(file)
+function hashFile(file, onsuccess)
 {
-    var hash = ""
+	var shaObj = new window.jsSHA("This is a Test", "TEXT");
+	var hash = shaObj.getHash("SHA-512", "B64");
+
+    onsuccess(hash)
 }
 
 
@@ -25,8 +28,10 @@ self.onmessage = function(e)
     var reader = new FileReader();
 	    reader.onload = function(e)
 	    {
-	      hashFile(this.result); // this.result is the read file as an ArrayBuffer.
-          self.postMessage(file);
+	      hashFile(this.result, function(hash) // this.result is the read file as an ArrayBuffer.
+	      {
+              self.postMessage({'hash': hash, 'blob': file});
+	      })
 	    }
 
 	    reader.readAsArrayBuffer(file);
