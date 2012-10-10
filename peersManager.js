@@ -23,31 +23,31 @@ function PeersManager(signaling, db)
         return file.channel
     }
 
-    this._transferbegin = function(file)
+    this._transferbegin = function(fileentry)
     {
         // Calc number of necesary chunks to download
-        var chunks = file.size/chunksize;
+        var chunks = fileentry.size/chunksize;
         if(chunks % 1 != 0)
             chunks = Math.floor(chunks) + 1;
 
         // Add a blob container and a bitmap to our file stub
-        file.blob = new Blob([''], {"type": file.type})
-        file.bitmap = Bitmap(chunks)
+        fileentry.blob = new Blob([''], {"type": fileentry.type})
+        fileentry.bitmap = Bitmap(chunks)
 
         // Insert new "file" inside IndexedDB
-        db.sharepoints_add(file,
+        db.files_add(fileentry,
         function()
         {
-            self.dispatchEvent({type: "transfer.begin", data: [file]})
-            console.log("Transfer begin: '"+file.name+"' = "+JSON.stringify(file))
+            self.dispatchEvent({type: "transfer.begin", data: [fileentry]})
+            console.log("Transfer begin: '"+fileentry.name+"' = "+JSON.stringify(fileentry))
 
             // Demand data from the begining of the file
-            self.getChannel(file).emit('transfer.query', file.name,
-                                                         getRandom(file.bitmap))
+            self.getChannel(fileentry).emit('transfer.query', fileentry.hash,
+                                                              getRandom(fileentry.bitmap))
         },
         function(errorCode)
         {
-            console.error("Transfer begin: '"+file.name+"' is already in database.")
+            console.error("Transfer begin: '"+fileentry.name+"' is already in database.")
         })
     }
 

@@ -11,7 +11,7 @@ function Transport_Peer_init(transport, db, peersManager)
 
         // Check if we have already any of the files
         // It's stupid to try to download it... and also give errors
-        db.sharepoints_getAll(null, function(filelist)
+        db.files_getAll(null, function(filelist)
         {
             for(var i=0, file; file = files[i]; i++)
             {
@@ -20,11 +20,13 @@ function Transport_Peer_init(transport, db, peersManager)
                 // nor tracker systems
                 file.channel = transport
 
+                // Check if we have the file already, and if so set it our copy
+                // bitmap and blob reference
                 for(var j=0, file_hosted; file_hosted = filelist[j]; j++)
-                    if(file.name == file_hosted.name)
+                    if(file.hash == file_hosted.hash)
                     {
                         file.bitmap = file_hosted.bitmap
-                        file.blob   = file_hosted.blob || file_hosted
+                        file.blob   = file_hosted.file || file_hosted.blob
 
                         break;
                     }
@@ -43,13 +45,13 @@ function Transport_Peer_init(transport, db, peersManager)
 
     // transfer
 
-    function _savetodisk(file)
+    function _savetodisk(fileentry)
     {
         // Auto-save downloaded file
         var save = document.createElement("A");
-            save.href = window.URL.createObjectURL(file.blob)
+            save.href = window.URL.createObjectURL(fileentry.blob)
             save.target = "_blank"      // This can give problems...
-            save.download = file.name   // This force to download with a filename instead of navigate
+            save.download = fileentry.name   // This force to download with a filename instead of navigate
 
         var evt = document.createEvent('MouseEvents');
             evt.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null);
@@ -61,7 +63,7 @@ function Transport_Peer_init(transport, db, peersManager)
 
     transport.addEventListener('transfer.send', function(event)
     {
-        var filename = event.data[0]
+        var hash = event.data[0]
         var chunk = parseInt(event.data[1])
         var data = event.data[2]
 
@@ -72,12 +74,12 @@ function Transport_Peer_init(transport, db, peersManager)
 
         data = byteArray
 
-        db.sharepoints_get(filename, function(file)
+        db.files_get(hash, function(fileentry)
         {
-            remove(file.bitmap, chunk)
+            remove(fileentry.bitmap, chunk)
 
             // Create new FileWriter
-            var fw = new FileWriter(file.blob)
+            var fw = new FileWriter(fileentry.blob)
 
             // Calc and set pos, and increase blob size if necesary
             var pos = chunk * chunksize;
@@ -91,41 +93,42 @@ function Transport_Peer_init(transport, db, peersManager)
             // This is not standard, but it's the only way to get out the
             // created blob
             if(blob != undefined)
-                file.blob = blob
+                fileentry.blob = blob
 
             // Check for pending chunks and require them or save the file
-            var pending_chunks = file.bitmap.length
+            var pending_chunks = fileentry.bitmap.length
             if(pending_chunks)
             {
-                var chunks = file.size/chunksize;
+                var chunks = fileentry.size/chunksize;
                 if(chunks % 1 != 0)
                     chunks = Math.floor(chunks) + 1;
 
                 // Notify about transfer update
                 peersManager.dispatchEvent({type: "transfer.update",
-                                            data: [file, 1 - pending_chunks/chunks]})
+                                            data: [fileentry, 1 - pending_chunks/chunks]})
 
                 // Demand more data from one of the pending chunks
-                db.sharepoints_put(file, function()
+                db.files_put(fileentry, function()
                 {
-                    peersManager.getChannel(file).emit('transfer.query',
-                                            file.name, getRandom(file.bitmap));
+                    peersManager.getChannel(fileentry).emit('transfer.query',
+                                                            fileentry.hash,
+                                                            getRandom(fileentry.bitmap));
                 })
             }
             else
             {
                 // There are no more chunks, set file as fully downloaded
-                delete file.bitmap;
+                delete fileentry.bitmap;
 
-                db.sharepoints_put(file, function()
+                db.files_put(fileentry, function()
                 {
                     // Auto-save downloaded file
-                    _savetodisk(file)
+                    _savetodisk(fileentry)
 
                     // Notify about transfer end
                     peersManager.dispatchEvent({type: "transfer.end",
-                                                data: [file]})
-                    console.log("Transfer of "+file.name+" finished!");
+                                                data: [fileentry]})
+                    console.log("Transfer of "+fileentry.name+" finished!");
                 })
             }
         })
