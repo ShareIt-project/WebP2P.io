@@ -30,7 +30,7 @@ self.onmessage = function(e)
 	    {
 	      hashFile(this.result, function(hash) // this.result is the read file as an ArrayBuffer.
 	      {
-              self.postMessage({'hash': hash, 'blob': file});
+              self.postMessage({'hash': hash, 'file': file});
 	      })
 	    }
 
