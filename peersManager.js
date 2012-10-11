@@ -1,12 +1,13 @@
 // Fallbacks for vendor-specific variables until the spec is finalized.
 var PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
 
-// Holds the STUN server to use for PeerConnections.
-var STUN_SERVER = "STUN stun.l.google.com:19302";
 
-
-function PeersManager(signaling, db)
+function PeersManager(signaling, db, stun_server)
 {
+    // Set a default STUN server if none is specified
+    if(stun_server == undefined)
+		stun_server = "stun.l.google.com:19302";
+
     EventTarget.call(this)
 
     var peers = {}
@@ -53,7 +54,7 @@ function PeersManager(signaling, db)
 
 	function createPeerConnection(id)
 	{
-	    var pc = peers[id] = new PeerConnection(STUN_SERVER, function(){});
+	    var pc = peers[id] = new PeerConnection("STUN "+stun_server, function(){});
 
 		return pc
 	}
