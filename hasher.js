@@ -1,28 +1,51 @@
+// Object that update the SharedPoints and hash its files
+
+
 function Hasher(db)
 {
+    var queue = []
+
     var worker = new Worker('js/webp2p/hasher_worker.js');
         worker.onmessage = function(event)
         {
-            db.files_add(event.data)
+            var fileentry = event.data
 
+            // Remove hashed file from the queue
+            queue.splice(queue.indexOf(fileentry.file))
+
+            // Notify that the file have been hashed
             if(this.onsuccess)
-                this.onsuccess()
+                this.onsuccess(fileentry)
         }
 
-    this.hash = function(fileslist)
+    this.hash = function(sharedpoints)
     {
-        worker.postMessage(fileslist)
+	  // Add files to queue if they are not there yet
+	  for(var i=0, sp; sp=sharedpoints[i];)
+	    for(var j=0, file; q_file=queue[j]; j++)
+	      if(sp == file)
+	        sharedpoints.splice(i)
+	      else
+	        i++;
 
-        // Loop through the FileList and add sharedpoints to list.
-        for(var i=0, file; file=fileslist[i]; i++)
-            db.sharepoints_add(file)
+	  queue.concat(sharedpoints)
+
+      // Run over all the files on the queue and process them
+	  for(var i=0, sp; sp=queue[i]; ++i)
+	  {
+        worker.postMessage(sp)
+
+        db.sharepoints_put(sp)
+      }
     }
 
     this.refresh()
     {
-        db.sharepoints_getAll(null, function(fileslist)
+        var self = this
+
+        db.sharepoints_getAll(null, function(sharedpoints)
         {
-            worker.postMessage(fileslist)
+            self.hash(sharedpoints)
         })
     }
 }
