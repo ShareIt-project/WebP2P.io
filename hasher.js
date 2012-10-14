@@ -14,8 +14,8 @@ function Hasher(db)
             queue.splice(queue.indexOf(fileentry.file))
 
             // Notify that the file have been hashed
-            if(this.onsuccess)
-                this.onsuccess(fileentry)
+            if(this.onhashed)
+                this.onhashed(fileentry)
         }
 
     this.hash = function(sharedpoints)
