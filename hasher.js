@@ -17,4 +17,12 @@ function Hasher(db)
         for(var i=0, file; file=fileslist[i]; i++)
             db.sharepoints_add(file)
     }
+
+    this.refresh()
+    {
+        db.sharepoints_getAll(null, function(fileslist)
+        {
+            worker.postMessage(fileslist)
+        })
+    }
 }

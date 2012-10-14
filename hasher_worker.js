@@ -21,6 +21,15 @@ self.onmessage = function(e)
 {
   var files = e.data
 
+  // Add files to queue if they are not there yet
+  for(var i=0, file; file=files[i];)
+    for(var j=0, q_file; q_file=queue[j]; j++)
+      if(file == q_file)
+        files.splice(i)
+      else
+        i++;
+  queue.concat(files)
+
   for(var i=0; i<files.length; ++i)
   {
     var file=files[i]
