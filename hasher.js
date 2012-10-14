@@ -31,7 +31,7 @@ function Hasher(db)
 	  queue.concat(sharedpoints)
 
       // Run over all the files on the queue and process them
-	  for(var i=0, sp; sp=queue[i]; ++i)
+	  for(var i=0, sp; sp=sharedpoints[i]; ++i)
 	  {
         worker.postMessage(sp)
 
