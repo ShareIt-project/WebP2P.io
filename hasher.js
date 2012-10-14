@@ -39,7 +39,7 @@ function Hasher(db)
       }
     }
 
-    this.refresh()
+    this.refresh = function()
     {
         var self = this
 
@@ -48,4 +48,13 @@ function Hasher(db)
             self.hash(sharedpoints)
         })
     }
+
+    // Start hashing new files from the shared points on load
+    this.refresh()
+
+    // Refresh hashes every hour
+    setInterval(function()
+    {
+        this.refresh()
+    }, 60*60*1000)
 }
