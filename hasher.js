@@ -21,8 +21,8 @@ function Hasher(db)
     this.hash = function(sharedpoints)
     {
 	  // Add files to queue if they are not there yet
-	  for(var i=0, sp; sp=sharedpoints[i];)
-	    for(var j=0, file; q_file=queue[j]; j++)
+	  for(var j=0, file; file=queue[j]; j++)
+        for(var i=0, sp; sp=sharedpoints[i];)
 	      if(sp == file)
 	        sharedpoints.splice(i)
 	      else
