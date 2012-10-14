@@ -5,6 +5,8 @@ function Hasher(db)
 {
     var queue = []
 
+    var self = this
+
     var worker = new Worker('js/webp2p/hasher_worker.js');
         worker.onmessage = function(event)
         {
@@ -14,8 +16,8 @@ function Hasher(db)
             queue.splice(queue.indexOf(fileentry.file))
 
             // Notify that the file have been hashed
-            if(this.onhashed)
-                this.onhashed(fileentry)
+            if(self.onhashed)
+                self.onhashed(fileentry)
         }
 
     this.hash = function(sharedpoints)
@@ -41,8 +43,6 @@ function Hasher(db)
 
     this.refresh = function()
     {
-        var self = this
-
         db.sharepoints_getAll(null, function(sharedpoints)
         {
             self.hash(sharedpoints)
@@ -50,11 +50,11 @@ function Hasher(db)
     }
 
     // Start hashing new files from the shared points on load
-    this.refresh()
+    self.refresh()
 
     // Refresh hashes every hour
     setInterval(function()
     {
-        this.refresh()
+        self.refresh()
     }, 60*60*1000)
 }
