@@ -64,6 +64,9 @@ FileWriter = function(blob)
 
   this.write = function(data)
   {
+    if(!data)
+        return;
+
     // Call onwritestart if it was defined.
     if(this.onwritestart)
        this.onwritestart();
