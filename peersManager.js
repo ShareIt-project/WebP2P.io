@@ -1,5 +1,5 @@
 // Fallbacks for vendor-specific variables until the spec is finalized.
-var PeerConnection = window.PeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
+var RTCPeerConnection = window.RTCPeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
 
 
 function PeersManager(signaling, db, stun_server)
@@ -54,7 +54,7 @@ function PeersManager(signaling, db, stun_server)
 
 	function createPeerConnection(id)
 	{
-	    var pc = peers[id] = new PeerConnection("STUN "+stun_server, function(){});
+	    var pc = peers[id] = new RTCPeerConnection("STUN "+stun_server, function(){});
 
 		return pc
 	}
