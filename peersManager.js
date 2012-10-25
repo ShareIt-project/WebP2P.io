@@ -95,11 +95,11 @@ function PeersManager(signaling, db, stun_server)
 	                if(onsuccess)
 	                    onsuccess(channel)
                 }
-            }
-            peer.onerror = function()
-            {
-                if(onerror)
-                    onerror()
+                channel.onerror = function()
+                {
+                    if(onerror)
+                        onerror(uid, peer, channel)
+                }
             }
 
             // Send offer to new PeerConnection
