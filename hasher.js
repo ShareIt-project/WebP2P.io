@@ -22,7 +22,7 @@ function Hasher(db)
 
     this.hash = function(sharedpoints)
     {
-	  // Add files to queue if they are not there yet
+      // Add files to queue if they are not there yet
 	  for(var j=0, file; file=queue[j]; j++)
         for(var i=0, sp; sp=sharedpoints[i];)
 	      if(sp == file)
@@ -30,7 +30,7 @@ function Hasher(db)
 	      else
 	        i++;
 
-	  queue.concat(sharedpoints)
+	  queue = queue.concat(Array.prototype.slice.call(sharedpoints))
 
       // Run over all the files on the queue and process them
 	  for(var i=0, sp; sp=sharedpoints[i]; ++i)
