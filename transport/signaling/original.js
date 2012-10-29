@@ -1,4 +1,4 @@
-function Transport_Signaling_init(signaling, peersManager)
+function Transport_Signaling_Original_init(signaling, peersManager)
 {
     function processOffer(pc, socketId, sdp)
     {
