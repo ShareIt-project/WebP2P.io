@@ -1,4 +1,4 @@
-function Transport_Signaling_SIP_init(peersManager)
+function Signaling_SIP_init(peersManager)
 {
     var configuration =
     {

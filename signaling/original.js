@@ -1,4 +1,4 @@
-function Transport_Signaling_Original(ws_uri)
+function Signaling_Original(ws_uri)
 {
     // Connect a signaling channel to the handshake server and get an ID
 //    var signaling = new WebSocket('ws://localhost:8001')
