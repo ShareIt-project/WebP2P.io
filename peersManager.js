@@ -1,5 +1,5 @@
 // Fallbacks for vendor-specific variables until the spec is finalized.
-var RTCPeerConnection = window.RTCPeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
+var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
 
 
 function PeersManager(signaling, db, stun_server)
