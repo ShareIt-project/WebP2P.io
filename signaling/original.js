@@ -18,7 +18,7 @@ function Signaling_Original(ws_uri, onsuccess)
                 pc.setLocalDescription(pc.SDP_ANSWER, answer);
             }
 
-            signaling.setPeersManager(peersManager)
+            signaling.setPeersManager = function(peersManager)
             {
                 signaling.addEventListener('offer', function(event)
                 {
