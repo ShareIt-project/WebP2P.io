@@ -1,7 +1,6 @@
 function Signaling_Original(ws_uri, onsuccess)
 {
     // Connect a signaling channel to the handshake server and get an ID
-//    var signaling = new WebSocket('ws://localhost:8001')
     var signaling = new WebSocket(ws_uri)
         signaling.onopen = function()
         {
