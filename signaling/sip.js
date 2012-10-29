@@ -1,8 +1,8 @@
-function Signaling_SIP_init(peersManager)
+function Signaling_SIP(ws_uri, onsuccess)
 {
     var configuration =
     {
-      'outbound_proxy_set': [outbound_proxy_set],
+      'outbound_proxy_set': [ws_uri],
       'uri': sip_uri,
       'display_name': '',
       'password':  sip_password,
