@@ -6,57 +6,25 @@ function Signaling_Original(ws_uri, onsuccess)
         {
             Transport_init(signaling)
 
-            function processOffer(pc, socketId, sdp)
+            signaling.addEventListener('offer', function(event)
             {
-                pc.setRemoteDescription(pc.SDP_OFFER, new SessionDescription(sdp));
+                var socketId = event.data[0]
+                var sdp = event.data[1]
 
-                // Send answer
-                var answer = pc.createAnswer(pc.remoteDescription.toSdp());
+                if(signaling.onoffer)
+                    signaling.onoffer(socketId, sdp)
+            })
 
-                signaling.emit("answer", socketId, answer.toSdp());
-
-                pc.setLocalDescription(pc.SDP_ANSWER, answer);
-            }
-
-            signaling.setPeersManager = function(peersManager)
+            signaling.addEventListener('answer', function(event)
             {
-                signaling.addEventListener('offer', function(event)
-                {
-                    var socketId = event.data[0]
-                    var sdp = event.data[1]
+                console.log("[signaling.answer]");
 
-                    // Search the peer between the list of currently connected peers
-                    var pc = peersManager.getPeer(socketId)
+                var socketId = event.data[0]
+                var sdp = event.data[1]
 
-                    // Peer is not connected, create a new channel
-                    if(!pc)
-                        pc = peersManager.createPeer(socketId);
-
-                    processOffer(pc, socketId, sdp)
-
-                    console.log("offer.local: "+pc.localDescription.toSdp())
-                    console.log("offer.remote: "+pc.remoteDescription.toSdp())
-                })
-
-                signaling.addEventListener('answer', function(event)
-                {
-                    console.log("[signaling.answer]");
-
-                    var socketId = event.data[0]
-                    var sdp = event.data[1]
-
-                    // Search the peer on the list of currently connected peers
-                    var pc = peersManager.getPeer(socketId)
-                    if(pc)
-                        pc.setRemoteDescription(pc.SDP_ANSWER, new SessionDescription(sdp))
-                    else
-                        console.error("[signaling.answer] PeerConnection '" + socketId +
-                                      "' not found");
-
-                    console.log("answer.local: "+pc.localDescription.toSdp())
-                    console.log("answer.remote: "+pc.remoteDescription.toSdp())
-                })
-            }
+                if(signaling.onanswer)
+                    signaling.onanswer(socketId, sdp)
+            })
 
             signaling.connectTo = function(uid, sdp)
             {
