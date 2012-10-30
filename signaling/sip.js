@@ -1,24 +1,17 @@
 function Signaling_SIP(ws_uri, onsuccess)
 {
+    var sip_uri = ''
+
     var configuration =
     {
-      'outbound_proxy_set': [ws_uri],
+      'outbound_proxy_set': ws_uri,
       'uri': sip_uri,
-      'display_name': '',
-      'password':  sip_password,
-      'register_expires': 600,
-      'secure_transport': false,
-      'stun_server': 'aliax.net',
-      'trace_sip': true,
-      'hack_ip_in_contact': true,
-      'hack_via_tcp': true
+      'password':  ''
     };
-
-    var ua
 
     try
     {
-        ua = new JsSIP.UA(configuration);
+        var signaling = new JsSIP.UA(configuration);
     }
     catch(e)
     {
@@ -27,39 +20,47 @@ function Signaling_SIP(ws_uri, onsuccess)
     }
 
     // Transport connection/disconnection callbacks
-    ua.on('connected', ws_connected);
-    ua.on('disconnected', ws_disconnected);
+    signaling.on('connected', ws_connected);
+    signaling.on('disconnected', ws_disconnected);
 
     // Call/Message reception callbacks
-    ua.on('newSession', function(e)
+    signaling.on('newSession', function(e)
     {
       GUI.new_session(e)
     });
 
-    ua.on('newMessage', function(e)
+    signaling.on('newMessage', function(e)
     {
       GUI.new_message(e)
     });
 
     // Registration/Deregistration callbacks
-    ua.on('registered', function(e)
+    signaling.on('registered', function(e)
     {
       console.info('Registered');
       GUI.setStatus("registered");
     });
 
-    ua.on('unregistered', function(e)
+    signaling.on('unregistered', function(e)
     {
       console.info('Deregistered');
       GUI.setStatus("connected");
     });
 
-    ua.on('registrationFailed', function(e)
+    signaling.on('registrationFailed', function(e)
     {
       console.info('Registration failure');
       GUI.setStatus("connected");
     });
 
     // Start
-    ua.start();
+    signaling.start();
+
+
+    signaling.connectTo = function(uid, sdp)
+    {
+        signaling.call(uid, false, false);
+        signaling.sendMessage(uid, sdp)
+    }
+
 }
