@@ -58,6 +58,11 @@ function Signaling_Original(ws_uri, onsuccess)
                 })
             }
 
+            signaling.connectTo = function(uid, sdp)
+            {
+                this.emit("offer", uid, sdp);
+            }
+
             if(onsuccess)
                 onsuccess(signaling)
         }

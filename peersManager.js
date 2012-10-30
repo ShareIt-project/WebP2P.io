@@ -71,7 +71,7 @@ function PeersManager(signaling, db, stun_server)
 
 		channel.onclose = function()
 		{
-   			delete pc._channel
+			delete pc._channel
 		}
 	}
 
@@ -106,7 +106,7 @@ function PeersManager(signaling, db, stun_server)
             // Send offer to new PeerConnection
             var offer = peer.createOffer();
 
-            signaling.emit("offer", uid, offer.toSdp());
+            signaling.connectTo(uid, offer.toSdp());
 
             peer.setLocalDescription(peer.SDP_OFFER, offer);
         }
