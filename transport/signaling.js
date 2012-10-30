@@ -49,4 +49,9 @@ function Transport_Signaling_init(signaling, peersManager)
         console.log("answer.local: "+pc.localDescription.toSdp())
         console.log("answer.remote: "+pc.remoteDescription.toSdp())
     })
+
+    signaling.connectTo = function(uid, sdp)
+    {
+        this.emit("offer", uid, sdp);
+    }
 }
