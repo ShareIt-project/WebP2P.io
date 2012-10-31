@@ -1,6 +1,5 @@
 // Fallbacks for vendor-specific variables until the spec is finalized.
-var RTCPeerConnection = window.RTCPeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
-//var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.webkitPeerConnection00 || window.mozRTCPeerConnection;
+var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
 
 
 function PeersManager(signaling, db, stun_server)
@@ -55,7 +54,7 @@ function PeersManager(signaling, db, stun_server)
 
 	function createPeerConnection(id)
 	{
-	    var pc = peers[id] = new RTCPeerConnection("STUN "+stun_server, function(){});
+	    var pc = peers[id] = new RTCPeerConnection({"iceServers": [{"url": 'stun:'+stun_server}]});
 
 		return pc
 	}
@@ -71,7 +70,7 @@ function PeersManager(signaling, db, stun_server)
 
 		channel.onclose = function()
 		{
-   			delete pc._channel
+			delete pc._channel
 		}
 	}
 
@@ -104,11 +103,13 @@ function PeersManager(signaling, db, stun_server)
             }
 
             // Send offer to new PeerConnection
-            var offer = peer.createOffer();
+            peer.createOffer(function(offer)
+            {
+                signaling.connectTo(uid, offer.sdp)
 
-            signaling.emit("offer", uid, offer.toSdp());
-
-            peer.setLocalDescription(peer.SDP_OFFER, offer);
+                peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
+                                                                   type: 'offer'}))
+            });
         }
 
         // Peer is connected and we have defined an 'onsucess' callback
