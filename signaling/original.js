@@ -6,52 +6,29 @@ function Signaling_Original(ws_uri, onsuccess)
         {
             Transport_init(signaling)
 
-            function processOffer(pc, socketId, sdp)
+            signaling.addEventListener('offer', function(event)
             {
-                pc.setRemoteDescription(new RTCSessionDescription({sdp: sdp,
-                                                                   type: 'offer'}));
+                var socketId = event.data[0]
+                var sdp = event.data[1]
 
-                // Send answer
-                pc.createAnswer(function(answer)
-                {
-                    signaling.emit("answer", socketId, answer.sdp)
+                if(signaling.onoffer)
+                    signaling.onoffer(socketId, sdp)
+            })
 
-                    pc.setLocalDescription(new RTCSessionDescription({sdp: answer.sdp,
-                                                                      type: 'answer'}))
-                });
-            }
-
-            signaling.setPeersManager = function(peersManager)
+            signaling.addEventListener('answer', function(event)
             {
-                signaling.addEventListener('offer', function(event)
-                {
-                    var socketId = event.data[0]
-                    var sdp = event.data[1]
+                console.log("[signaling.answer]");
 
-                    // Search the peer between the list of currently connected peers
-                    var pc = peersManager.getPeer(socketId)
+                var socketId = event.data[0]
+                var sdp = event.data[1]
 
-                    // Peer is not connected, create a new channel
-                    if(!pc)
-                        pc = peersManager.createPeer(socketId);
+                if(signaling.onanswer)
+                    signaling.onanswer(socketId, sdp)
+            })
 
-                    processOffer(pc, socketId, sdp)
-                })
-
-                signaling.addEventListener('answer', function(event)
-                {
-                    var socketId = event.data[0]
-                    var sdp = event.data[1]
-
-                    // Search the peer on the list of currently connected peers
-                    var pc = peersManager.getPeer(socketId)
-                    if(pc)
-                        pc.setRemoteDescription(new RTCSessionDescription({sdp: sdp,
-                                                                           type: 'answer'}))
-                    else
-                        console.error("[signaling.answer] PeerConnection '" + socketId +
-                                      "' not found");
-                })
+            signaling.connectTo = function(uid, sdp)
+            {
+                this.emit("offer", uid, sdp);
             }
 
             if(onsuccess)
