@@ -2,14 +2,16 @@ function Transport_Signaling_init(signaling, peersManager)
 {
     function processOffer(pc, socketId, sdp)
     {
-        pc.setRemoteDescription(pc.SDP_OFFER, new SessionDescription(sdp));
+        pc.setRemoteDescription(new RTCSessionDescription({sdp: sdp, type: 'offer'}));
 
         // Send answer
-        var answer = pc.createAnswer(pc.remoteDescription.toSdp());
+        pc.createAnswer(function(answer)
+        {
+            signaling.emit("answer", socketId, answer.sdp)
 
-        signaling.emit("answer", socketId, answer.toSdp());
-
-        pc.setLocalDescription(pc.SDP_ANSWER, answer);
+            pc.setLocalDescription(new RTCSessionDescription({sdp: answer.sdp,
+                                                              type: 'answer'}))
+        })
     }
 
 
@@ -26,9 +28,6 @@ function Transport_Signaling_init(signaling, peersManager)
             pc = peersManager.createPeer(socketId);
 
         processOffer(pc, socketId, sdp)
-
-        console.log("offer.local: "+pc.localDescription.toSdp())
-        console.log("offer.remote: "+pc.remoteDescription.toSdp())
     })
 
     signaling.addEventListener('answer', function(event)
@@ -41,13 +40,11 @@ function Transport_Signaling_init(signaling, peersManager)
         // Search the peer on the list of currently connected peers
         var pc = peersManager.getPeer(socketId)
         if(pc)
-            pc.setRemoteDescription(pc.SDP_ANSWER, new SessionDescription(sdp))
+            pc.setRemoteDescription(new RTCSessionDescription({sdp: sdp,
+                                                               type: 'answer'}))
         else
             console.error("[signaling.answer] PeerConnection '" + socketId +
                           "' not found");
-
-        console.log("answer.local: "+pc.localDescription.toSdp())
-        console.log("answer.remote: "+pc.remoteDescription.toSdp())
     })
 
     signaling.connectTo = function(uid, sdp)
