@@ -6,61 +6,57 @@ function Signaling_SIP(ws_uri, onsuccess)
     {
       'outbound_proxy_set': ws_uri,
       'uri': sip_uri,
-      'password':  ''
+//      'password': ''
     };
 
-    try
-    {
-        var signaling = new JsSIP.UA(configuration);
-    }
-    catch(e)
-    {
-      console.log(e);
-      return;
-    }
+    // Connect a signaling channel to the SIP server
+    var ua = new JsSIP.UA(configuration);
+        ua.on('registered', function(e)
+        {
+            // Compose and send message
+            ua.emit = function()
+            {
+                var args = Array.prototype.slice.call(arguments, 0);
 
-    // Transport connection/disconnection callbacks
-    signaling.on('connected', ws_connected);
-    signaling.on('disconnected', ws_disconnected);
+                var messageSender = ua.message(args[1], JSON.stringify(args))
+                    messageSender.onFailure = function(response, error)
+                    {
+                        console.warning(response);
+                        console.warning(error);
+                    });
+            }
 
-    // Call/Message reception callbacks
-    signaling.on('newSession', function(e)
-    {
-      GUI.new_session(e)
-    });
 
-    signaling.on('newMessage', function(e)
-    {
-      GUI.new_message(e)
-    });
+            ua.onmessage = function(display_name, uri, message)
+            {
+                message = JSON.parse(message)
 
-    // Registration/Deregistration callbacks
-    signaling.on('registered', function(e)
-    {
-      console.info('Registered');
-      GUI.setStatus("registered");
-    });
+                switch(message[0])
+                {
+                    case 'offer':
+                        if(signaling.onoffer)
+                            signaling.onoffer(message[1], message[2])
+                        break
 
-    signaling.on('unregistered', function(e)
-    {
-      console.info('Deregistered');
-      GUI.setStatus("connected");
-    });
+                    case 'answer':
+                        if(signaling.onanswer)
+                            signaling.onanswer(message[1], message[2])
+                }
+            }
 
-    signaling.on('registrationFailed', function(e)
-    {
-      console.info('Registration failure');
-      GUI.setStatus("connected");
-    });
+            ua.connectTo = function(uid, sdp)
+            {
+                this.emit("offer", uid, sdp);
+            }
+
+            if(onsuccess)
+                onsuccess(ua)
+        });
+        ua.on('registrationFailed', function(error)
+        {
+          console.error(error);
+        });
 
     // Start
-    signaling.start();
-
-
-    signaling.connectTo = function(uid, sdp)
-    {
-        signaling.call(uid, false, false);
-        signaling.sendMessage(uid, sdp)
-    }
-
+    ua.start();
 }

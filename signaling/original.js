@@ -17,8 +17,6 @@ function Signaling_Original(ws_uri, onsuccess)
 
             signaling.addEventListener('answer', function(event)
             {
-                console.log("[signaling.answer]");
-
                 var socketId = event.data[0]
                 var sdp = event.data[1]
 
