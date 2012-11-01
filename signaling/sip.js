@@ -7,8 +7,7 @@ function Signaling_SIP(ws_uri, onsuccess)
     var configuration =
     {
       'outbound_proxy_set': ws_uri,
-      'uri': sip_uri,
-//      'password': ''
+      'uri': sip_uri
     };
 
     // Connect a signaling channel to the SIP server
@@ -20,17 +19,20 @@ function Signaling_SIP(ws_uri, onsuccess)
             {
                 var args = Array.prototype.slice.call(arguments, 0);
 
-                var messageSender = signaling.sendMessage(args[1], JSON.stringify(args))
-                    messageSender.onFailure = function(response, error)
-                    {
-                        console.warning(response);
-                        console.warning(error);
-                    });
+                var eventHandlers = {failed: function(response, error)
+                                             {
+                                                 console.warning(response);
+                                                 console.warning(error);
+                                             }
+                                    }
+
+                signaling.sendMessage(args[1], JSON.stringify(args),
+                                      'text/JSON', eventHandlers)
             }
 
-            signaling.onmessage = function(display_name, uri, message)
+            signaling.on('newMessage', function(event)
             {
-                message = JSON.parse(message)
+                var message = JSON.parse(event.data.request.body)
 
                 switch(message[0])
                 {
@@ -43,7 +45,7 @@ function Signaling_SIP(ws_uri, onsuccess)
                         if(signaling.onanswer)
                             signaling.onanswer(message[1], message[2])
                 }
-            }
+            })
 
 
             signaling.connectTo = function(uid, sdp)
@@ -54,9 +56,9 @@ function Signaling_SIP(ws_uri, onsuccess)
             if(onsuccess)
                 onsuccess(signaling)
         });
-        signaling.on('registrationFailed', function(error)
+        signaling.on('registrationFailed', function(event)
         {
-            console.error(error);
+            console.error(event);
         });
 
     // Start
