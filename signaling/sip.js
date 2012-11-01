@@ -10,15 +10,15 @@ function Signaling_SIP(ws_uri, onsuccess)
     };
 
     // Connect a signaling channel to the SIP server
-    var ua = new JsSIP.UA(configuration);
-        ua.on('registered', function(e)
+    var signaling = new JsSIP.UA(configuration);
+        signaling.on('registered', function(e)
         {
             // Compose and send message
-            ua.emit = function()
+            signaling.emit = function()
             {
                 var args = Array.prototype.slice.call(arguments, 0);
 
-                var messageSender = ua.message(args[1], JSON.stringify(args))
+                var messageSender = signaling.sendMessage(args[1], JSON.stringify(args))
                     messageSender.onFailure = function(response, error)
                     {
                         console.warning(response);
@@ -26,8 +26,7 @@ function Signaling_SIP(ws_uri, onsuccess)
                     });
             }
 
-
-            ua.onmessage = function(display_name, uri, message)
+            signaling.onmessage = function(display_name, uri, message)
             {
                 message = JSON.parse(message)
 
@@ -44,19 +43,20 @@ function Signaling_SIP(ws_uri, onsuccess)
                 }
             }
 
-            ua.connectTo = function(uid, sdp)
+
+            signaling.connectTo = function(uid, sdp)
             {
                 this.emit("offer", uid, sdp);
             }
 
             if(onsuccess)
-                onsuccess(ua)
+                onsuccess(signaling)
         });
-        ua.on('registrationFailed', function(error)
+        signaling.on('registrationFailed', function(error)
         {
-          console.error(error);
+            console.error(error);
         });
 
     // Start
-    ua.start();
+    signaling.start();
 }
