@@ -22,10 +22,14 @@ function Transport_Host_init(transport, db)
         var files_send = []
 
         for(var i = 0, fileentry; fileentry = fileslist[i]; i++)
+        {
+            var blob = fileentry.file || fileentry.blob
+
             files_send.push({'hash': fileentry.hash,
-                             'name': fileentry.file.name,
-                             'size': fileentry.file.size,
-                             'type': fileentry.file.type});
+                             'name': blob.name || fileentry.name,
+                             'size': blob.size,
+                             'type': blob.type});
+        }
 
         transport.emit('fileslist.send', files_send);
     }
