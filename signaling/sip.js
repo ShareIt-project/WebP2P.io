@@ -32,7 +32,7 @@ function Signaling_SIP(ws_uri, onsuccess)
 
             signaling.on('newMessage', function(event)
             {
-                var message = JSON.parse(event.data.request.body)
+                var message = JSON.parse(event.data.message.body)
 
                 switch(message[0])
                 {
