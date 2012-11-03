@@ -1,15 +1,5 @@
-function Signaling_SIP(ws_uri, onsuccess)
+function Signaling_SIP(configuration, onsuccess)
 {
-    var UUIDv4 = function b(a){return a?(a^Math.random()*16>>a/4).toString(16):([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,b)}
-
-    var sip_uri = UUIDv4()+'@localhost'
-
-    var configuration =
-    {
-      'outbound_proxy_set': ws_uri,
-      'uri': sip_uri
-    };
-
     // Connect a signaling channel to the SIP server
     var signaling = new JsSIP.UA(configuration);
         signaling.on('registered', function(e)
