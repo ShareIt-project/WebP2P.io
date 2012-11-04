@@ -2,7 +2,7 @@
 var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
 
 
-function PeersManager(signaling, db, stun_server)
+function PeersManager(db, stun_server)
 {
     // Set a default STUN server if none is specified
     if(stun_server == undefined)
@@ -11,6 +11,7 @@ function PeersManager(signaling, db, stun_server)
     EventTarget.call(this)
 
     var peers = {}
+    var signaling
 
     var self = this
 
@@ -83,6 +84,12 @@ function PeersManager(signaling, db, stun_server)
         // Peer is not connected, create a new channel
         if(!peer)
         {
+            if(!signaling)
+            {
+                console.error("No signaling channel available")
+                return
+            }
+
             // Create PeerConnection
             peer = createPeerConnection(uid);
             peer.onopen = function()
@@ -132,5 +139,10 @@ function PeersManager(signaling, db, stun_server)
 	        }
 
         return peer
+    }
+
+    this.setSignaling = function(newSignaling)
+    {
+        signaling = newSignaling
     }
 }
