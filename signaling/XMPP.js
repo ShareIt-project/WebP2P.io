@@ -1,12 +1,14 @@
-function Signaling_XMPP(configuration, onsuccess)
+function Signaling_XMPP(configuration, manager)
 {
+    var self = this
+
     // Connect a signaling channel to the XMPP server
     var signaling = new JSJaCHttpBindingConnection(configuration);
         signaling.connect(configuration);   // Ugly hack to have only one config object
         signaling.registerHandler('onconnect', function(e)
         {
             // Compose and send message
-            signaling.emit = function()
+            self.emit = function(id, sdp)
             {
                 var args = Array.prototype.slice.call(arguments, 0);
                 var peer = args[1]
@@ -27,27 +29,17 @@ function Signaling_XMPP(configuration, onsuccess)
                 switch(message[0])
                 {
                     case 'offer':
-                        if(signaling.onoffer)
-                            signaling.onoffer(peer, message[1])
+                        if(manager.onoffer)
+                            manager.onoffer(peer, message[1])
                         break
 
                     case 'answer':
-                        if(signaling.onanswer)
-                            signaling.onanswer(peer, message[1])
+                        if(manager.onanswer)
+                            manager.onanswer(peer, message[1])
                 }
             })
 
-
-            signaling.connectTo = function(uid, sdp)
-            {
-                this.emit("offer", uid, sdp);
-            }
-
-
             signaling.send(new JSJaCPresence());
-
-            if(onsuccess)
-                onsuccess(signaling)
         });
         signaling.registerHandler('onerror', function(event)
         {
