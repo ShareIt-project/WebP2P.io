@@ -15,8 +15,8 @@ function Signaling_XMPP(configuration, manager)
                 args.splice(1,1)
 
                 var oMsg = new JSJaCMessage();
-                oMsg.setTo(new JSJaCJID(peer));
-                oMsg.setBody(JSON.stringify(args));
+                    oMsg.setTo(new JSJaCJID(peer));
+                    oMsg.setBody(JSON.stringify(args));
 
                 signaling.send(oMsg);
             }
