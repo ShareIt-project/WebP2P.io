@@ -1,11 +1,20 @@
 function SignalingManager(configuration)
 {
-    var signaling = new Signaling_XMPP(configuration[0][1], this)
+    var type = configuration[2][0]
+    var conf = configuration[2][1]
+
+    switch(type)
+    {
+        case 'SimpleSignaling':
+            var signaling = new Signaling_SimpleSignaling(conf, this)
+            break;
+
+        case 'XMPP':
+            var signaling = new Signaling_XMPP(conf, this)
+    }
 
     this.connectTo = function(uid, sdp)
     {
         signaling.emit("offer", uid, sdp);
     }
-
-//    signaling.addEventListener('sessionId', function(event)
 }
