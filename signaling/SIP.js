@@ -1,14 +1,12 @@
-function Signaling_SIP(configuration, onsuccess)
+function Signaling_SIP(configuration, manager)
 {
     // Connect a signaling channel to the SIP server
     var signaling = new JsSIP.UA(configuration);
         signaling.on('registered', function(e)
         {
             // Compose and send message
-            signaling.emit = function()
+            signaling.send = function(uid, data)
             {
-                var args = Array.prototype.slice.call(arguments, 0);
-
                 var eventHandlers = {failed: function(response, error)
                                              {
                                                  console.warning(response);
@@ -16,35 +14,37 @@ function Signaling_SIP(configuration, onsuccess)
                                              }
                                     }
 
-                signaling.sendMessage(args[1], JSON.stringify(args),
+                signaling.sendMessage(uid, JSON.stringify(data),
                                       'text/JSON', eventHandlers)
             }
 
             signaling.on('newMessage', function(event)
             {
-                var message = JSON.parse(event.data.message.body)
+                var uid  = event.data.message.remote_identity
+                var data = JSON.parse(event.data.message.body)
 
-                switch(message[0])
+                switch(data[0])
                 {
                     case 'offer':
-                        if(signaling.onoffer)
-                            signaling.onoffer(message[1], message[2])
+                        if(manager.onoffer)
+                            manager.onoffer(uid, data[1])
                         break
 
                     case 'answer':
-                        if(signaling.onanswer)
-                            signaling.onanswer(message[1], message[2])
+                        if(manager.onanswer)
+                            manager.onanswer(uid, data[1])
                 }
             })
 
-            if(onsuccess)
-                onsuccess(signaling)
+            // Set signaling as open
+            if(self.onopen)
+                self.onopen(configuration.uri)
         });
         signaling.on('registrationFailed', function(event)
         {
             console.error(event);
         });
 
-    // Start
+    // Start the SIP connection
     signaling.start();
 }
