@@ -5,7 +5,7 @@ function Signaling_XMPP(configuration)
     // Connect a signaling channel to the XMPP server
     var signaling = new JSJaCHttpBindingConnection(configuration);
         signaling.connect(configuration);   // Ugly hack to have only one config object
-        signaling.registerHandler('onconnect', function(e)
+        signaling.registerHandler('onconnect', function()
         {
             // Compose and send message
             self.send = function(uid, data)

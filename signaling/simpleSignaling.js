@@ -16,7 +16,6 @@ function Signaling_SimpleSignaling(configuration)
             {
                 if(self.onmessage)
                     self.onmessage(uid, data)
-                }
             }
 
             // Set signaling as open
