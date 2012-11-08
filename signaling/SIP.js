@@ -1,5 +1,7 @@
-function Signaling_SIP(configuration, manager)
+function Signaling_SIP(configuration)
 {
+    var self = this
+
     // Connect a signaling channel to the SIP server
     var signaling = new JsSIP.UA(configuration);
         signaling.on('registered', function(e)
@@ -23,17 +25,8 @@ function Signaling_SIP(configuration, manager)
                 var uid  = event.data.message.remote_identity
                 var data = JSON.parse(event.data.message.body)
 
-                switch(data[0])
-                {
-                    case 'offer':
-                        if(manager.onoffer)
-                            manager.onoffer(uid, data[1])
-                        break
-
-                    case 'answer':
-                        if(manager.onanswer)
-                            manager.onanswer(uid, data[1])
-                }
+                if(self.onmessage)
+                    self.onmessage(uid, data)
             })
 
             // Set signaling as open

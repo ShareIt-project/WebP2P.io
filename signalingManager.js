@@ -6,17 +6,32 @@ function SignalingManager(configuration)
     switch(type)
     {
         case 'SimpleSignaling':
-            var signaling = new Signaling_SimpleSignaling(conf, this)
+            var signaling = new Signaling_SimpleSignaling(conf)
             break;
 
         case 'XMPP':
-            var signaling = new Signaling_XMPP(conf, this)
+            var signaling = new Signaling_XMPP(conf)
     }
 
     var self = this
 
     signaling.onopen = function(uid)
     {
+        signaling.onmessage = function(uid, data)
+        {
+            switch(data[0])
+            {
+                case 'offer':
+                    if(self.onoffer)
+                        self.onoffer(uid, data[1])
+                    break
+
+                case 'answer':
+                    if(self.onanswer)
+                        self.onanswer(uid, data[1])
+            }
+        }
+
         if(self.onUID)
            self.onUID(uid)
     }

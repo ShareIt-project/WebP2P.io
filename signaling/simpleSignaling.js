@@ -1,4 +1,4 @@
-function Signaling_SimpleSignaling(configuration, manager)
+function Signaling_SimpleSignaling(configuration)
 {
     var self = this
 
@@ -14,16 +14,8 @@ function Signaling_SimpleSignaling(configuration, manager)
 
             signaling.onmessage = function(uid, data)
             {
-                switch(data[0])
-                {
-                    case 'offer':
-                        if(manager.onoffer)
-                            manager.onoffer(uid, data[1])
-                        break
-
-                    case 'answer':
-                        if(manager.onanswer)
-                            manager.onanswer(uid, data[1])
+                if(self.onmessage)
+                    self.onmessage(uid, data)
                 }
             }
 

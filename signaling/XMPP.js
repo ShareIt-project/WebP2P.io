@@ -1,4 +1,4 @@
-function Signaling_XMPP(configuration, manager)
+function Signaling_XMPP(configuration)
 {
     var self = this
 
@@ -8,7 +8,7 @@ function Signaling_XMPP(configuration, manager)
         signaling.registerHandler('onconnect', function(e)
         {
             // Compose and send message
-            self.emit = function(uid, data)
+            self.send = function(uid, data)
             {
                 var oMsg = new JSJaCMessage();
                     oMsg.setTo(new JSJaCJID(uid));
@@ -22,17 +22,8 @@ function Signaling_XMPP(configuration, manager)
                 var uid  = oJSJaCPacket.getFromJID()
                 var data = JSON.parse(oJSJaCPacket.getBody())
 
-                switch(data[0])
-                {
-                    case 'offer':
-                        if(manager.onoffer)
-                            manager.onoffer(uid, data[1])
-                        break
-
-                    case 'answer':
-                        if(manager.onanswer)
-                            manager.onanswer(uid, data[1])
-                }
+                if(self.onmessage)
+                    self.onmessage(uid, data)
             })
 
             signaling.send(new JSJaCPresence());
