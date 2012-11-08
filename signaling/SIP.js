@@ -14,6 +14,9 @@ function Signaling_SIP(configuration)
                                                {
                                                    console.warning(response);
                                                    console.warning(error);
+
+                                                   if(self.onerror)
+                                                       self.onerror(error)
                                                }
                                       })
             }
@@ -31,9 +34,10 @@ function Signaling_SIP(configuration)
             if(self.onopen)
                 self.onopen(configuration.uri)
         });
-        signaling.on('registrationFailed', function(event)
+        signaling.on('registrationFailed', function(error)
         {
-            console.error(event);
+            if(self.onerror)
+                self.onerror(error)
         });
 
     // Start the SIP connection

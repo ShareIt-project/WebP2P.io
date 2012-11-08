@@ -32,8 +32,9 @@ function Signaling_XMPP(configuration)
             if(self.onopen)
                 self.onopen(configuration.username)
         });
-        signaling.registerHandler('onerror', function(event)
+        signaling.registerHandler('onerror', function(error)
         {
-            console.error(event);
+            if(self.onerror)
+               self.onerror(error)
         });
 }

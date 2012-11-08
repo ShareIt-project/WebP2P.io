@@ -22,8 +22,9 @@ function Signaling_SimpleSignaling(configuration)
             if(self.onopen)
                 self.onopen(uid)
         }
-        signaling.onerror = function(event)
+        signaling.onerror = function(error)
         {
-            console.error(event);
+            if(self.onerror)
+                self.onerror(error)
         }
 }

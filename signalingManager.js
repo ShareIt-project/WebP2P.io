@@ -35,6 +35,10 @@ function SignalingManager(configuration)
         if(self.onUID)
            self.onUID(uid)
     }
+    signaling.onerror = function(error)
+    {
+        console.error(error)
+    }
 
     this.sendOffer = function(uid, sdp)
     {
