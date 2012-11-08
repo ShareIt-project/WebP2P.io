@@ -13,6 +13,14 @@ function SignalingManager(configuration)
             var signaling = new Signaling_XMPP(conf, this)
     }
 
+    var self = this
+
+    signaling.onopen = function(uid)
+    {
+        if(self.onUID)
+           self.onUID(uid)
+    }
+
     this.connectTo = function(uid, sdp)
     {
         signaling.emit("offer", uid, sdp);

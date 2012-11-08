@@ -4,7 +4,7 @@ function Signaling_SimpleSignaling(configuration, manager)
 
     // Connect a signaling channel to the XMPP server
     var signaling = new SimpleSignaling(configuration);
-        signaling.onopen = function(e)
+        signaling.onopen = function(uid)
         {
             // Compose and send message
             self.emit = function(uid, sdp)
@@ -27,8 +27,9 @@ function Signaling_SimpleSignaling(configuration, manager)
                 }
             }
 
-            // Register the UID
-            signaling.send(configuration.uid);
+            // Set signaling as open
+            if(self.onopen)
+                self.onopen(uid)
         }
         signaling.onerror = function(event)
         {
