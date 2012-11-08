@@ -4,8 +4,8 @@
 // Hack for sha512
 var window = {}
 
-//importScripts('https://raw.github.com/Caligatio/jsSHA/master/src/sha512.js');
-importScripts('lib/sha512.js');
+importScripts('https://raw.github.com/Caligatio/jsSHA/master/src/sha512.js');
+//importScripts('../lib/sha512.js');
 
 
 function hashFile(file, onsuccess)
