@@ -23,6 +23,6 @@ function SignalingManager(configuration)
 
     this.connectTo = function(uid, sdp)
     {
-        signaling.emit("offer", uid, sdp);
+        signaling.send(uid, ["offer", sdp]);
     }
 }

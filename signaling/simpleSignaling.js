@@ -7,9 +7,9 @@ function Signaling_SimpleSignaling(configuration, manager)
         signaling.onopen = function(uid)
         {
             // Compose and send message
-            self.emit = function(uid, sdp)
+            self.send = function(uid, data)
             {
-                signaling.send(uid, sdp);
+                signaling.send(uid, data);
             }
 
             signaling.onmessage = function(uid, data)
