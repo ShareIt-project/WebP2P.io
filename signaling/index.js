@@ -1,7 +1,10 @@
 function SignalingManager(configuration)
 {
-    var type = configuration[2][0]
-    var conf = configuration[2][1]
+    var index = Math.floor(Math.random()*configuration.length)
+    var index = 2   // Fixed value until I get SIP and/or XMPP to work
+
+    var type = configuration[index][0]
+    var conf = configuration[index][1]
 
     switch(type)
     {
