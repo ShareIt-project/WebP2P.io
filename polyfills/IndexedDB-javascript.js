@@ -183,17 +183,13 @@ function IdbJS_install()
 	}
 
 
-	window.indexedDB =
+    window.indexedDB._dbs = {}
+    window.indexedDB.open = function(name, version)
 	{
-	  _dbs: {},
+	  this._dbs[name] = this._dbs[name] || new IDBDatabase()
 
-	  open: function(name, version)
-	  {
-	    this._dbs[name] = this._dbs[name] || new IDBDatabase()
-
-	    var request = new IDBOpenRequest()
-	        request.result = this._dbs[name]
-	    return request
-	  }
+	  var request = new IDBOpenRequest()
+	      request.result = this._dbs[name]
+	  return request
 	}
 }
