@@ -9,6 +9,10 @@ function SignalingManager(configuration)
             var signaling = new Signaling_SimpleSignaling(conf)
             break;
 
+        case 'SIP':
+            var signaling = new Signaling_SIP(conf)
+            break;
+
         case 'XMPP':
             var signaling = new Signaling_XMPP(conf)
     }
