@@ -21,8 +21,13 @@ function SignalingManager(configuration)
            self.onUID(uid)
     }
 
-    this.connectTo = function(uid, sdp)
+    this.sendOffer = function(uid, sdp)
     {
         signaling.send(uid, ["offer", sdp]);
+    }
+
+    this.sendAnswer = function(uid, sdp)
+    {
+        signaling.send(uid, ["answer", sdp]);
     }
 }

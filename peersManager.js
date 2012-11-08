@@ -112,7 +112,7 @@ function PeersManager(db, stun_server)
             // Send offer to new PeerConnection
             peer.createOffer(function(offer)
             {
-                signaling.connectTo(uid, offer.sdp)
+                signaling.sendOffer(uid, offer.sdp)
 
                 peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
                                                                    type: 'offer'}))

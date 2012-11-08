@@ -37,12 +37,6 @@ function Signaling_SIP(configuration, onsuccess)
                 }
             })
 
-
-            signaling.connectTo = function(uid, sdp)
-            {
-                this.emit("offer", uid, sdp);
-            }
-
             if(onsuccess)
                 onsuccess(signaling)
         });
