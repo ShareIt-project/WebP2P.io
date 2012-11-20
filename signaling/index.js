@@ -8,6 +8,13 @@ function SignalingManager(json_uri)
 
     function getRandomSignaling(configuration)
     {
+        if(!configuration.length)
+        {
+            if(self.onerror)
+                self.onerror()
+            return
+        }
+
         var index = Math.floor(Math.random()*configuration.length)
 
         var type = configuration[index][0]
@@ -66,7 +73,15 @@ function SignalingManager(json_uri)
         {
             if(this.status == 200)
                 getRandomSignaling(JSON.parse(http_request.response))
+
+            else if(self.onerror)
+                self.onerror()
         };
+        http_request.onerror = function()
+        {
+            if(self.onerror)
+                self.onerror()
+        }
         http_request.send();
 
 
