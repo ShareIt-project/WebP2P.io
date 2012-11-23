@@ -16,6 +16,7 @@ function SignalingManager(json_uri)
         }
 
         var index = Math.floor(Math.random()*configuration.length)
+        var index = 0   // Forced until redirection works
 
         var type = configuration[index][0]
         var conf = configuration[index][1]

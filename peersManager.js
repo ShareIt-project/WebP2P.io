@@ -94,7 +94,7 @@ function PeersManager(db, stun_server)
             peer = createPeerConnection(uid);
             peer.onopen = function()
             {
-                var channel = peer.createDataChannel()
+                var channel = peer.createDataChannel('webp2p')
                 channel.onopen = function()
                 {
 	                initDataChannel(peer, channel)
