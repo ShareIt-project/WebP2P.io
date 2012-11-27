@@ -70,7 +70,7 @@ function SignalingManager(json_uri)
 
     var http_request = new XMLHttpRequest();
         http_request.open("GET", json_uri);
-        http_request.onload = function ()
+        http_request.onload = function()
         {
             if(this.status == 200)
                 getRandomSignaling(JSON.parse(http_request.response))
