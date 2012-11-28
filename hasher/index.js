@@ -45,11 +45,13 @@ function Hasher(db, policy)
     {
         db.sharepoints_getAll(null, function(sharedpoints)
         {
-            if(sharedpoints.length)
+            if(sharedpoints.length & policy)
                 policy(function()
                 {
                     self.hash(sharedpoints)
                 })
+            else
+                self.hash(sharedpoints)
         })
     }
 
