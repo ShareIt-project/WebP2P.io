@@ -2,50 +2,43 @@ function Signaling_PubNub(configuration)
 {
     var self = this
 
-    var channel = ""
-
     // INIT PubNub
-    var pubnub = PUBNUB.init(
-    {
-        publish_key   : 'pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b',
-        subscribe_key : 'sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a',
-        ssl           : true,
-        uuid          : configuration.uuid
-    });
+    var pubnub = PUBNUB.init(configuration);
 
  // LISTEN
     pubnub.subscribe(
     {
-        channel: channel,
+        channel: configuration.channel,
 
         // Receive messages
         callback: function(message)
         {
-            if(self.onmessage && message.to == configuration.uuid)
-                self.onmessage(message.from, message.data)
+            if(message[1] == configuration.uuid)
+            {
+                var uid  = message[0]
+                var data = message[2]
+
+                if(self.onmessage)
+                    self.onmessage(uid, data)
+            }
         },
 
         connect: function()
         {
             // Compose and send message
-            self.send = function(uid, data)
+            self.send = function(dest, data)
             {
                 pubnub.publish(
                 {
-                    channel: channel,
+                    channel: configuration.channel,
 
-                    message:
-                    {
-                        from: configuration.uuid,
-                        to: uid,
-                        data: data
-                    }
+                    message: [configuration.uuid, dest, data]
                 })
             }
 
             // Set signaling as open
             if(self.onopen)
-                self.onopen(configuration.uid)
+                self.onopen(configuration.uuid)
         },
 
         error: function(error)
