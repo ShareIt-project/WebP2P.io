@@ -2,49 +2,47 @@ function Signaling_PubNub(configuration)
 {
     var self = this
 
-    // INIT PubNub
+    // Connect a signaling channel to the PubNub server
     var pubnub = PUBNUB.init(configuration);
-
- // LISTEN
-    pubnub.subscribe(
-    {
-        channel: configuration.channel,
-
-        // Receive messages
-        callback: function(message)
+        pubnub.subscribe(
         {
-            if(message[1] == configuration.uuid)
-            {
-                var uid  = message[0]
-                var data = message[2]
+            channel: configuration.channel,
 
-                if(self.onmessage)
-                    self.onmessage(uid, data)
-            }
-        },
-
-        connect: function()
-        {
-            // Compose and send message
-            self.send = function(dest, data)
+            // Receive messages
+            callback: function(message)
             {
-                pubnub.publish(
+                if(message[1] == configuration.uuid)
                 {
-                    channel: configuration.channel,
+                    var uid  = message[0]
+                    var data = message[2]
+    
+                    if(self.onmessage)
+                        self.onmessage(uid, data)
+                }
+            },
 
-                    message: [configuration.uuid, dest, data]
-                })
+            connect: function()
+            {
+                // Compose and send message
+                self.send = function(dest, data)
+                {
+                    pubnub.publish(
+                    {
+                        channel: configuration.channel,
+
+                        message: [configuration.uuid, dest, data]
+                    })
+                }
+
+                // Set signaling as open
+                if(self.onopen)
+                    self.onopen(configuration.uuid)
+            },
+
+            error: function(error)
+            {
+                if(self.onerror)
+                    self.onerror(error)
             }
-
-            // Set signaling as open
-            if(self.onopen)
-                self.onopen(configuration.uuid)
-        },
-
-        error: function(error)
-        {
-            if(self.onerror)
-                self.onerror(error)
-        }
-    })
+        })
 }
