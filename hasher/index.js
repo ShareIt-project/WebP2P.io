@@ -25,7 +25,7 @@ function Hasher(db, policy)
       // Add files to queue if they are not there yet
 	  for(var j=0, file; file=queue[j]; j++)
         for(var i=0, sp; sp=sharedpoints[i];)
-	      if(sp == file)
+	      if(sp == file || !sp.size)
 	        sharedpoints.splice(i)
 	      else
 	        i++;
