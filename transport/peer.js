@@ -59,7 +59,7 @@ function Transport_Peer_init(transport, db, peersManager)
         setTimeout(function()
         {
             window.URL.revokeObjectURL(save.href)
-        }, 0)
+        }, 1000)
     }
 
     transport.addEventListener('transfer.send', function(event)
