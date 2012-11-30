@@ -23,6 +23,11 @@ function SignalingManager(json_uri)
 
         switch(type)
         {
+            case 'PubNub':
+                conf.uuid = conf.uuid || UUIDv4()
+                signaling = new Signaling_PubNub(conf)
+                break;
+
             case 'SimpleSignaling':
                 conf.uid = conf.uid || UUIDv4()
                 signaling = new Signaling_SimpleSignaling(conf)
