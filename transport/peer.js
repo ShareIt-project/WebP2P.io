@@ -55,7 +55,11 @@ function Transport_Peer_init(transport, db, peersManager)
 
         save.click()
 
-        window.URL.revokeObjectURL(save.href)
+        // Hack to remove the ObjectURL after it have been saved and not before
+        setTimeout(function()
+        {
+            window.URL.revokeObjectURL(save.href)
+        }, 0)
     }
 
     transport.addEventListener('transfer.send', function(event)
