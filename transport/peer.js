@@ -98,6 +98,7 @@ function Transport_Peer_init(transport, db, peersManager)
 
             // Check for pending chunks and require them or save the file
             var pending_chunks = fileentry.bitmap.indexes(false).length
+            console.log('pending_chunks: '+pending_chunks)
             if(pending_chunks)
             {
                 var chunks = fileentry.size/chunksize;
@@ -108,13 +109,11 @@ function Transport_Peer_init(transport, db, peersManager)
                 peersManager.dispatchEvent({type: "transfer.update",
                                             data: [fileentry, 1 - pending_chunks/chunks]})
 
-                // Demand more data from one of the pending chunks
+                // Demand more data from one of the pending chunks after update
+                // the fileentry status on the database
                 db.files_put(fileentry, function()
                 {
-                    var channel = peersManager.getChannel(fileentry)
-
-                    channel.emit('transfer.query', fileentry.hash,
-                                 fileentry.bitmap.getRandom(false));
+                    peersManager.transfer_query(fileentry)
                 })
             }
             else
