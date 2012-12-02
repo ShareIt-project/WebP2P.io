@@ -93,7 +93,7 @@ function SignalingManager(json_uri)
 
     this.sendOffer = function(uid, sdp)
     {
-        if(signaling)
+        if(signaling && signaling.send)
             signaling.send(uid, ["offer", sdp]);
         else
             console.warn("signaling is not available");
