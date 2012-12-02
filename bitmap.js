@@ -1,20 +1,10 @@
-function Bitmap(size)
+function Bitmap(length)
 {
-  var i = Math.ceil(size/8)
-  var j = size%8
-
-  var bitmap = new Uint8Array(i)
-
-  bitmap[i] = Math.pow(2, j) - 1
-
-  for(var i=0; i<bitmap.length-1; i++)
-    bitmap[i] = Math.pow(2, 8) - 1
-
-  return bitmap
+  return new BoolArray(length)
 }
 
 
-function Bitmap_getRandom(bitmap)
+function Bitmap_getSetted_Random(bitmap)
 {
   var setted = Bitmap_setted(bitmap)
 
@@ -29,7 +19,7 @@ function Bitmap_set(bitmap, index)
   bitmap[i] |= 1 << j
 }
 
-// Run over all the bits on the bitmap and return and array with the setted ones
+//Run over all the bits on the bitmap and return and array with the setted ones
 function Bitmap_setted(bitmap)
 {
   var setted = []
@@ -37,6 +27,19 @@ function Bitmap_setted(bitmap)
   for(var i=0; i<bitmap.length; i++)
     for(var j=0; j<=7; j++)
       if(bitmap[i] & (1 << j))
+        setted.append(i*8 + j)
+
+  return setted
+}
+
+//Run over all the bits on the bitmap and return and array with the setted ones
+function Bitmap_unsetted(bitmap)
+{
+  var setted = []
+
+  for(var i=0; i<bitmap.length; i++)
+    for(var j=0; j<=7; j++)
+      if(!(bitmap[i] & (1 << j)))
         setted.append(i*8 + j)
 
   return setted
