@@ -17,11 +17,16 @@ function Bitmap(length)
 
   // Get the index of a random setted or unsetted bit on the bitmap.
   // If none is available, return undefined
-  function getRandom(setted)
+  this.getRandom = function(setted)
   {
     var array = this.indexes(setted)
 
     if(array.length)
       return array[Math.floor(Math.random() * array.length)]
+  }
+
+  this.set = function(index, value)
+  {
+      this.prototype.set(index, value)
   }
 }
