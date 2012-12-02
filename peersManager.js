@@ -34,7 +34,7 @@ function PeersManager(db, stun_server)
 
         // Add a blob container and a bitmap to our file stub
         fileentry.blob = new Blob([''], {"type": fileentry.type})
-        fileentry.bitmap = Bitmap(chunks)
+        fileentry.bitmap = new Bitmap(chunks)
 
         // Insert new "file" inside IndexedDB
         db.files_add(fileentry,
@@ -45,7 +45,7 @@ function PeersManager(db, stun_server)
 
             // Demand data from the begining of the file
             self.getChannel(fileentry).emit('transfer.query', fileentry.hash,
-                                            Bitmap_getRandom(fileentry.bitmap))
+                                            fileentry.bitmap.getRandom())
         },
         function(errorCode)
         {

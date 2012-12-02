@@ -1,32 +1,27 @@
 function Bitmap(length)
 {
-  return new BoolArray(length)
-}
+  this.prototype = new BoolArray(length)
 
+  // Return an array with the index of the setted or unsetted bits
+  this.indexes = function(setted)
+  {
+    var array = []
 
-// Get the index of a random setted or unsetted bit on the bitmap.
-// If none is available, return undefined
-function Bitmap_getRandom(bitmap, setted)
-{
-  var array = Bitmap_indexes(bitmap, setted)
+    for(var i=0; i<this.length; i++)
+      for(var j=0; j<=7; j++)
+        if(this.get(i) == setted)
+            array.push(i*8 + j)
 
-  if(array.length)
-    return array[Math.floor(Math.random() * array.length)]
-}
+    return array
+  }
 
-// Return an array with the index of the setted or unsetted bits
-function Bitmap_indexes(bitmap, setted)
-{
-  var array = []
+  // Get the index of a random setted or unsetted bit on the bitmap.
+  // If none is available, return undefined
+  function getRandom(setted)
+  {
+    var array = this.indexes(setted)
 
-  for(var i=0; i<bitmap.length; i++)
-    for(var j=0; j<=7; j++)
-    {
-      var cond = bitmap[i] & (1 << j)
-
-      if((cond && setted) || (!cond && !setted))
-          array.push(i*8 + j)
-    }
-
-  return array
+    if(array.length)
+      return array[Math.floor(Math.random() * array.length)]
+  }
 }
