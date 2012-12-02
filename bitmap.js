@@ -7,10 +7,9 @@ function Bitmap(length)
   {
     var array = []
 
-    for(var i=0; i<this.length; i++)
-      for(var j=0; j<=7; j++)
-        if(this.get(i) == setted)
-            array.push(i*8 + j)
+    for(var i=0; i<this.prototype.length; i++)
+      if(this.prototype.get(i) == setted)
+        array.push(i)
 
     return array
   }
