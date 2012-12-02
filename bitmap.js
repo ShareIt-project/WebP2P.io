@@ -4,51 +4,29 @@ function Bitmap(length)
 }
 
 
-function Bitmap_getSetted_Random(bitmap)
+// Get the index of a random setted or unsetted bit on the bitmap.
+// If none is available, return undefined
+function Bitmap_getRandom(bitmap, setted)
 {
-  var setted = Bitmap_setted(bitmap)
+  var array = Bitmap_indexes(bitmap, setted)
 
-  return setted[Math.floor(Math.random() * setted.length)]
+  if(array.length)
+    return array[Math.floor(Math.random() * array.length)]
 }
 
-function Bitmap_set(bitmap, index)
+// Return an array with the index of the setted or unsetted bits
+function Bitmap_indexes(bitmap, setted)
 {
-  var i = Math.ceil(index/8)
-  var j = index%8
-
-  bitmap[i] |= 1 << j
-}
-
-//Run over all the bits on the bitmap and return and array with the setted ones
-function Bitmap_setted(bitmap)
-{
-  var setted = []
+  var array = []
 
   for(var i=0; i<bitmap.length; i++)
     for(var j=0; j<=7; j++)
-      if(bitmap[i] & (1 << j))
-        setted.append(i*8 + j)
+    {
+      var cond = bitmap[i] & (1 << j)
 
-  return setted
-}
+      if((cond && setted) || (!cond && !setted))
+          array.append(i*8 + j)
+    }
 
-//Run over all the bits on the bitmap and return and array with the setted ones
-function Bitmap_unsetted(bitmap)
-{
-  var setted = []
-
-  for(var i=0; i<bitmap.length; i++)
-    for(var j=0; j<=7; j++)
-      if(!(bitmap[i] & (1 << j)))
-        setted.append(i*8 + j)
-
-  return setted
-}
-
-function Bitmap_unset(bitmap, index)
-{
-  var i = Math.ceil(index/8)
-  var j = index%8
-
-  bitmap[i] &= ~(1 << j)
+  return array
 }
