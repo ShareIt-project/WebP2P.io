@@ -12,8 +12,8 @@ function Signaling_SIP(configuration)
                 signaling.sendMessage(uid, JSON.stringify(data), 'text/JSON',
                                       {failed: function(response, error)
                                                {
-                                                   console.warning(response);
-                                                   console.warning(error);
+                                                   console.warn(response);
+                                                   console.warn(error);
 
                                                    if(self.onerror)
                                                        self.onerror(error)

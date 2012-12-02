@@ -45,7 +45,7 @@ function PeersManager(db, stun_server)
 
             // Demand data from the begining of the file
             self.getChannel(fileentry).emit('transfer.query', fileentry.hash,
-                                                              getRandom(fileentry.bitmap))
+                                            Bitmap_getRandom(fileentry.bitmap))
         },
         function(errorCode)
         {

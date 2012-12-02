@@ -96,7 +96,7 @@ function SignalingManager(json_uri)
         if(signaling)
             signaling.send(uid, ["offer", sdp]);
         else
-            console.warning("signaling is not available");
+            console.warn("signaling is not available");
     }
 
     this.sendAnswer = function(uid, sdp)
@@ -104,6 +104,6 @@ function SignalingManager(json_uri)
         if(signaling)
             signaling.send(uid, ["answer", sdp]);
         else
-            console.warning("signaling is not available");
+            console.warn("signaling is not available");
     }
 }

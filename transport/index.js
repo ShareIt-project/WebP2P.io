@@ -10,7 +10,7 @@ function Transport_init(transport)
         transport.send(JSON.stringify(args), function(error)
         {
             if(error)
-                console.warning(error);
+                console.warn(error);
         });
     }
 
