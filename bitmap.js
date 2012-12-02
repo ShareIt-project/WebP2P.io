@@ -25,7 +25,7 @@ function Bitmap_indexes(bitmap, setted)
       var cond = bitmap[i] & (1 << j)
 
       if((cond && setted) || (!cond && !setted))
-          array.append(i*8 + j)
+          array.push(i*8 + j)
     }
 
   return array
