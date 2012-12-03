@@ -26,6 +26,6 @@ function Bitmap(length)
 
   this.set = function(index, value)
   {
-      this.prototype.set(index, value)
+    this.prototype.set(index, value)
   }
 }

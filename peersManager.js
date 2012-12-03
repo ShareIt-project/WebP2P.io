@@ -30,9 +30,6 @@ function PeersManager(db, stun_server)
         var channel = getChannel(fileentry)
         var chunk = fileentry.bitmap.getRandom(false)
 
-        console.log('chunk: '+chunk)
-        console.log(fileentry.bitmap)
-
         channel.emit('transfer.query', fileentry.hash, chunk)
     }
 
@@ -52,7 +49,6 @@ function PeersManager(db, stun_server)
         function()
         {
             self.dispatchEvent({type: "transfer.begin", data: [fileentry]})
-            console.log("Transfer begin: '"+fileentry.name+"' = "+JSON.stringify(fileentry))
 
             // Demand data from the begining of the file
             self.transfer_query(fileentry)

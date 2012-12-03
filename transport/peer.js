@@ -98,7 +98,6 @@ function Transport_Peer_init(transport, db, peersManager)
 
             // Check for pending chunks and require them or save the file
             var pending_chunks = fileentry.bitmap.indexes(false).length
-            console.log('pending_chunks: '+pending_chunks)
             if(pending_chunks)
             {
                 var chunks = fileentry.size/chunksize;
