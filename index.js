@@ -4,7 +4,7 @@
  * @author Jesús Leganés Combarro "Piranna" piranna@gmail.com (webp2p)
  */
 
-var JSJaC =
+var webp2p =
 {
   require: function(libraryName)
   {
@@ -15,24 +15,26 @@ var JSJaC =
   load: function()
   {
     var includes =
-    ['xmlextras',
-     'jsextras',
-     'crypt',
-     'JSJaCConfig',
-     'JSJaCConstants',
-     'JSJaCCookie',
-     'JSJaCJSON',
-     'JSJaCJID',
-     'JSJaCBuilder',
-     'JSJaCPacket',
-     'JSJaCError',
-     'JSJaCKeys',
-     'JSJaCConnection',
-     'JSJaCHttpPollingConnection',
-     'JSJaCHttpBindingConnection',
-     'JSJaCConsoleLogger',
-     'JSJaCFBApplication',
-     'JSJaCWebSocketConnection'
+    ['bitmap',
+     'db',
+     'peersManager',
+
+     'hasher/index',
+
+     'lib/jssip-0.2.1',
+
+     'polyfills/FileWriter',
+     'polyfills/IndexedDB-javascript',
+
+     'signaling/index',
+     'signaling/PubNub',
+     'signaling/simpleSignaling',
+     'signaling/SIP',
+     'signaling/XMPP',
+
+     'transport/index',
+     'transport/host',
+     'transport/peer'
      ];
 
     var scripts = document.getElementsByTagName("script");
@@ -40,9 +42,10 @@ var JSJaC =
     for(i=0; i<scripts.length; i++)
     {
       var src = scripts.item(i).src
-      if(src && src.match(/JSJaC\.js$/))
+      var regex = /webp2p\/index\.js$/
+      if(src && src.match(regex))
       {
-        path = src.replace(/JSJaC.js$/,'');
+        path = src.replace(regex,'webp2p/');
         break;
       }
     }
@@ -60,5 +63,4 @@ var JSJaC =
   }
 };
 
-if(typeof JSJaCConnection == 'undefined')
-  JSJaC.load();
+webp2p.load();
