@@ -7,7 +7,7 @@ function Hasher(db, policy)
 
     var self = this
 
-    var worker = new Worker('js/webp2p/hasher/worker.js');
+    var worker = new Worker('../../js/webp2p/hasher/worker.js');
         worker.onmessage = function(event)
         {
             var fileentry = event.data
