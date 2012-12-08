@@ -60,8 +60,8 @@ function SignalingManager(json_uri)
                 }
             }
 
-            if(self.onUID)
-               self.onUID(uid)
+            if(self.onopen)
+               self.onopen(uid)
         }
         signaling.onerror = function(error)
         {
