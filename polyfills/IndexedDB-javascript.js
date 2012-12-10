@@ -97,10 +97,16 @@ function IdbJS_install()
 	{
 	  var objects = {}
 
-	  this.add = function(value, key)
-	  {
-	    return this.put(value, key)
-	  }
+      this.add = function(value, key)
+      {
+        return this.put(value, key)
+      }
+      this.delete = function(key)
+      {
+        delete objects[key]
+
+        return new IDBRequest()
+      }
 	  this.get = function(key)
 	  {
 	    var request = new IDBRequest()

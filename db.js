@@ -34,25 +34,45 @@ function DB_init(onsuccess)
 	                };
 	        }
 
-	        db._add = function(objectStore, data, onsuccess, onerror)
-	        {
-	            var transaction = db.transaction(objectStore, "readwrite");
-	            var objectStore = transaction.objectStore(objectStore);
+            db._add = function(objectStore, data, onsuccess, onerror)
+            {
+                var transaction = db.transaction(objectStore, "readwrite");
+                var objectStore = transaction.objectStore(objectStore);
 
-	            // [To-Do] Check current objectStore and update files on duplicates
+                // [To-Do] Check current objectStore and update files on duplicates
 
-	            var request = objectStore.add(data);
-	            if(onsuccess != undefined)
-	                request.onsuccess = function(event)
-	                {
-	                    onsuccess(request.result)
-	                };
-	            if(onerror != undefined)
-	                request.onerror = function(event)
-	                {
-	                    onerror(event.target.errorCode)
-	                }
-	        }
+                var request = objectStore.add(data);
+                if(onsuccess != undefined)
+                    request.onsuccess = function(event)
+                    {
+                        onsuccess(request.result)
+                    };
+                if(onerror != undefined)
+                    request.onerror = function(event)
+                    {
+                        onerror(event.target.errorCode)
+                    }
+            }
+
+            db._delete = function(objectStore, key, onsuccess, onerror)
+            {
+                var transaction = db.transaction(objectStore, "readwrite");
+                var objectStore = transaction.objectStore(objectStore);
+
+                // [To-Do] Check current objectStore and update files on duplicates
+
+                var request = objectStore.delete(key);
+                if(onsuccess != undefined)
+                    request.onsuccess = function(event)
+                    {
+                        onsuccess(request.result)
+                    };
+                if(onerror != undefined)
+                    request.onerror = function(event)
+                    {
+                        onerror(event.target.errorCode)
+                    }
+            }
 
 	        db._get = function(objectStore, key, onsuccess, onerror)
 	        {
@@ -120,6 +140,11 @@ function DB_init(onsuccess)
             db.sharepoints_add = function(file, onsuccess, onerror)
             {
                 db._add("sharepoints", file, onsuccess, onerror);
+            }
+
+            db.sharepoints_delete = function(key, onsuccess, onerror)
+            {
+                db._delete("sharepoints", key, onsuccess, onerror);
             }
 
             db.sharepoints_get = function(key, onsuccess, onerror)
