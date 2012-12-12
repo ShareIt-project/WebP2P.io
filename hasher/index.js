@@ -30,10 +30,19 @@ function Hasher(db, policy)
 	      else
 	        i++;
 
-	  queue = queue.concat(Array.prototype.slice.call(files))
-
       if(files.length)
       {
+        files = Array.prototype.slice.call(files)
+        files.sort(function(a, b)
+        {
+            var str1 = a.webkitRelativePath
+            var str2 = b.webkitRelativePath
+
+            return ((str1 == str2) ? 0 : ((str1 > str2) ? 1 : -1));
+        })
+
+        queue = queue.concat(files)
+
         var sharedpoint_name = files[0].webkitRelativePath.split('/')[0]
 
         // Run over all the files on the queue and process them
