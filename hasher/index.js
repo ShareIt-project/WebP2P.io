@@ -32,12 +32,13 @@ function Hasher(db, policy)
 
 	  queue = queue.concat(Array.prototype.slice.call(sharedpoints))
 
-      // Run over all the files on the queue and process them
-	  for(var i=0, sp; sp=sharedpoints[i]; ++i)
-	  {
-        worker.postMessage(sp)
+      if(sharedpoints.length)
+      {
+        // Run over all the files on the queue and process them
+        for(var i=0, sp; sp=sharedpoints[i]; ++i)
+          worker.postMessage(sp);
 
-        db.sharepoints_put(sp)
+        db.sharepoints_put(sharedpoints[0])
       }
     }
 
