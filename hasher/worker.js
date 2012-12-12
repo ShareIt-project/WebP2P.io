@@ -36,11 +36,5 @@ function hashFileentry(fileentry)
 
 self.onmessage = function(e)
 {
-  var sharedpoint = e.data
-
-  var fileentry = {'sharedpoint': sharedpoint.name,
-                   'path': sharedpoint.webkitRelativePath,
-                   'file': sharedpoint}
-
-  hashFileentry(fileentry)
+  hashFileentry(e.data)
 }

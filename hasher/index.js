@@ -20,25 +20,34 @@ function Hasher(db, policy)
                 self.onhashed(fileentry)
         }
 
-    this.hash = function(sharedpoints)
+    this.hash = function(files)
     {
       // Add files to queue if they are not there yet
 	  for(var j=0, file; file=queue[j]; j++)
-        for(var i=0, sp; sp=sharedpoints[i];)
+        for(var i=0, sp; sp=files[i];)
 	      if(sp == file || !sp.size)
-	        sharedpoints.splice(i)
+	          files.splice(i)
 	      else
 	        i++;
 
-	  queue = queue.concat(Array.prototype.slice.call(sharedpoints))
+	  queue = queue.concat(Array.prototype.slice.call(files))
 
-      if(sharedpoints.length)
+      if(files.length)
       {
-        // Run over all the files on the queue and process them
-        for(var i=0, sp; sp=sharedpoints[i]; ++i)
-          worker.postMessage(sp);
+        var sharedpoint_name = files[0].webkitRelativePath.split('/')[0]
 
-        db.sharepoints_put(sharedpoints[0])
+        // Run over all the files on the queue and process them
+        for(var i=0, file; file=files[i]; ++i)
+        {
+            var fileentry = {'sharedpoint': sharedpoint_name,
+                             'file': file}
+
+            worker.postMessage(fileentry);
+
+            console.log(file.webkitRelativePath+': "'+file.name+'": '+file.type)
+        }
+
+        db.sharepoints_put({name: sharedpoint_name, type: 'folder'})
       }
     }
 
