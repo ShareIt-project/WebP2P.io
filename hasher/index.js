@@ -49,6 +49,7 @@ function Hasher(db, policy)
         for(var i=0, file; file=files[i]; ++i)
         {
             var fileentry = {'sharedpoint': sharedpoint_name,
+                             'path': file.webkitRelativePath.split('/').slice(1,-1).join('/'),
                              'file': file}
 
             worker.postMessage(fileentry);

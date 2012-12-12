@@ -24,8 +24,8 @@ function hashFileentry(fileentry)
         // this.result is the readed file as an ArrayBuffer.
         hashData(this.result, function(hash)
         {
-            fileentry.hash = hash
-            self.postMessage(fileentry);
+          fileentry.hash = hash
+          self.postMessage(fileentry);
         })
       }
 
