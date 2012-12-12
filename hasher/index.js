@@ -47,7 +47,7 @@ function Hasher(db, policy)
             console.log(file.webkitRelativePath+': "'+file.name+'": '+file.type)
         }
 
-        db.sharepoints_put({name: sharedpoint_name, type: 'folder'})
+        db.sharepoints_put({name: sharedpoint_name, type: 'folder', size: 0})
       }
     }
 
