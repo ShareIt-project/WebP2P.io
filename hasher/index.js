@@ -44,18 +44,20 @@ function Hasher(db, policy)
         queue = queue.concat(files)
 
         var sharedpoint_name = files[0].webkitRelativePath.split('/')[0]
+        var sharedpoint = {name: sharedpoint_name, type: 'folder'}
 
         // Run over all the files on the queue and process them
         for(var i=0, file; file=files[i]; ++i)
         {
-            var fileentry = {'sharedpoint': sharedpoint_name,
+            var fileentry = {'sharedpoint': sharedpoint,
                              'path': file.webkitRelativePath.split('/').slice(1,-1).join('/'),
                              'file': file}
 
             worker.postMessage(fileentry);
         }
 
-        db.sharepoints_put({name: sharedpoint_name, type: 'folder', size: 0})
+        sharedpoint.size = 0
+        db.sharepoints_put(sharedpoint)
       }
     }
 
