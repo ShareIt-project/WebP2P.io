@@ -4,6 +4,7 @@
 function Hasher(db, policy)
 {
     var queue = []
+    var timeout
 
     var self = this
 
@@ -65,22 +66,25 @@ function Hasher(db, policy)
     {
         db.sharepoints_getAll(null, function(sharedpoints)
         {
-            if(sharedpoints.length & policy)
-                policy(function()
-                {
-                    self.hash(sharedpoints)
-                })
-            else
+            function doHash()
+            {
                 self.hash(sharedpoints)
+
+                // Refresh hashes after one hour
+                clearTimeout(timeout)
+                timeout = setTimeout(function()
+                {
+                    self.refresh()
+                }, 60*60*1000)
+            }
+
+            if(sharedpoints.length & policy)
+                policy(doHash)
+            else
+                doHash()
         })
     }
 
     // Start hashing new files from the shared points on load
     self.refresh()
-
-    // Refresh hashes every hour
-    setInterval(function()
-    {
-        self.refresh()
-    }, 60*60*1000)
 }
