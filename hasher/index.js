@@ -23,7 +23,7 @@ function Hasher(db, policy)
         {
             var fileentry = event.data[1]
 
-            switch(e.data[0])
+            switch(event.data[0])
             {
                 case 'hashed':
                 {
