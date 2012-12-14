@@ -8,17 +8,40 @@ function Hasher(db, policy)
 
     var self = this
 
+    // Refresh hashes after one hour
+    function updateTimeout()
+    {
+        clearTimeout(timeout)
+        timeout = setTimeout(function()
+        {
+            self.refresh()
+        }, 60*60*1000)
+    }
+
     var worker = new Worker('../../js/webp2p/hasher/worker.js');
         worker.onmessage = function(event)
         {
-            var fileentry = event.data
+            var fileentry = event.data[1]
 
-            // Remove hashed file from the queue
-            queue.splice(queue.indexOf(fileentry.file))
+            switch(e.data[0])
+            {
+                case 'hashed':
+                {
+                    // Remove hashed file from the queue
+                    queue.splice(queue.indexOf(fileentry.file))
 
-            // Notify that the file have been hashed
-            if(self.onhashed)
-                self.onhashed(fileentry)
+                    // Notify that the file have been hashed
+                    if(self.onhashed)
+                        self.onhashed(fileentry)
+                }
+                break
+
+                case 'delete':
+                    db.files_delete(fileentry.hash)
+            }
+
+            // Update refresh timeout after each worker message
+            updateTimeout()
         }
 
     this.hash = function(files)
@@ -33,7 +56,13 @@ function Hasher(db, policy)
 
       if(files.length)
       {
+        var sharedpoint = {name: files[0].webkitRelativePath.split('/')[0],
+                           type: 'folder'}
+
         files = Array.prototype.slice.call(files)
+        queue = queue.concat(files)
+
+
         files.sort(function(a, b)
         {
             var str1 = a.webkitRelativePath
@@ -42,11 +71,6 @@ function Hasher(db, policy)
             return ((str1 == str2) ? 0 : ((str1 > str2) ? 1 : -1));
         })
 
-        queue = queue.concat(files)
-
-        var sharedpoint_name = files[0].webkitRelativePath.split('/')[0]
-        var sharedpoint = {name: sharedpoint_name, type: 'folder'}
-
         // Run over all the files on the queue and process them
         for(var i=0, file; file=files[i]; ++i)
         {
@@ -54,8 +78,9 @@ function Hasher(db, policy)
                              'path': file.webkitRelativePath.split('/').slice(1,-1).join('/'),
                              'file': file}
 
-            worker.postMessage(fileentry);
+            worker.postMessage(['hash',fileentry]);
         }
+
 
         sharedpoint.size = 0
         db.sharepoints_put(sharedpoint)
@@ -64,24 +89,37 @@ function Hasher(db, policy)
 
     this.refresh = function()
     {
+        // Hasher is working, just return
+        if(timeout == 'hashing')
+            return
+
+        // Hasher is not working, start hashing files
+        clearTimeout(timeout)
+        timeout = 'hashing'
+
         db.sharepoints_getAll(null, function(sharedpoints)
         {
-            function doHash()
+            db.files_getAll(null, function(fileentries)
             {
-                self.hash(sharedpoints)
-
-                // Refresh hashes after one hour
-                clearTimeout(timeout)
-                timeout = setTimeout(function()
+                function sharedpoint_exist(name)
                 {
-                    self.refresh()
-                }, 60*60*1000)
-            }
+                    for(var i=0; i<sharedpoints.lenght; i++)
+                        if(sharedpoints[i].name == name)
+                            return true
+                }
 
-            if(sharedpoints.length & policy)
-                policy(doHash)
-            else
-                doHash()
+                // Remove all unaccesible files
+                for(var i=0, fileentry; fileentry=fileentries[i]; i++)
+                    if(!sharedpoint_exist(fileentry.sharedpoint.name))
+                        db.files_delete(fileentry.hash)
+                    else if(fileentry.file)
+                        worker.postMessage(['refresh',fileentry]);
+
+                if(sharedpoints.length & policy)
+                    policy(updateTimeout)
+                else
+                    updateTimeout()
+            })
         })
     }
 

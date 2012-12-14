@@ -25,16 +25,36 @@ function hashFileentry(fileentry)
         hashData(this.result, function(hash)
         {
           fileentry.hash = hash
-          self.postMessage(fileentry);
+          self.postMessage(['hashed',fileentry]);
         })
       }
 
-//  reader.readAsArrayBuffer(file);
   reader.readAsBinaryString(fileentry.file);
+}
+
+function checkRemoved(fileentry)
+{
+  var reader = new FileReader();
+      reader.onerror = function()
+      {
+          self.postMessage(['delete',fileentry]);
+      }
+
+  reader.readAsBinaryString(fileentry.file.slice(0,1));
 }
 
 
 self.onmessage = function(e)
 {
-  hashFileentry(e.data)
+  var fileentry = e.data[1]
+
+  switch(e.data[0])
+  {
+      case 'hash':
+          hashFileentry(fileentry)
+          break
+
+      case 'refresh':
+          checkRemoved(fileentry)
+  }
 }

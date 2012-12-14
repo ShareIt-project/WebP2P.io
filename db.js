@@ -167,6 +167,11 @@ function DB_init(onsuccess)
                 db._add("files", file, onsuccess, onerror);
             }
 
+            db.files_delete = function(key, onsuccess, onerror)
+            {
+                db._delete("files", key, onsuccess, onerror);
+            }
+
             db.files_get = function(key, onsuccess, onerror)
             {
                 db._get("files", key, onsuccess, onerror);
