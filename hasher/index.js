@@ -15,7 +15,19 @@ function Hasher(db, policy)
         timeout = setTimeout(function()
         {
             self.refresh()
+//        }, 30*1000)
         }, 60*60*1000)
+    }
+
+    function delete_fileentry(fileentry)
+    {
+        // Remove file from the database
+        db.files_delete(fileentry.hash, function()
+        {
+            // Notify that the file have been deleted
+            if(self.ondeleted)
+                self.ondeleted(fileentry)
+        })
     }
 
     var worker = new Worker('../../js/webp2p/hasher/worker.js');
@@ -30,14 +42,18 @@ function Hasher(db, policy)
                     // Remove hashed file from the queue
                     queue.splice(queue.indexOf(fileentry.file))
 
-                    // Notify that the file have been hashed
-                    if(self.onhashed)
-                        self.onhashed(fileentry)
+                    // Add file to the database
+                    db.files_put(fileentry, function()
+                    {
+                        // Notify that the file have been hashed
+                        if(self.onhashed)
+                            self.onhashed(fileentry)
+                    })
                 }
                 break
 
                 case 'delete':
-                    db.files_delete(fileentry.hash)
+                    delete_fileentry(fileentry)
             }
 
             // Update refresh timeout after each worker message
@@ -94,6 +110,8 @@ function Hasher(db, policy)
             return
 
         // Hasher is not working, start hashing files
+        console.info("Starting hashing refresh")
+
         clearTimeout(timeout)
         timeout = 'hashing'
 
@@ -103,7 +121,7 @@ function Hasher(db, policy)
             {
                 function sharedpoint_exist(name)
                 {
-                    for(var i=0; i<sharedpoints.lenght; i++)
+                    for(var i=0; i<sharedpoints.length; i++)
                         if(sharedpoints[i].name == name)
                             return true
                 }
@@ -111,7 +129,7 @@ function Hasher(db, policy)
                 // Remove all unaccesible files
                 for(var i=0, fileentry; fileentry=fileentries[i]; i++)
                     if(!sharedpoint_exist(fileentry.sharedpoint.name))
-                        db.files_delete(fileentry.hash)
+                        delete_fileentry(fileentry)
                     else if(fileentry.file)
                         worker.postMessage(['refresh',fileentry]);
 
