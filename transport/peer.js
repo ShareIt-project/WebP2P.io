@@ -22,6 +22,24 @@ function Transport_Peer_init(transport, db, peersManager)
             }
     }
 
+    function sort_fileslist(fileslist)
+    {
+        fileentries.sort(function(a, b)
+        {
+            function strcmp(str1, str2)
+            {
+                return ((str1 == str2) ? 0 : ((str1 > str2) ? 1 : -1));
+            }
+
+            var result = strcmp(a.path, b.path);
+            if(result) return result;
+
+            var result = strcmp(a.file.name, b.file.name);
+            if(result) return result;
+        })
+    }
+
+
     // fileslist
 
     var _fileslist = []
@@ -37,8 +55,10 @@ function Transport_Peer_init(transport, db, peersManager)
             for(var i=0, fileentry; fileentry = fileentries[i]; i++)
                 check_ifOwned(fileentry, fileslist)
 
+            sort_fileslist(fileentries)
+
             // Update the peer's fileslist with the checked data
-            _fileslist = event.data[0]
+            _fileslist = fileentries
 
             // Notify about fileslist update
             transport.dispatchEvent({type: "fileslist._updated"})
@@ -69,6 +89,8 @@ function Transport_Peer_init(transport, db, peersManager)
 
             // Add the fileentry to the fileslist
             _fileslist.push(fileentry)
+
+            sort_fileslist(_fileslist)
 
             // Notify about fileslist update
             transport.dispatchEvent({type: "fileslist._updated"})
