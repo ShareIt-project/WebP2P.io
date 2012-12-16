@@ -3,38 +3,41 @@ var chunksize = 65536
 
 function Transport_Peer_init(transport, db, peersManager)
 {
+    function check_ifOwned(fileentry, fileslist)
+    {
+        // We add here ad-hoc the channel of the peer where we got
+        // the file since we currently don't have support for hashes
+        // nor tracker systems
+        fileentry.channel = transport
+
+        // Check if we have the file already, and if so set it our copy
+        // bitmap and blob reference
+        for(var j=0, file_hosted; file_hosted = fileslist[j]; j++)
+            if(fileentry.hash == file_hosted.hash)
+            {
+                fileentry.bitmap = file_hosted.bitmap
+                fileentry.blob   = file_hosted.file || file_hosted.blob
+
+                break;
+            }
+    }
+
     // fileslist
 
     transport.addEventListener('fileslist.send', function(event)
     {
-        var files = event.data[0]
+        var fileentries = event.data[0]
 
         // Check if we have already any of the files
         // It's stupid to try to download it... and also give errors
-        db.files_getAll(null, function(filelist)
+        db.files_getAll(null, function(fileslist)
         {
-            for(var i=0, file; file = files[i]; i++)
-            {
-                // We add here ad-hoc the channel of the peer where we got
-                // the file since we currently don't have support for hashes
-                // nor tracker systems
-                file.channel = transport
-
-                // Check if we have the file already, and if so set it our copy
-                // bitmap and blob reference
-                for(var j=0, file_hosted; file_hosted = filelist[j]; j++)
-                    if(file.hash == file_hosted.hash)
-                    {
-                        file.bitmap = file_hosted.bitmap
-                        file.blob   = file_hosted.file || file_hosted.blob
-
-                        break;
-                    }
-            }
+            for(var i=0, fileentry; fileentry = fileentries[i]; i++)
+                check_ifOwned(fileentry, fileslist)
 
             // Notify about fileslist update
             transport.dispatchEvent({type: "fileslist.send.filtered",
-                                     data: [files]})
+                                     data: [fileentries]})
         })
     })
     transport.fileslist_query = function()
@@ -52,21 +55,7 @@ function Transport_Peer_init(transport, db, peersManager)
         // Check if we have already the files
         db.files_getAll(null, function(fileslist)
         {
-            // We add here ad-hoc the channel of the peer where we got
-            // the file since we currently don't have support for hashes
-            // nor tracker systems
-            fileentry.channel = transport
-
-            // Check if we have the file already, and if so set it our copy
-            // bitmap and blob reference
-            for(var j=0, file_hosted; file_hosted = fileslist[j]; j++)
-                if(fileentry.hash == file_hosted.hash)
-                {
-                    fileentry.bitmap = file_hosted.bitmap
-                    fileentry.blob   = file_hosted.file || file_hosted.blob
-
-                    break;
-                }
+            check_ifOwned(fileentry, fileslist)
 
             // Notify about fileslist update
             transport.dispatchEvent({type: "fileslist.added.filtered",
