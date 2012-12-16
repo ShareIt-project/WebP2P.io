@@ -24,7 +24,7 @@ function Transport_Peer_init(transport, db, peersManager)
 
     function sort_fileslist(fileslist)
     {
-        fileentries.sort(function(a, b)
+        fileslist.sort(function(a, b)
         {
             function strcmp(str1, str2)
             {
@@ -34,7 +34,8 @@ function Transport_Peer_init(transport, db, peersManager)
             var result = strcmp(a.path, b.path);
             if(result) return result;
 
-            var result = strcmp(a.file.name, b.file.name);
+            var result = strcmp(a.file ? a.file.name : a.name,
+                                b.file ? b.file.name : b.name);
             if(result) return result;
         })
     }
@@ -61,7 +62,8 @@ function Transport_Peer_init(transport, db, peersManager)
             _fileslist = fileentries
 
             // Notify about fileslist update
-            transport.dispatchEvent({type: "fileslist._updated"})
+            transport.dispatchEvent({type: "fileslist._updated",
+                                     data: [_fileslist]})
         })
     })
     transport.fileslist_query = function()
@@ -93,9 +95,10 @@ function Transport_Peer_init(transport, db, peersManager)
             sort_fileslist(_fileslist)
 
             // Notify about fileslist update
-            transport.dispatchEvent({type: "fileslist._updated"})
-        }
-    }
+            transport.dispatchEvent({type: "fileslist._updated",
+                                     data: [_fileslist]})
+        })
+    })
     transport.addEventListener('fileslist.deleted', function(event)
     {
         var fileentry = event.data[0]
@@ -109,11 +112,12 @@ function Transport_Peer_init(transport, db, peersManager)
                 _fileslist.splice(i, 1)
 
                 // Notify about fileslist update
-                transport.dispatchEvent({type: "fileslist._updated"})
+                transport.dispatchEvent({type: "fileslist._updated",
+                                         data: [_fileslist]})
 
                 return
             }
-    }
+    })
 
 
     // transfer

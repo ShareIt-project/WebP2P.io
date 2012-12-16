@@ -62,15 +62,15 @@ function PeersManager(db, stun_server)
     // Notify to all peers that I have added a new file
     this._send_file_added = function(fileentry)
     {
-        for(var i=0, peer; peer=peers[i]; i++)
-            peer._channel._send_file_added(fileentry);
+        for(var uid in peers)
+            peers[uid]._channel._send_file_added(fileentry);
     }
 
     // Notify to all peers that I have removed a file
     this._send_file_deleted = function(fileentry)
     {
-        for(var i=0, peer; peer=peers[i]; i++)
-            peer._channel._send_file_deleted(fileentry);
+        for(var uid in peers)
+            peers[uid]._channel._send_file_deleted(fileentry);
     }
 
     function createPeerConnection(id)
