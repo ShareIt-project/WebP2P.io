@@ -24,6 +24,8 @@ function Transport_Peer_init(transport, db, peersManager)
 
     // fileslist
 
+    var _fileslist = []
+
     transport.addEventListener('fileslist.send', function(event)
     {
         var fileentries = event.data[0]
@@ -35,9 +37,11 @@ function Transport_Peer_init(transport, db, peersManager)
             for(var i=0, fileentry; fileentry = fileentries[i]; i++)
                 check_ifOwned(fileentry, fileslist)
 
+            // Update the peer's fileslist with the checked data
+            _fileslist = event.data[0]
+
             // Notify about fileslist update
-            transport.dispatchEvent({type: "fileslist.send.filtered",
-                                     data: [fileentries]})
+            transport.dispatchEvent({type: "fileslist._updated"})
         })
     })
     transport.fileslist_query = function()
@@ -52,23 +56,41 @@ function Transport_Peer_init(transport, db, peersManager)
     {
         var fileentry = event.data[0]
 
+        // Check if we have the file previously listed
+        for(var i=0, listed; listed = _fileslist[i]; i++)
+            if(fileentry.path == listed.path
+            && fileentry.name == listed.name)
+                return
+
         // Check if we have already the files
         db.files_getAll(null, function(fileslist)
         {
             check_ifOwned(fileentry, fileslist)
 
+            // Add the fileentry to the fileslist
+            _fileslist.push(fileentry)
+
             // Notify about fileslist update
-            transport.dispatchEvent({type: "fileslist.added.filtered",
-                                     data: fileentry})
+            transport.dispatchEvent({type: "fileslist._updated"})
         }
     }
     transport.addEventListener('fileslist.deleted', function(event)
     {
         var fileentry = event.data[0]
 
-        // Notify about fileslist update
-        transport.dispatchEvent({type: "fileslist.deleted.filtered",
-                                 data: fileentry})
+        // Search for the fileentry on the fileslist
+        for(var i=0, listed; listed = _fileslist[i]; i++)
+            if(fileentry.path == listed.path
+            && fileentry.name == listed.name)
+            {
+                // Remove the fileentry for the fileslist
+                _fileslist.splice(i, 1)
+
+                // Notify about fileslist update
+                transport.dispatchEvent({type: "fileslist._updated"})
+
+                return
+            }
     }
 
 
