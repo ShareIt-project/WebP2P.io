@@ -43,6 +43,46 @@ function Transport_Peer_init(transport, db, peersManager)
     }
 
 
+    // fileslist updates
+
+    transport.addEventListener('fileslist.added', function(event)
+    {
+        var fileentry = event.data[0]
+
+        // Check if we have already the files
+        db.files_getAll(null, function(fileslist)
+        {
+            // We add here ad-hoc the channel of the peer where we got
+            // the file since we currently don't have support for hashes
+            // nor tracker systems
+            fileentry.channel = transport
+
+            // Check if we have the file already, and if so set it our copy
+            // bitmap and blob reference
+            for(var j=0, file_hosted; file_hosted = fileslist[j]; j++)
+                if(fileentry.hash == file_hosted.hash)
+                {
+                    fileentry.bitmap = file_hosted.bitmap
+                    fileentry.blob   = file_hosted.file || file_hosted.blob
+
+                    break;
+                }
+
+            // Notify about fileslist update
+            transport.dispatchEvent({type: "fileslist.added.filtered",
+                                     data: fileentry})
+        }
+    }
+    transport.addEventListener('fileslist.deleted', function(event)
+    {
+        var fileentry = event.data[0]
+
+        // Notify about fileslist update
+        transport.dispatchEvent({type: "fileslist.deleted.filtered",
+                                 data: fileentry})
+    }
+
+
     // transfer
 
     function _savetodisk(fileentry)

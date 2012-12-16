@@ -59,7 +59,21 @@ function PeersManager(db, stun_server)
         })
     }
 
-	function createPeerConnection(id)
+    // Notify to all peers that I have added a new file
+    this._send_file_added = function(fileentry)
+    {
+        for(var i=0, peer; peer=peers[i]; i++)
+            peer._channel._send_file_added(fileentry);
+    }
+
+    // Notify to all peers that I have removed a file
+    this._send_file_deleted = function(fileentry)
+    {
+        for(var i=0, peer; peer=peers[i]; i++)
+            peer._channel._send_file_deleted(fileentry);
+    }
+
+    function createPeerConnection(id)
 	{
 	    var pc = peers[id] = new RTCPeerConnection({"iceServers": [{"url": 'stun:'+stun_server}]});
 
