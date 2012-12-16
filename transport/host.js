@@ -24,8 +24,10 @@ function Transport_Host_init(transport, db)
             for(var i = 0, fileentry; fileentry = fileslist[i]; i++)
             {
                 var blob = fileentry.file || fileentry.blob
+                var path = fileentry.sharedpoint+'/'+fileentry.path
 
                 files_send.push({'hash': fileentry.hash,
+                                 'path': path,
                                  'name': blob.name || fileentry.name,
                                  'size': blob.size,
                                  'type': blob.type});
@@ -37,8 +39,10 @@ function Transport_Host_init(transport, db)
     transport._send_file_added = function(fileentry)
     {
         var blob = fileentry.file || fileentry.blob
+        var path = fileentry.sharedpoint+'/'+fileentry.path
 
         transport.emit('fileslist.added', {'hash': fileentry.hash,
+                                           'path': path,
                                            'name': blob.name || fileentry.name,
                                            'size': blob.size,
                                            'type': blob.type});
