@@ -1,12 +1,18 @@
-// Polyfill to add full support for JavaScript objects with an IndexedDB
-// interface. This is primary purpose because a bug storing files on Chromium
-// implementation (http://code.google.com/p/chromium/issues/detail?id=108012).
-// The drawback is that since it's implemented using pure JavaScript objects,
-// well... the data persistence lacks about some functionality... :-P
-
+/**
+ * Polyfill to add full support for JavaScript objects with an IndexedDB
+ * interface. This is primary purpose because a bug storing files on Chromium
+ * implementation (http://code.google.com/p/chromium/issues/detail?id=108012).
+ * The drawback is that since it's implemented using pure JavaScript objects,
+ * well... the data persistence lacks about some functionality... :-P
+ * @author piranna
+ */
 window.indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
 
 
+/**
+ * Test if IndexedDB has support for Blob objects
+ * @param {Function} callback Callback called when support have been checked
+ */
 function testIDBBlobSupport(callback)
 {
   var dbname = "detect-blob-support";
@@ -41,8 +47,14 @@ function testIDBBlobSupport(callback)
 }
 
 
+/**
+ * Overwrites and install an only-memory IndexedDB object with support for Blob
+ */
 function IdbJS_install()
 {
+    /**
+     * @constructor
+     */
 	function IDBRequest()
 	{
 	  this.target = {}
@@ -57,6 +69,9 @@ function IdbJS_install()
 	  }
 	}
 
+    /**
+     * @constructor
+     */
 	function IDBOpenRequest()
 	{
 	  IDBRequest.call(this)
@@ -70,6 +85,9 @@ function IdbJS_install()
 	IDBOpenRequest.prototype = new IDBRequest()
 
 
+    /**
+     * @constructor
+     */
 	function IDBCursor()
 	{
 	  this._objects = []
@@ -93,6 +111,9 @@ function IdbJS_install()
       }
     }
 
+    /**
+     * @constructor
+     */
 	function IDBObjectStore()
 	{
 	  var objects = {}
@@ -151,6 +172,9 @@ function IdbJS_install()
 	  }
 	}
 
+    /**
+     * @constructor
+     */
 	function IDBTransaction()
 	{
 	  this.objectStore = function(name)

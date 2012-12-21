@@ -1,11 +1,23 @@
+/**
+ * Manage the signaling channel using several servers
+ * @constructor
+ * @param {String} json_uri URI of the signaling servers configuration
+ */
 function SignalingManager(json_uri)
 {
     var self = this
 
     var signaling = null
 
+    /**
+     * UUID generator
+     */
     var UUIDv4 = function b(a){return a?(a^Math.random()*16>>a/4).toString(16):([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,b)}
 
+    /**
+     * Get a random signaling channel or test for the next one
+     * @param {Object} configuration Signaling servers configuration
+     */
     function getRandomSignaling(configuration)
     {
         if(!configuration.length)
@@ -91,6 +103,11 @@ function SignalingManager(json_uri)
         http_request.send();
 
 
+    /**
+     * Send a RTCPeerConnection offer through the active signaling channel
+     * @param {UUID} uid Identifier of the other peer
+     * @param {String} sdp Content of the SDP object
+     */
     this.sendOffer = function(uid, sdp)
     {
         if(signaling && signaling.send)
@@ -99,6 +116,11 @@ function SignalingManager(json_uri)
             console.warn("signaling is not available");
     }
 
+    /**
+     * Send a RTCPeerConnection answer through the active signaling channel
+     * @param {UUID} uid Identifier of the other peer
+     * @param {String} sdp Content of the SDP object
+     */
     this.sendAnswer = function(uid, sdp)
     {
         if(signaling)

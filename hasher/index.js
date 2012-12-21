@@ -1,6 +1,8 @@
-// Object that update the SharedPoints and hash its files
-
-
+/**
+ * Update the SharedPoints and hash its files
+ * @param {IDBDatabase} db ShareIt! database
+ * @param {Function|null} policy Function to manage the policy access
+ */
 function Hasher(db, policy)
 {
     var queue = []
@@ -8,7 +10,9 @@ function Hasher(db, policy)
 
     var self = this
 
-    // Refresh hashes after one hour
+    /**
+     * Refresh hashes after one hour
+     */
     function updateTimeout()
     {
         clearTimeout(timeout)
@@ -19,6 +23,10 @@ function Hasher(db, policy)
         }, 60*60*1000)
     }
 
+    /**
+     * Delete a {Fileentry} (mainly because it was removed from the filesystem)
+     * @param {Fileentry} fileentry {Fileentry} to be removed from database
+     */
     function delete_fileentry(fileentry)
     {
         // Remove file from the database
@@ -60,6 +68,10 @@ function Hasher(db, policy)
             updateTimeout()
         }
 
+    /**
+     * Hash the files from a {Sharedpoint}.
+     * @param {Array} files List of files to be hashed
+     */
     this.hash = function(files)
     {
       // Add files to queue if they are not there yet
@@ -103,6 +115,9 @@ function Hasher(db, policy)
       }
     }
 
+    /**
+     * Refresh the {Sharedpoint}s and {Fileentry}s on the database
+     */
     this.refresh = function()
     {
         // Hasher is working, just return

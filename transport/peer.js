@@ -1,8 +1,19 @@
 var chunksize = 65536
 
 
+/**
+ * Addapt a transport layer to be used as a peer
+ * @param transport
+ * @param {IDBdatabase} db WebP2P database
+ * @param {PeersManager} peersManager {PeersManager} object
+ */
 function Transport_Peer_init(transport, db, peersManager)
 {
+    /**
+     * Check if we already have the file and set it references to our copy
+     * @param {Fileentry} fileentry {Fileentry} to be checked
+     * @param {Array} fileslist List of {Fileentry}s
+     */
     function check_ifOwned(fileentry, fileslist)
     {
         // We add here ad-hoc the channel of the peer where we got
@@ -22,6 +33,10 @@ function Transport_Peer_init(transport, db, peersManager)
             }
     }
 
+    /**
+     * Sort in place the fileslist by path and filename
+     * @param {Array} fileslist List of {Fileentry}s
+     */
     function sort_fileslist(fileslist)
     {
         fileslist.sort(function(a, b)
@@ -45,6 +60,9 @@ function Transport_Peer_init(transport, db, peersManager)
 
     var _fileslist = []
 
+    /**
+     * Catch new sended data for the other peer fileslist
+     */
     transport.addEventListener('fileslist.send', function(event)
     {
         var fileentries = event.data[0]
@@ -66,6 +84,10 @@ function Transport_Peer_init(transport, db, peersManager)
                                      data: [_fileslist]})
         })
     })
+
+    /**
+     * Request the other peer fileslist
+     */
     transport.fileslist_query = function()
     {
         transport.emit('fileslist.query');
@@ -74,6 +96,9 @@ function Transport_Peer_init(transport, db, peersManager)
 
     // fileslist updates
 
+    /**
+     * Catch when the other peer has added a new file
+     */
     transport.addEventListener('fileslist.added', function(event)
     {
         var fileentry = event.data[0]
@@ -99,6 +124,10 @@ function Transport_Peer_init(transport, db, peersManager)
                                      data: [_fileslist]})
         })
     })
+
+    /**
+     * Catch when the other peer has deleted a file
+     */
     transport.addEventListener('fileslist.deleted', function(event)
     {
         var fileentry = event.data[0]
@@ -122,6 +151,10 @@ function Transport_Peer_init(transport, db, peersManager)
 
     // transfer
 
+    /**
+     * Save the downloaded file to the hard disk
+     * @param {Fileentry} fileentry {Fileentry} to be saved
+     */
     function _savetodisk(fileentry)
     {
         // Auto-save downloaded file
@@ -139,6 +172,9 @@ function Transport_Peer_init(transport, db, peersManager)
         }, 1000)
     }
 
+    /**
+     * Catch new sended data for a file
+     */
     transport.addEventListener('transfer.send', function(event)
     {
         var hash = event.data[0]

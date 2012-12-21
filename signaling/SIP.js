@@ -1,3 +1,7 @@
+/**
+ * Signaling channel connector for SIP
+ * @param {Object} configuration Configuration object
+ */
 function Signaling_SIP(configuration)
 {
     var self = this

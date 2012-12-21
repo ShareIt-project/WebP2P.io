@@ -1,4 +1,6 @@
-// Worker to hash a file
+/**
+ * Worker to hash and check existence of a file
+ */
 
 
 // Hack for sha512
@@ -7,6 +9,11 @@ var window = {}
 importScripts('https://raw.github.com/Caligatio/jsSHA/master/src/sha512.js');
 
 
+/**
+ * Hash the data of a file
+ * @param {BinaryString} data Data to be hashed
+ * @param {Function} onsuccess Callback called when data was hashed
+ */
 function hashData(data, onsuccess)
 {
 	var shaObj = new window.jsSHA(data, "TEXT");
@@ -15,7 +22,10 @@ function hashData(data, onsuccess)
     onsuccess(hash)
 }
 
-
+/**
+ * Hash a {Fileentry}
+ * @param {Fileentry} fileentry {Fileentry} to be hashed
+ */
 function hashFileentry(fileentry)
 {
   var reader = new FileReader();
@@ -32,6 +42,11 @@ function hashFileentry(fileentry)
   reader.readAsBinaryString(fileentry.file);
 }
 
+/**
+ * Check if a {Fileentry} have been removed from the filesystem. If so, request
+ * it to be deleted from the database
+ * @param {Fileentry} fileentry {Fileentry} to be checked
+ */
 function checkRemoved(fileentry)
 {
   var reader = new FileReader();
@@ -52,11 +67,15 @@ function checkRemoved(fileentry)
 }
 
 
-self.onmessage = function(e)
+/**
+ * Receive new petitions to hash or check {Fileentry}s
+ * @param {DOMEvent} event
+ */
+self.onmessage = function(event)
 {
-  var fileentry = e.data[1]
+  var fileentry = event.data[1]
 
-  switch(e.data[0])
+  switch(event.data[0])
   {
       case 'hash':
           hashFileentry(fileentry)
