@@ -152,27 +152,6 @@ function Transport_Peer_init(transport, db, peersManager)
     // transfer
 
     /**
-     * Save the downloaded file to the hard disk
-     * @param {Fileentry} fileentry {Fileentry} to be saved
-     */
-    function _savetodisk(fileentry)
-    {
-        // Auto-save downloaded file
-        var save = document.createElement("A");
-            save.href = window.URL.createObjectURL(fileentry.blob)
-            save.target = "_blank"      // This can give problems...
-            save.download = fileentry.name   // This force to download with a filename instead of navigate
-
-        save.click()
-
-        // Hack to remove the ObjectURL after it have been saved and not before
-        setTimeout(function()
-        {
-            window.URL.revokeObjectURL(save.href)
-        }, 1000)
-    }
-
-    /**
      * Catch new sended data for a file
      */
     transport.addEventListener('transfer.send', function(event)
@@ -235,15 +214,19 @@ function Transport_Peer_init(transport, db, peersManager)
 
                 db.files_put(fileentry, function()
                 {
-                    // Auto-save downloaded file
-                    _savetodisk(fileentry)
-
-                    // Notify about transfer end
-                    peersManager.dispatchEvent({type: "transfer.end",
-                                                data: [fileentry]})
-                    console.log("Transfer of "+fileentry.name+" finished!");
+                    peersManager.transfer_end(fileentry)
                 })
             }
         })
     })
+
+    /**
+     * Request (more) data for a file
+     * @param {Fileentry} Fileentry of the file to be requested
+     * @param {Number} chunk Chunk of the file to be requested
+     */
+    transport.transfer_query = function(fileentry, chunk)
+    {
+        transport.emit('transfer.query', fileentry.hash, chunk)
+    }
 }

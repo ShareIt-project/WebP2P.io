@@ -45,7 +45,7 @@ function PeersManager(db, stun_server)
         var channel = getChannel(fileentry)
         var chunk = fileentry.bitmap.getRandom(false)
 
-        channel.emit('transfer.query', fileentry.hash, chunk)
+        channel.transfer_query(fileentry, chunk)
     }
 
     /**
@@ -54,13 +54,34 @@ function PeersManager(db, stun_server)
      */
     this._transferbegin = function(fileentry)
     {
+        function onerror(errorCode)
+        {
+            console.error("Transfer begin: '"+fileentry.name+"' is already in database.")
+        }
+
+        // Add a blob container to our file stub
+        fileentry.blob = new Blob([''], {"type": fileentry.type})
+
+        // File size is zero, generate the file instead of request it
+        if(!fileentry.size)
+        {
+            // Insert new empty "file" inside IndexedDB
+            db.files_add(fileentry,
+            function()
+            {
+                self.transfer_end(fileentry)
+            },
+            onerror)
+
+            return
+        }
+
         // Calc number of necesary chunks to download
+        // and add a bitmap to our file stub
         var chunks = fileentry.size/chunksize;
         if(chunks % 1 != 0)
             chunks = Math.floor(chunks) + 1;
 
-        // Add a blob container and a bitmap to our file stub
-        fileentry.blob = new Blob([''], {"type": fileentry.type})
         fileentry.bitmap = new Bitmap(chunks)
 
         // Insert new "file" inside IndexedDB
@@ -72,10 +93,38 @@ function PeersManager(db, stun_server)
             // Demand data from the begining of the file
             self.transfer_query(fileentry)
         },
-        function(errorCode)
+        onerror)
+    }
+
+    this.transfer_end = function(fileentry)
+    {
+        /**
+         * Save the downloaded file to the hard disk
+         * @param {Fileentry} fileentry {Fileentry} to be saved
+         */
+        function _savetodisk(fileentry)
         {
-            console.error("Transfer begin: '"+fileentry.name+"' is already in database.")
-        })
+            // Auto-save downloaded file
+            var save = document.createElement("A");
+                save.href = window.URL.createObjectURL(fileentry.blob)
+                save.target = "_blank"          // This can give problems...
+                save.download = fileentry.name  // This force to download with a filename instead of navigate
+
+            save.click()
+
+            // Hack to remove the ObjectURL after it have been saved and not before
+            setTimeout(function()
+            {
+                window.URL.revokeObjectURL(save.href)
+            }, 1000)
+        }
+
+        // Auto-save downloaded file
+        _savetodisk(fileentry)
+
+        // Notify about transfer end
+        self.dispatchEvent({type: "transfer.end", data: [fileentry]})
+        console.log("Transfer of "+fileentry.name+" finished!");
     }
 
     /**
