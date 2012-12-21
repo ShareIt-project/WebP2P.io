@@ -27,7 +27,7 @@ function Hasher(db, policy)
      * Delete a {Fileentry} (mainly because it was removed from the filesystem)
      * @param {Fileentry} fileentry {Fileentry} to be removed from database
      */
-    function delete_fileentry(fileentry)
+    function fileentry_delete(fileentry)
     {
         // Remove file from the database
         db.files_delete(fileentry.hash, function()
@@ -38,6 +38,24 @@ function Hasher(db, policy)
         })
     }
 
+    /**
+     * Set a {Fileentry} as hashed and store it on the database
+     * @param {Fileentry} fileentry {Fileentry} to be added to the database
+     */
+    function fileentry_hashed(fileentry)
+    {
+        // Remove hashed file from the queue
+        queue.splice(queue.indexOf(fileentry.file))
+
+        // Add file to the database
+        db.files_put(fileentry, function()
+        {
+            // Notify that the file have been hashed
+            if(self.onhashed)
+                self.onhashed(fileentry)
+        })
+    }
+
     var worker = new Worker('../../js/webp2p/hasher/worker.js');
         worker.onmessage = function(event)
         {
@@ -45,23 +63,12 @@ function Hasher(db, policy)
 
             switch(event.data[0])
             {
-                case 'hashed':
-                {
-                    // Remove hashed file from the queue
-                    queue.splice(queue.indexOf(fileentry.file))
-
-                    // Add file to the database
-                    db.files_put(fileentry, function()
-                    {
-                        // Notify that the file have been hashed
-                        if(self.onhashed)
-                            self.onhashed(fileentry)
-                    })
-                }
-                break
-
                 case 'delete':
-                    delete_fileentry(fileentry)
+                    fileentry_delete(fileentry)
+                    break
+
+                case 'hashed':
+                    fileentry_hashed(fileentry)
             }
 
             // Update refresh timeout after each worker message
@@ -77,9 +84,17 @@ function Hasher(db, policy)
       // Add files to queue if they are not there yet
 	  for(var j=0, file; file=queue[j]; j++)
         for(var i=0, sp; sp=files[i];)
-	      if(sp == file || !sp.size)
+          if(!sp.size)          // File has zero size
+          {
+              // Precalculated hash for zero sized files
+              sp.hash = "z4PhNX7vuL3xVChQ1m2AB9Yg5AULVxXcg/SpIdNs6c5H0NE8XYXysP+DGNKHfuwvY7kxvUdBeoGlODJ6+SfaPg=="
+              fileentry_hashed(sp)
+
+              files.splice(i)
+          }
+          else if(sp == file)   // File is already on the queue list
 	          files.splice(i)
-	      else
+	      else                  // Normal file, hash it
 	        i++;
 
       if(files.length)
