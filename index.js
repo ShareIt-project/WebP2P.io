@@ -21,16 +21,12 @@ var webp2p =
 
      'hasher/index',
 
-     'lib/jssip-0.2.1',
-
      'polyfills/FileWriter',
      'polyfills/IndexedDB-javascript',
 
      'signaling/index',
      'signaling/PubNub',
      'signaling/simpleSignaling',
-     'signaling/SIP',
-     'signaling/XMPP',
 
      'transport/index',
      'transport/host',
