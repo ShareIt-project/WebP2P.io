@@ -1,3 +1,7 @@
+/**
+ * Signaling channel connector for PubNub
+ * @param {Object} configuration Configuration object
+ */
 function Signaling_PubNub(configuration)
 {
     var self = this

@@ -1,6 +1,7 @@
-// FileWriter polyfill based on code from idb.filesystem.js by Eric Bidelman
-//
-// Copyright 2012 Jesus Leganes Combarro "Piranna"
+/**
+ * FileWriter polyfill based on code from idb.filesystem.js by Eric Bidelman
+ * @copyright 2012 Jesus Leganes Combarro "Piranna"
+ */
 
 (function(module){
 
@@ -17,7 +18,7 @@ if(Blob.slice != undefined)
  * Modeled from:
  * dev.w3.org/2009/dap/file-system/file-writer.html#the-filewriter-interface
  *
- * @param {FileEntry} fileEntry The FileEntry associated with this writer.
+ * @param {Blob} blob The Blob associated with this writer.
  * @constructor
  */
 FileWriter = function(blob)
@@ -29,17 +30,29 @@ FileWriter = function(blob)
   var blob_ = blob;
 
 
+  /**
+   * Getter of the current position of the blob index
+   * @returns {Number} The position of the index inside the blob
+   */
   this.__defineGetter__('position', function()
   {
     return position_;
   });
 
+  /**
+   * Getter of the current length of the blob
+   * @returns {Number} The current lenght of the blob
+   */
   this.__defineGetter__('length', function()
   {
     return blob_.size;
   });
 
 
+  /**
+   * Move the current index of the blob
+   * @param {Number} offset The new position of the blob index
+   */
   this.seek = function(offset)
   {
     position_ = offset
@@ -53,6 +66,10 @@ FileWriter = function(blob)
        position_ = 0
   };
 
+  /**
+   * Truncate the blob size the the new value
+   * @param {Number} size The new size of the blob (bigger or smaller)
+   */
   this.truncate = function(size)
   {
     if(size < this.length)
@@ -62,6 +79,10 @@ FileWriter = function(blob)
                         {"type": blob_.type})
   };
 
+  /**
+   * Write some data on the current position of the blob index
+   * @param data Data to be written
+   */
   this.write = function(data)
   {
     if(!data)

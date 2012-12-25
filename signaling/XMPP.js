@@ -1,3 +1,7 @@
+/**
+ * Signaling channel connector for XMPP
+ * @param {Object} configuration Configuration object
+ */
 function Signaling_XMPP(configuration)
 {
     var self = this

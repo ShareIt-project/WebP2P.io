@@ -1,8 +1,14 @@
+/**
+ * Init a channel as an event-based transport layer
+ * @param transport
+ */
 function Transport_init(transport)
 {
     EventTarget.call(transport)
 
-    // Compose and send message
+    /**
+     *  Compose and send message
+     */
     transport.emit = function()
     {
         var args = Array.prototype.slice.call(arguments, 0);
@@ -14,7 +20,9 @@ function Transport_init(transport)
         });
     }
 
-    // Message received
+    /**
+     *  Message received
+     */
     transport.onmessage = function(message)
     {
         message = JSON.parse(message.data)

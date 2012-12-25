@@ -1,5 +1,9 @@
 window.indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
 
+/**
+ * Initializes the database
+ * @param {Function} onsuccess Callback called when database is ready
+ */
 function DB_init(onsuccess)
 {
 	var version = 2
@@ -34,12 +38,18 @@ function DB_init(onsuccess)
 	                };
 	        }
 
+	        /**
+	         * Add an object to the specified {IDBObjectStore}
+	         * @param {String} objectStore Name of the {IDBObjectStore}
+	         * @param {Object} data Object to be added to the {IDBObjectStore}
+             * @param {Function} onsuccess Callback called when object was added
+             * @param {Function} onerror Callback called when object was not
+             * able to be added
+	         */
             db._add = function(objectStore, data, onsuccess, onerror)
             {
                 var transaction = db.transaction(objectStore, "readwrite");
                 var objectStore = transaction.objectStore(objectStore);
-
-                // [To-Do] Check current objectStore and update files on duplicates
 
                 var request = objectStore.add(data);
                 if(onsuccess != undefined)
@@ -54,12 +64,20 @@ function DB_init(onsuccess)
                     }
             }
 
+            /**
+             * Delete an object from the specified {IDBObjectStore}
+             * @param {String} objectStore Name of the {IDBObjectStore}
+             * @param {String} key Name of the key to deleted on the
+             * {IDBObjectStore}
+             * @param {Function} onsuccess Callback called when object was
+             * deleted
+             * @param {Function} onerror Callback called when key was not able
+             * to be deleted
+             */
             db._delete = function(objectStore, key, onsuccess, onerror)
             {
                 var transaction = db.transaction(objectStore, "readwrite");
                 var objectStore = transaction.objectStore(objectStore);
-
-                // [To-Do] Check current objectStore and update files on duplicates
 
                 var request = objectStore.delete(key);
                 if(onsuccess != undefined)
@@ -74,6 +92,16 @@ function DB_init(onsuccess)
                     }
             }
 
+            /**
+             * Get an object from the specified {IDBObjectStore}
+             * @param {String} objectStore Name of the {IDBObjectStore}
+             * @param {String} key Name of the key to be get from the
+             * {IDBObjectStore}
+             * @param {Function} onsuccess Callback called when object was
+             * gotten
+             * @param {Function} onerror Callback called when object was not
+             * able to be gotten
+             */
 	        db._get = function(objectStore, key, onsuccess, onerror)
 	        {
 	            var transaction = db.transaction(objectStore);
@@ -91,6 +119,15 @@ function DB_init(onsuccess)
                     };
 	        }
 
+            /**
+             * Get all objects from the specified {IDBObjectStore}
+             * @param {String} objectStore Name of the {IDBObjectStore}
+             * @param {IDBRange|null} range Range to delimit keys to be gotten
+             * @param {Function} onsuccess Callback called when objects were
+             * gotten
+             * @param {Function} onerror Callback called when object were not
+             * able to be gotten
+             */
 	        db._getAll = function(objectStore, range, onsuccess, onerror)
 	        {
 	            var result = [];
@@ -117,12 +154,19 @@ function DB_init(onsuccess)
                     };
 	        }
 
+            /**
+             * Update or add an object on the specified {IDBObjectStore}
+             * @param {String} objectStore Name of the {IDBObjectStore}
+             * @param {Object} data Object to be added to the {IDBObjectStore}
+             * @param {Function} onsuccess Callback called when object was
+             * updated or added
+             * @param {Function} onerror Callback called when object was not
+             * able to be updated or added
+             */
 	        db._put = function(objectStore, data, onsuccess, onerror)
 	        {
 	            var transaction = db.transaction(objectStore, "readwrite");
 	            var objectStore = transaction.objectStore(objectStore);
-
-	            // [To-Do] Check current sharepoints and update files on duplicates
 
 	            var request = objectStore.put(data);
 	            if(onsuccess != undefined)
@@ -137,54 +181,135 @@ function DB_init(onsuccess)
 	                }
 	        }
 
-            db.sharepoints_add = function(file, onsuccess, onerror)
+            /**
+             * Add a {Sharedpoint}
+             * @param {Sharedpoint} sharedpoint {Sharedpoint} to be added
+             * @param {Function} onsuccess Callback called when the
+             * {Sharedpoint} was added
+             * @param {Function} onerror Callback called when the {Sharedpoint}
+             * was not able to be added
+             */
+            db.sharepoints_add = function(sharedpoint, onsuccess, onerror)
             {
-                db._add("sharepoints", file, onsuccess, onerror);
+                db._add("sharepoints", sharedpoint, onsuccess, onerror);
             }
 
+            /**
+             * Delete a {Sharedpoint}
+             * @param {String} key {Sharedpoint} to be deleted
+             * @param {Function} onsuccess Callback called when the
+             * {Sharedpoint} was deleted
+             * @param {Function} onerror Callback called when the {Sharedpoint}
+             * was not able to be deleted
+             */
             db.sharepoints_delete = function(key, onsuccess, onerror)
             {
                 db._delete("sharepoints", key, onsuccess, onerror);
             }
 
+            /**
+             * Get a {Sharedpoint}
+             * @param {String} key {Sharedpoint} to be gotten
+             * @param {Function} onsuccess Callback called when the
+             * {Sharedpoint} was gotten
+             * @param {Function} onerror Callback called when the {Sharedpoint}
+             * was not able to be gotten
+             */
             db.sharepoints_get = function(key, onsuccess, onerror)
             {
                 db._get("sharepoints", key, onsuccess, onerror);
             }
 
+            /**
+             * Get all the {Sharedpoint}s
+             * @param {IDBRange|null} range Range of {Sharedpoint}s to be gotten
+             * @param {Function} onsuccess Callback called when the
+             * {Sharedpoint}s were gotten
+             * @param {Function} onerror Callback called when the {Sharedpoint}s
+             * were not able to be gotten
+             */
             db.sharepoints_getAll = function(range, onsuccess, onerror)
             {
                 db._getAll("sharepoints", range, onsuccess, onerror);
             }
 
-            db.sharepoints_put = function(file, onsuccess, onerror)
+            /**
+             * Update or add a {Sharedpoint}
+             * @param {Sharedpoint} sharedpoint {Sharedpoint} to be updated or
+             * added
+             * @param {Function} onsuccess Callback called when the
+             * {Sharedpoint} was updated or added
+             * @param {Function} onerror Callback called when the {Sharedpoint}
+             * was not able to be updated or added
+             */
+            db.sharepoints_put = function(sharedpoint, onsuccess, onerror)
             {
-                db._put("sharepoints", file, onsuccess, onerror);
+                db._put("sharepoints", sharedpoint, onsuccess, onerror);
             }
 
-            db.files_add = function(file, onsuccess, onerror)
+            /**
+             * Add a {Fileentry}
+             * @param {Fileentry} fileentry {Fileentry} to be added
+             * @param {Function} onsuccess Callback called when the {Fileentry}
+             * was added
+             * @param {Function} onerror Callback called when the {Fileentry}
+             * was not able to be added
+             */
+            db.files_add = function(fileentry, onsuccess, onerror)
             {
-                db._add("files", file, onsuccess, onerror);
+                db._add("files", fileentry, onsuccess, onerror);
             }
 
+            /**
+             * Delete a {Fileentry}
+             * @param {String} key {Fileentry} to be deleted
+             * @param {Function} onsuccess Callback called when the {Fileentry}
+             * was deleted
+             * @param {Function} onerror Callback called when the {Fileentry}
+             * was not able to be deleted
+             */
             db.files_delete = function(key, onsuccess, onerror)
             {
                 db._delete("files", key, onsuccess, onerror);
             }
 
+            /**
+             * Get a {Fileentry}
+             * @param {String} key {Fileentry} to be gotten
+             * @param {Function} onsuccess Callback called when the {Fileentry}
+             * was gotten
+             * @param {Function} onerror Callback called when the {Fileentry}
+             * was not able to be gotten
+             */
             db.files_get = function(key, onsuccess, onerror)
             {
                 db._get("files", key, onsuccess, onerror);
             }
 
+            /**
+             * Get all the {Fileentry}s
+             * @param {IDBRange|null} range Range of {Fileentry}s to be gotten
+             * @param {Function} onsuccess Callback called when the {Fileentry}s
+             * were gotten
+             * @param {Function} onerror Callback called when the {Fileentry}
+             * was not able to be gotten
+             */
             db.files_getAll = function(range, onsuccess, onerror)
             {
                 db._getAll("files", range, onsuccess, onerror);
             }
 
-            db.files_put = function(file, onsuccess, onerror)
+            /**
+             * Update or add a {Fileentry}
+             * @param {Fileentry} fileentry {Fileentry} to be updated or added
+             * @param {Function} onsuccess Callback called when the {Fileentry}
+             * was updated or added
+             * @param {Function} onerror Callback called when the {Fileentry}
+             * was not able to be updated or added
+             */
+            db.files_put = function(fileentry, onsuccess, onerror)
             {
-                db._put("files", file, onsuccess, onerror);
+                db._put("files", fileentry, onsuccess, onerror);
             }
 
 			if(onsuccess)

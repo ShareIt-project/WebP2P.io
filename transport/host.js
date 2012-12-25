@@ -9,6 +9,11 @@ if(typeof FileReader == "undefined")
 }
 
 
+/**
+ * Addapt a transport layer to be used as a host
+ * @param transport
+ * @param {IDBdatabase} db WebP2P database
+ */
 function Transport_Host_init(transport, db)
 {
     // Filereader support (be able to host files from the filesystem)
@@ -17,31 +22,39 @@ function Transport_Host_init(transport, db)
 
     // filelist
 
-        transport._send_files_list = function(fileslist)
+    /**
+     * Addapt and send to the other peer our list of shared files
+     * @param {Array} fileslist Our list of {Fileentry}s
+     */
+    transport._send_files_list = function(fileslist)
+    {
+        var files_send = []
+
+        for(var i = 0, fileentry; fileentry = fileslist[i]; i++)
         {
-            var files_send = []
-
-            for(var i = 0, fileentry; fileentry = fileslist[i]; i++)
+            var blob = fileentry.file || fileentry.blob
+            var path = ""
+            if(fileentry.sharedpoint)
             {
-                var blob = fileentry.file || fileentry.blob
-                var path = ""
-                if(fileentry.sharedpoint)
-                {
-                    path += fileentry.sharedpoint.name
-                    if(fileentry.path != "")
-                        path += '/'+fileentry.path
-                }
-
-                files_send.push({'hash': fileentry.hash,
-                                 'path': path,
-                                 'name': blob.name || fileentry.name,
-                                 'size': blob.size,
-                                 'type': blob.type});
+                path += fileentry.sharedpoint.name
+                if(fileentry.path != "")
+                    path += '/'+fileentry.path
             }
 
-            transport.emit('fileslist.send', files_send);
+            files_send.push({'hash': fileentry.hash,
+                             'path': path,
+                             'name': blob.name || fileentry.name,
+                             'size': blob.size,
+                             'type': blob.type});
         }
 
+        transport.emit('fileslist.send', files_send);
+    }
+
+    /**
+     * Notify to the other peer that we have added a new file
+     * @param {Fileentry} fileentry {Fileentry} of the new added file
+     */
     transport._send_file_added = function(fileentry)
     {
         var blob = fileentry.file || fileentry.blob
@@ -60,11 +73,18 @@ function Transport_Host_init(transport, db)
                                            'type': blob.type});
     }
 
+    /**
+     * Notify to the other peer that we have deleted a new file
+     * @param {Fileentry} fileentry {Fileentry} of the deleted file
+     */
     transport._send_file_deleted = function(fileentry)
     {
         transport.emit('fileslist.deleted', fileentry.hash);
     }
 
+    /**
+     * Catch request for our files list
+     */
     transport.addEventListener('fileslist.query', function(event)
     {
         db.files_getAll(null, transport._send_files_list)
@@ -72,6 +92,9 @@ function Transport_Host_init(transport, db)
 
     // transfer
 
+    /**
+     * Catch request of file data
+     */
     transport.addEventListener('transfer.query', function(event)
     {
         var hash = event.data[0]

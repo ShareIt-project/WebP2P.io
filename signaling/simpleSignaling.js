@@ -1,3 +1,7 @@
+/**
+ * Signaling channel connector for SimpleSignaling
+ * @param {Object} configuration Configuration object
+ */
 function Signaling_SimpleSignaling(configuration)
 {
     var self = this
