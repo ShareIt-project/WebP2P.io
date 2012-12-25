@@ -134,8 +134,25 @@ function PeersManager(db, stun_server)
      */
     this._send_file_added = function(fileentry)
     {
+        var self = this
+
+        this.dispatchEvent({type: "file.added", data: [fileentry]})
+
         for(var uid in peers)
             peers[uid]._channel._send_file_added(fileentry);
+
+        // Update fileentry sharedpoint size
+        db.sharepoints_get(fileentry.sharedpoint.name,
+        function(sharedpoint)
+        {
+            // Increase sharedpoint shared size
+            sharedpoint.size += fileentry.file.size
+
+            db.sharepoints_put(sharedpoint, function()
+            {
+                self.dispatchEvent({type: "sharedpoints.update"})
+            })
+        })
     }
 
     /**
@@ -144,8 +161,25 @@ function PeersManager(db, stun_server)
      */
     this._send_file_deleted = function(fileentry)
     {
+        var self = this
+
+        this.dispatchEvent({type: "file.deleted", data: [fileentry]})
+
         for(var uid in peers)
             peers[uid]._channel._send_file_deleted(fileentry);
+
+        // Update fileentry sharedpoint size
+        db.sharepoints_get(fileentry.sharedpoint.name,
+        function(sharedpoint)
+        {
+            // Increase sharedpoint shared size
+            sharedpoint.size -= fileentry.file.size
+
+            db.sharepoints_put(sharedpoint, function()
+            {
+                self.dispatchEvent({type: "sharedpoints.update"})
+            })
+        })
     }
 
     /**
