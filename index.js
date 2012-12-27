@@ -24,9 +24,9 @@ var webp2p =
      'polyfills/FileWriter',
      'polyfills/IndexedDB-javascript',
 
-     'signaling/index',
-     'signaling/PubNub',
-     'signaling/simpleSignaling',
+     'handshake/index',
+     'handshake/PubNub',
+     'handshake/simpleSignaling',
 
      'transport/index',
      'transport/host',

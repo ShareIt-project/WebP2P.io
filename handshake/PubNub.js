@@ -1,12 +1,12 @@
 /**
- * Signaling channel connector for PubNub
+ * Handshake channel connector for PubNub
  * @param {Object} configuration Configuration object
  */
-function Signaling_PubNub(configuration)
+function Handshake_PubNub(configuration)
 {
     var self = this
 
-    // Connect a signaling channel to the PubNub server
+    // Connect a handshake channel to the PubNub server
     var pubnub = PUBNUB.init(configuration);
         pubnub.subscribe(
         {
@@ -38,7 +38,7 @@ function Signaling_PubNub(configuration)
                     })
                 }
 
-                // Set signaling as open
+                // Set handshake as open
                 if(self.onopen)
                     self.onopen(configuration.uuid)
             },

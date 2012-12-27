@@ -18,7 +18,7 @@ function PeersManager(db, stun_server)
     EventTarget.call(this)
 
     var peers = {}
-    var signaling
+    var handshake
 
     var self = this
 
@@ -229,9 +229,9 @@ function PeersManager(db, stun_server)
         // Peer is not connected, create a new channel
         if(!peer)
         {
-            if(!signaling)
+            if(!handshake)
             {
-                console.error("No signaling channel available")
+                console.error("No handshake channel available")
                 return
             }
 
@@ -257,7 +257,7 @@ function PeersManager(db, stun_server)
             // Send offer to new PeerConnection
             peer.createOffer(function(offer)
             {
-                signaling.sendOffer(uid, offer.sdp)
+                handshake.sendOffer(uid, offer.sdp)
 
                 peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
                                                                    type: 'offer'}))
@@ -297,11 +297,11 @@ function PeersManager(db, stun_server)
     }
 
     /**
-     * Set the {SignalingManager} to be used
-     * @param {SignalingManager} newSignaling The new {SignalingManager}
+     * Set the {SandshakeManager} to be used
+     * @param {SandshakeManager} newHandshake The new {HandshakeManager}
      */
-    this.setSignaling = function(newSignaling)
+    this.setHandshake = function(newHandshake)
     {
-        signaling = newSignaling
+        handshake = newHandshake
     }
 }

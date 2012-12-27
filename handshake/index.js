@@ -1,13 +1,13 @@
 /**
- * Manage the signaling channel using several servers
+ * Manage the handshake channel using several servers
  * @constructor
- * @param {String} json_uri URI of the signaling servers configuration
+ * @param {String} json_uri URI of the handshake servers configuration
  */
-function SignalingManager(json_uri)
+function HandshakeManager(json_uri)
 {
     var self = this
 
-    var signaling = null
+    var handshake = null
 
     /**
      * UUID generator
@@ -15,10 +15,10 @@ function SignalingManager(json_uri)
     var UUIDv4 = function b(a){return a?(a^Math.random()*16>>a/4).toString(16):([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,b)}
 
     /**
-     * Get a random signaling channel or test for the next one
-     * @param {Object} configuration Signaling servers configuration
+     * Get a random handshake channel or test for the next one
+     * @param {Object} configuration Handshake servers configuration
      */
-    function getRandomSignaling(configuration)
+    function getRandomHandshake(configuration)
     {
         if(!configuration.length)
         {
@@ -37,27 +37,27 @@ function SignalingManager(json_uri)
         {
             case 'PubNub':
                 conf.uuid = conf.uuid || UUIDv4()
-                signaling = new Signaling_PubNub(conf)
+                handshake = new Handshake_PubNub(conf)
                 break;
 
             case 'SimpleSignaling':
                 conf.uid = conf.uid || UUIDv4()
-                signaling = new Signaling_SimpleSignaling(conf)
+                handshake = new Handshake_SimpleSignaling(conf)
                 break;
 
             case 'SIP':
                 conf.uri = conf.uri || UUIDv4()+'@'+conf.outbound_proxy_set
-                signaling = new Signaling_SIP(conf)
+                handshake = new Handshake_SIP(conf)
                 break;
 
             case 'XMPP':
                 conf.username = conf.username || UUIDv4()
-                signaling = new Signaling_XMPP(conf)
+                handshake = new Handshake_XMPP(conf)
         }
 
-        signaling.onopen = function(uid)
+        handshake.onopen = function(uid)
         {
-            signaling.onmessage = function(uid, data)
+            handshake.onmessage = function(uid, data)
             {
                 switch(data[0])
                 {
@@ -75,13 +75,13 @@ function SignalingManager(json_uri)
             if(self.onopen)
                self.onopen(uid)
         }
-        signaling.onerror = function(error)
+        handshake.onerror = function(error)
         {
             console.error(error)
 
-            // Try to get an alternative signaling channel
+            // Try to get an alternative handshake channel
             configuration.splice(index, 1)
-            getRandomSignaling(configuration)
+            getRandomHandshake(configuration)
         }
     }
 
@@ -90,7 +90,7 @@ function SignalingManager(json_uri)
         http_request.onload = function()
         {
             if(this.status == 200)
-                getRandomSignaling(JSON.parse(http_request.response))
+                getRandomHandshake(JSON.parse(http_request.response))
 
             else if(self.onerror)
                 self.onerror()
@@ -104,28 +104,28 @@ function SignalingManager(json_uri)
 
 
     /**
-     * Send a RTCPeerConnection offer through the active signaling channel
+     * Send a RTCPeerConnection offer through the active handshake channel
      * @param {UUID} uid Identifier of the other peer
      * @param {String} sdp Content of the SDP object
      */
     this.sendOffer = function(uid, sdp)
     {
-        if(signaling && signaling.send)
-            signaling.send(uid, ["offer", sdp]);
+        if(handshake && handshake.send)
+            handshake.send(uid, ["offer", sdp]);
         else
-            console.warn("signaling is not available");
+            console.warn("Handshake channel is not available");
     }
 
     /**
-     * Send a RTCPeerConnection answer through the active signaling channel
+     * Send a RTCPeerConnection answer through the active handshake channel
      * @param {UUID} uid Identifier of the other peer
      * @param {String} sdp Content of the SDP object
      */
     this.sendAnswer = function(uid, sdp)
     {
-        if(signaling)
-            signaling.send(uid, ["answer", sdp]);
+        if(handshake)
+            handshake.send(uid, ["answer", sdp]);
         else
-            console.warn("signaling is not available");
+            console.warn("Handshake channel is not available");
     }
 }
