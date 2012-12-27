@@ -44,15 +44,6 @@ function HandshakeManager(json_uri)
                 conf.uid = conf.uid || UUIDv4()
                 handshake = new Handshake_SimpleSignaling(conf)
                 break;
-
-            case 'SIP':
-                conf.uri = conf.uri || UUIDv4()+'@'+conf.outbound_proxy_set
-                handshake = new Handshake_SIP(conf)
-                break;
-
-            case 'XMPP':
-                conf.username = conf.username || UUIDv4()
-                handshake = new Handshake_XMPP(conf)
         }
 
         handshake.onopen = function(uid)
