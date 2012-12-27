@@ -1,32 +1,32 @@
 /**
- * Signaling channel connector for SimpleSignaling
+ * Handshake channel connector for SimpleSignaling
  * @param {Object} configuration Configuration object
  */
-function Signaling_SimpleSignaling(configuration)
+function Handshake_SimpleSignaling(configuration)
 {
     var self = this
 
-    // Connect a signaling channel to the XMPP server
-    var signaling = new SimpleSignaling(configuration);
-        signaling.onopen = function(uid)
+    // Connect a handshake channel to the XMPP server
+    var handshake = new SimpleSignaling(configuration);
+        handshake.onopen = function(uid)
         {
             // Compose and send message
             self.send = function(uid, data)
             {
-                signaling.send(uid, data);
+                handshake.send(uid, data);
             }
 
-            signaling.onmessage = function(uid, data)
+            handshake.onmessage = function(uid, data)
             {
                 if(self.onmessage)
                     self.onmessage(uid, data)
             }
 
-            // Set signaling as open
+            // Set handshake channel as open
             if(self.onopen)
                 self.onopen(uid)
         }
-        signaling.onerror = function(error)
+        handshake.onerror = function(error)
         {
             if(self.onerror)
                 self.onerror(error)

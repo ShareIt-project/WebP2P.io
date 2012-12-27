@@ -1,15 +1,15 @@
 /**
- * Signaling channel connector for XMPP
+ * Handshake channel connector for XMPP
  * @param {Object} configuration Configuration object
  */
-function Signaling_XMPP(configuration)
+function Handshake_XMPP(configuration)
 {
     var self = this
 
-    // Connect a signaling channel to the XMPP server
-    var signaling = new JSJaCHttpBindingConnection(configuration);
-        signaling.connect(configuration);   // Ugly hack to have only one config object
-        signaling.registerHandler('onconnect', function()
+    // Connect a handshake channel to the XMPP server
+    var handshake = new JSJaCHttpBindingConnection(configuration);
+        handshake.connect(configuration);   // Ugly hack to have only one config object
+        handshake.registerHandler('onconnect', function()
         {
             // Compose and send message
             self.send = function(uid, data)
@@ -18,10 +18,10 @@ function Signaling_XMPP(configuration)
                     oMsg.setTo(new JSJaCJID(uid));
                     oMsg.setBody(JSON.stringify(data));
 
-                signaling.send(oMsg);
+                handshake.send(oMsg);
             }
 
-            signaling.registerHandler('message', function(oJSJaCPacket)
+            handshake.registerHandler('message', function(oJSJaCPacket)
             {
                 var uid  = oJSJaCPacket.getFromJID()
                 var data = JSON.parse(oJSJaCPacket.getBody())
@@ -30,13 +30,13 @@ function Signaling_XMPP(configuration)
                     self.onmessage(uid, data)
             })
 
-            signaling.send(new JSJaCPresence());
+            handshake.send(new JSJaCPresence());
 
-            // Set signaling as open
+            // Set handshake channel as open
             if(self.onopen)
                 self.onopen(configuration.username)
         });
-        signaling.registerHandler('onerror', function(error)
+        handshake.registerHandler('onerror', function(error)
         {
             if(self.onerror)
                self.onerror(error)
