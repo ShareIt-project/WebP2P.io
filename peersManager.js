@@ -219,7 +219,7 @@ function PeersManager(db, stun_server)
      * @param {String} sdp Session Description Protocol data of the other peer
      * @returns {RTCPeerConnection} The (newly created) peer
      */
-    this.onOffer = function(uid, sdp)
+    this.onoffer = function(uid, sdp)
     {
         // Search the peer between the list of currently connected peers
         var peer = peers[uid]
@@ -254,7 +254,7 @@ function PeersManager(db, stun_server)
      * @param {Function} onerror Callback called if we don't have previously
      * wanted to connect to the other peer
      */
-    this.onAnswer = function(uid, sdp, onerror)
+    this.onanswer = function(uid, sdp, onerror)
     {
         // Search the peer on the list of currently connected peers
         var peer = peers[uid]
