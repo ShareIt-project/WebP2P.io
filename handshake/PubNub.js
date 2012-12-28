@@ -15,11 +15,13 @@ function Handshake_PubNub(configuration)
             // Receive messages
             callback: function(message)
             {
-                if(message[1] == configuration.uuid)
+                var dest = message[1]
+
+                if(!dest || dest == configuration.uuid)
                 {
                     var uid  = message[0]
                     var data = message[2]
-    
+
                     if(self.onmessage)
                         self.onmessage(uid, data)
                 }
@@ -30,11 +32,13 @@ function Handshake_PubNub(configuration)
                 // Compose and send message
                 self.send = function(dest, data)
                 {
+                    var message = [configuration.uuid, dest, data]
+
                     pubnub.publish(
                     {
                         channel: configuration.channel,
 
-                        message: [configuration.uuid, dest, data]
+                        message: removeLeadingFalsy(message)
                     })
                 }
 

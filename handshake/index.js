@@ -1,4 +1,17 @@
 /**
+ * Remove leading 'falsy' items (null, undefined, '0', {}...) from an array
+ * @param {Array} array {Array} where to remove the leading 'falsy' items
+ * @returns {Array} The cleaned {Array}
+ */
+function removeLeadingFalsy(array)
+{
+    var end = array.length-1
+    while(!array[end])
+        end--
+    return array.slice(0, end)
+}
+
+/**
  * Manage the handshake channel using several servers
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration
@@ -50,18 +63,24 @@ function HandshakeManager(json_uri)
         {
             handshake.onmessage = function(uid, data)
             {
-                switch(data[0])
-                {
-                    case 'offer':
-                        if(self.onoffer)
-                            self.onoffer(uid, data[1])
-                        break
+                if(data)
+                    switch(data[0])
+                    {
+                        case 'offer':
+                            if(self.onoffer)
+                                self.onoffer(uid, data[1])
+                            break
 
-                    case 'answer':
-                        if(self.onanswer)
-                            self.onanswer(uid, data[1])
-                }
+                        case 'answer':
+                            if(self.onanswer)
+                                self.onanswer(uid, data[1])
+                    }
+                else if(self.onhandshake)
+                    self.onhandshake(uid)
             }
+
+            // Notify our presence to the other peers on the handshake server
+            handshake.send()
 
             if(self.onopen)
                self.onopen(uid)
