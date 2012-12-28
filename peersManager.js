@@ -314,4 +314,13 @@ function PeersManager(db, stun_server)
     {
         handshake = newHandshake
     }
+
+    /**
+     * Get the number of peers currently connected with this node
+     * @returns {Number} The number of peers connected
+     */
+    this.numPeers = function()
+    {
+        return Object.keys(peers).length
+    }
 }
