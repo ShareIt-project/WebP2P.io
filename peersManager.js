@@ -275,13 +275,43 @@ function PeersManager(db, stun_server)
     }
 
     /**
-     * Get a peer from the peers list based on its UID
+     * Process the offer to connect to a new peer
      * @param {UUID} uid Identifier of the other peer
-     * @returns {RTCPeerConnection|undefined} The requested peer or undefined
+     * @param {String} sdp Session Description Protocol data of the other peer
+     * @returns {RTCPeerConnection} The (newly created) peer
      */
-    this.getPeer = function(uid)
+    this.onOffer = funtion(uid, sdp)
     {
-        return peers[uid]
+        // Search the peer between the list of currently connected peers
+        var peer = peers[uid]
+
+        // Peer is not connected, create a new channel
+        if(!peer)
+            peer = peersManager.createPeer(uid);
+
+        // Process offer
+        peer.setRemoteDescription(new RTCSessionDescription({sdp:  sdp,
+                                                             type: 'offer'}));
+
+        return peer
+    }
+
+    /**
+     * Process the answer received while attempting to connect to the other peer
+     * @param {UUID} uid Identifier of the other peer
+     * @param {String} sdp Session Description Protocol data of the other peer
+     * @param {Function} onerror Callback called if we don't have previously
+     * wanted to connect to the other peer
+     */
+    this.onAnswer = funtion(uid, sdp, onerror)
+    {
+        // Search the peer on the list of currently connected peers
+        var peer = peers[uid]
+        if(peer)
+            peer.setRemoteDescription(new RTCSessionDescription({sdp:  sdp,
+                                                               type: 'answer'}))
+        else if(onerror)
+            onerror(uid)
     }
 
     /**
