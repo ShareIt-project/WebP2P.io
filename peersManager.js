@@ -219,14 +219,26 @@ function PeersManager(db, stun_server)
      * @param {String} sdp Session Description Protocol data of the other peer
      * @returns {RTCPeerConnection} The (newly created) peer
      */
-    this.onOffer = funtion(uid, sdp)
+    this.onOffer = function(uid, sdp)
     {
         // Search the peer between the list of currently connected peers
         var peer = peers[uid]
 
         // Peer is not connected, create a new channel
         if(!peer)
-            peer = peersManager.createPeer(uid);
+        {
+            peer = createPeerConnection(uid)
+            peer.ondatachannel = function(event)
+            {
+                console.log("Created datachannel with peer "+uid)
+                initDataChannel(peer, event.channel)
+            }
+            peer.onerror = function(event)
+            {
+                if(onerror)
+                    onerror(uid, event)
+            }
+        }
 
         // Process offer
         peer.setRemoteDescription(new RTCSessionDescription({sdp:  sdp,
@@ -242,7 +254,7 @@ function PeersManager(db, stun_server)
      * @param {Function} onerror Callback called if we don't have previously
      * wanted to connect to the other peer
      */
-    this.onAnswer = funtion(uid, sdp, onerror)
+    this.onAnswer = function(uid, sdp, onerror)
     {
         // Search the peer on the list of currently connected peers
         var peer = peers[uid]
@@ -251,28 +263,6 @@ function PeersManager(db, stun_server)
                                                                type: 'answer'}))
         else if(onerror)
             onerror(uid)
-    }
-
-    /**
-     * Creates a new peer connection and initialize it
-     * @param {UUID} uid Identifier of the other peer
-     * @returns {RTCPeerConnection} The newly created and initialized peer
-     */
-    this.createPeer = function(uid, onerror)
-    {
-        var peer = createPeerConnection(uid)
-	        peer.ondatachannel = function(event)
-	        {
-                console.log("createPeer")
-	            initDataChannel(peer, event.channel)
-	        }
-            peer.onerror = function()
-            {
-                if(onerror)
-                    onerror(uid, peer)
-            }
-
-        return peer
     }
 
     /**
