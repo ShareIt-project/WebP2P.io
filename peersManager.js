@@ -18,7 +18,6 @@ function PeersManager(db, stun_server)
     EventTarget.call(this)
 
     var peers = {}
-    var handshake
 
     var self = this
 
@@ -214,66 +213,6 @@ function PeersManager(db, stun_server)
 		}
 	}
 
-	/**
-	 * Connects to another peer based on its UID. If we are already connected,
-	 * it does nothing.
-	 * @param {UUID} uid Identifier of the other peer to be connected
-	 * @param {Function} onsuccess Callback called when the connection was done
-	 * @param {Function} onerror Callback called when connection was not possible
-	 */
-    this.connectTo = function(uid, onsuccess, onerror)
-    {
-        // Search the peer between the list of currently connected peers
-        var peer = peers[uid]
-
-        // Peer is not connected, create a new channel
-        if(!peer)
-        {
-            if(!handshake)
-            {
-                console.error("No handshake channel available")
-                return
-            }
-
-            // Create PeerConnection
-            peer = createPeerConnection(uid);
-            peer.onopen = function()
-            {
-                var channel = peer.createDataChannel('webp2p')
-                channel.onopen = function()
-                {
-	                initDataChannel(peer, channel)
-
-	                if(onsuccess)
-	                    onsuccess(channel)
-                }
-                channel.onerror = function()
-                {
-                    if(onerror)
-                        onerror(uid, peer, channel)
-                }
-            }
-            peer.onerror = function()
-            {
-                if(onerror)
-                    onerror(uid, peer)
-            }
-
-            // Send offer to new PeerConnection
-            peer.createOffer(function(offer)
-            {
-                handshake.sendOffer(uid, offer.sdp)
-
-                peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
-                                                                   type: 'offer'}))
-            });
-        }
-
-        // Peer is connected and we have defined an 'onsucess' callback
-        else if(onsuccess)
-            onsuccess(peer._channel)
-    }
-
     /**
      * Process the offer to connect to a new peer
      * @param {UUID} uid Identifier of the other peer
@@ -340,9 +279,67 @@ function PeersManager(db, stun_server)
      * Set the {SandshakeManager} to be used
      * @param {SandshakeManager} newHandshake The new {HandshakeManager}
      */
-    this.setHandshake = function(newHandshake)
+    this.setHandshake = function(handshake)
     {
-        handshake = newHandshake
+        /**
+         * Connects to another peer based on its UID. If we are already connected,
+         * it does nothing.
+         * @param {UUID} uid Identifier of the other peer to be connected
+         * @param {Function} onsuccess Callback called when the connection was done
+         * @param {Function} onerror Callback called when connection was not possible
+         */
+        this.connectTo = function(uid, onsuccess, onerror)
+        {
+            // Search the peer between the list of currently connected peers
+            var peer = peers[uid]
+
+            // Peer is not connected, create a new channel
+            if(!peer)
+            {
+//                if(!handshake)
+//                {
+//                    console.error("No handshake channel available")
+//                    return
+//                }
+
+                // Create PeerConnection
+                peer = createPeerConnection(uid);
+                peer.onopen = function()
+                {
+                    var channel = peer.createDataChannel('webp2p')
+                    channel.onopen = function()
+                    {
+                        initDataChannel(peer, channel)
+
+                        if(onsuccess)
+                            onsuccess(channel)
+                    }
+                    channel.onerror = function()
+                    {
+                        if(onerror)
+                            onerror(uid, peer, channel)
+                    }
+                }
+                peer.onerror = function()
+                {
+                    if(onerror)
+                        onerror(uid, peer)
+                }
+
+                // Send offer to new PeerConnection
+                peer.createOffer(function(offer)
+                {
+                    handshake.sendOffer(uid, offer.sdp)
+
+                    peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
+                                                                       type: 'offer'}))
+                });
+            }
+
+            // Peer is connected and we have defined an 'onsucess' callback
+            else if(onsuccess)
+                onsuccess(peer._channel)
+        }
     }
 
     /**
