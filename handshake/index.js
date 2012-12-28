@@ -5,8 +5,8 @@
  */
 function removeLeadingFalsy(array)
 {
-    var end = array.length-1
-    while(!array[end])
+    var end = array.length
+    while(!array[end-1])
         end--
     return array.slice(0, end)
 }
@@ -104,7 +104,7 @@ function HandshakeManager(json_uri)
         }
         handshake.onclose = function()
         {
-            del self.pending_synapses
+            delete self.pending_synapses
 
             configuration.splice(index, 1)
             getRandomHandshake(configuration)
