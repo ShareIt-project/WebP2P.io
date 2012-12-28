@@ -56,4 +56,12 @@ function Handshake_PubNub(configuration)
                     self.onerror(error)
             }
         })
+
+    this.close = function()
+    {
+        pubnub.unsubscribe(
+        {
+            channel: configuration.channel
+        });
+    }
 }
