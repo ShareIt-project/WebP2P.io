@@ -214,40 +214,6 @@ function PeersManager(db, stun_server)
 	}
 
     /**
-     * Process the offer to connect to a new peer
-     * @param {UUID} uid Identifier of the other peer
-     * @param {String} sdp Session Description Protocol data of the other peer
-     * @returns {RTCPeerConnection} The (newly created) peer
-     */
-    this.onoffer = function(uid, sdp)
-    {
-        // Search the peer between the list of currently connected peers
-        var peer = peers[uid]
-
-        // Peer is not connected, create a new channel
-        if(!peer)
-        {
-            peer = createPeerConnection(uid)
-            peer.ondatachannel = function(event)
-            {
-                console.log("Created datachannel with peer "+uid)
-                initDataChannel(peer, event.channel)
-            }
-            peer.onerror = function(event)
-            {
-                if(onerror)
-                    onerror(uid, event)
-            }
-        }
-
-        // Process offer
-        peer.setRemoteDescription(new RTCSessionDescription({sdp:  sdp,
-                                                             type: 'offer'}));
-
-        return peer
-    }
-
-    /**
      * Process the answer received while attempting to connect to the other peer
      * @param {UUID} uid Identifier of the other peer
      * @param {String} sdp Session Description Protocol data of the other peer
@@ -329,6 +295,47 @@ function PeersManager(db, stun_server)
             // Peer is connected and we have defined an 'onsucess' callback
             else if(onsuccess)
                 onsuccess(peer._channel)
+        }
+
+        /**
+         * Process the offer to connect to a new peer
+         * @param {UUID} uid Identifier of the other peer
+         * @param {String} sdp Session Description Protocol data of the other peer
+         * @returns {RTCPeerConnection} The (newly created) peer
+         */
+        this.onoffer = function(uid, sdp)
+        {
+            // Search the peer between the list of currently connected peers
+            var peer = peers[uid]
+
+            // Peer is not connected, create a new channel
+            if(!peer)
+            {
+                peer = createPeerConnection(uid)
+                peer.ondatachannel = function(event)
+                {
+                    console.log("Created datachannel with peer "+uid)
+                    initDataChannel(peer, event.channel)
+                }
+                peer.onerror = function(event)
+                {
+                    if(onerror)
+                        onerror(uid, event)
+                }
+            }
+
+            // Process offer
+            peer.setRemoteDescription(new RTCSessionDescription({sdp:  sdp,
+                                                                 type: 'offer'}));
+
+            // Send answer
+            peer.createAnswer(function(answer)
+            {
+                handshake.sendAnswer(uid, answer.sdp)
+
+                peer.setLocalDescription(new RTCSessionDescription({sdp:  answer.sdp,
+                                                                    type: 'answer'}))
+            });
         }
     }
 
