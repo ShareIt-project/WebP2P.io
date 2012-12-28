@@ -253,6 +253,11 @@ function PeersManager(db, stun_server)
                         onerror(uid, peer, channel)
                 }
             }
+            peer.onerror = function()
+            {
+                if(onerror)
+                    onerror(uid, peer)
+            }
 
             // Send offer to new PeerConnection
             peer.createOffer(function(offer)
@@ -284,7 +289,7 @@ function PeersManager(db, stun_server)
      * @param {UUID} uid Identifier of the other peer
      * @returns {RTCPeerConnection} The newly created and initialized peer
      */
-    this.createPeer = function(uid)
+    this.createPeer = function(uid, onerror)
     {
         var peer = createPeerConnection(uid)
 	        peer.ondatachannel = function(event)
@@ -292,6 +297,11 @@ function PeersManager(db, stun_server)
                 console.log("createPeer")
 	            initDataChannel(peer, event.channel)
 	        }
+            peer.onerror = function()
+            {
+                if(onerror)
+                    onerror(uid, peer)
+            }
 
         return peer
     }
