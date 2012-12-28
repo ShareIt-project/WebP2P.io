@@ -15,11 +15,14 @@ function Handshake_PubNub(configuration)
             // Receive messages
             callback: function(message)
             {
+                var uid  = message[0]
                 var dest = message[1]
 
-                if(!dest || dest == configuration.uuid)
+                // Only launch callback if message is not from ours
+                // and it's a broadcast or send directly to us
+                if( uid  != configuration.uuid
+                &&(!dest || dest == configuration.uuid))
                 {
-                    var uid  = message[0]
                     var data = message[2]
 
                     if(self.onmessage)
