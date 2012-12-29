@@ -1,3 +1,5 @@
+webp2p.require("https://raw.github.com/piranna/SimpleSignaling/master/simpleSignaling.js")
+
 /**
  * Handshake channel connector for SimpleSignaling
  * @param {Object} configuration Configuration object

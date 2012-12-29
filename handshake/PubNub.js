@@ -1,3 +1,5 @@
+webp2p.require("https://raw.github.com/pubnub/pubnub-api/master/javascript/3.3.1/pubnub-3.3.1.js")
+
 /**
  * Handshake channel connector for PubNub
  * @param {Object} configuration Configuration object
