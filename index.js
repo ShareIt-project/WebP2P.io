@@ -12,36 +12,16 @@ var webp2p =
     document.write('<script type="text/javascript" src="'+libraryName+'"></script>');
   },
 
-  load: function()
+  load: function(regex, basepath, includes)
   {
-    var includes =
-    ['bitmap',
-     'db',
-     'peersManager',
-
-     'hasher/index',
-
-     'polyfills/FileWriter',
-     'polyfills/IndexedDB-javascript',
-
-     'handshake/index',
-     'handshake/PubNub',
-     'handshake/simpleSignaling',
-
-     'transport/index',
-     'transport/host',
-     'transport/peer'
-     ];
-
     var scripts = document.getElementsByTagName("script");
     var path = './', i;
     for(i=0; i<scripts.length; i++)
     {
       var src = scripts.item(i).src
-      var regex = /webp2p\/index\.js$/
       if(src && src.match(regex))
       {
-        path = src.replace(regex,'webp2p/');
+        path = src.replace(regex,basepath);
         break;
       }
     }
@@ -59,4 +39,21 @@ var webp2p =
   }
 };
 
-webp2p.load();
+webp2p.load(/webp2p\/index\.js$/, 'webp2p/',
+            ['bitmap',
+             'db',
+             'peersManager',
+
+             'hasher/index',
+
+             'polyfills/FileWriter',
+             'polyfills/IndexedDB-javascript',
+
+             'handshake/index',
+             'handshake/PubNub',
+             'handshake/simpleSignaling',
+
+             'transport/index',
+             'transport/host',
+             'transport/peer'
+             ]);
