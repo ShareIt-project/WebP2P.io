@@ -67,6 +67,11 @@ function HandshakeManager(json_uri)
                 handshake = new Handshake_SimpleSignaling(conf)
                 break;
 
+            case 'xRTML':
+                conf.id = conf.id || UUIDv4()
+                handshake = new Handshake_PubNub(conf)
+                break;
+
             default:
                 onerror("Invalidad handshake server type '"+type+"'")
                 return
