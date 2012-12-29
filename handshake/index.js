@@ -22,6 +22,9 @@ function HandshakeManager(json_uri)
 
     var handshake = null
 
+    var max_connections
+    var connections
+
     /**
      * UUID generator
      */
@@ -77,10 +80,6 @@ function HandshakeManager(json_uri)
                 return
         }
 
-        // Count the maximum number of pending connections allowed to be done
-        // with this handshake server (undefined == unlimited)
-        self.pending_synapses = conf.max_synapses
-
         handshake.onopen = function(uid)
         {
             handshake.onmessage = function(uid, data)
@@ -109,12 +108,19 @@ function HandshakeManager(json_uri)
         }
         handshake.onclose = function()
         {
-            delete self.pending_synapses
+            max_connections = undefined
+            connections = undefined
 
+            // Go to the next handshake server
             configuration.splice(index, 1)
             getRandomHandshake(configuration)
         }
         handshake.onerror = onerror
+
+        // Count the maximum number of pending connections allowed to be done
+        // with this handshake server (undefined == unlimited)
+        max_connections = conf.max_connections / 2
+        connections = 0
     }
 
     var http_request = new XMLHttpRequest();
@@ -122,7 +128,10 @@ function HandshakeManager(json_uri)
         http_request.onload = function()
         {
             if(this.status == 200)
-                getRandomHandshake(JSON.parse(http_request.response))
+            {
+                var configuration = JSON.parse(http_request.response)
+                getRandomHandshake(configuration)
+            }
 
             else if(self.onerror)
                 self.onerror()
@@ -161,9 +170,14 @@ function HandshakeManager(json_uri)
             console.warn("Handshake channel is not available");
     }
 
-    this.close = function()
+    /**
+     * Close the connection with the handshake server (if any)
+     */
+    this.addConnection = function()
     {
-        if(handshake)
-            handshake.close();
+        connections++
+
+        if(connections == max_connections)
+           handshake.close()
     }
 }
