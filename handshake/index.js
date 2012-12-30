@@ -1,4 +1,17 @@
 /**
+ * Remove leading 'falsy' items (null, undefined, '0', {}...) from an array
+ * @param {Array} array {Array} where to remove the leading 'falsy' items
+ * @returns {Array} The cleaned {Array}
+ */
+function removeLeadingFalsy(array)
+{
+    var end = array.length
+    while(!array[end-1])
+        end--
+    return array.slice(0, end)
+}
+
+/**
  * Manage the handshake channel using several servers
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration
@@ -33,6 +46,15 @@ function HandshakeManager(json_uri)
         var type = configuration[index][0]
         var conf = configuration[index][1]
 
+        function onerror(error)
+        {
+            console.error(error)
+
+            // Try to get an alternative handshake channel
+            configuration.splice(index, 1)
+            getRandomHandshake(configuration)
+        }
+
         switch(type)
         {
             case 'PubNub':
@@ -45,44 +67,49 @@ function HandshakeManager(json_uri)
                 handshake = new Handshake_SimpleSignaling(conf)
                 break;
 
-            case 'SIP':
-                conf.uri = conf.uri || UUIDv4()+'@'+conf.outbound_proxy_set
-                handshake = new Handshake_SIP(conf)
-                break;
-
-            case 'XMPP':
-                conf.username = conf.username || UUIDv4()
-                handshake = new Handshake_XMPP(conf)
+            default:
+                onerror("Invalidad handshake server type '"+type+"'")
+                return
         }
+
+        // Count the maximum number of pending connections allowed to be done
+        // with this handshake server (undefined == unlimited)
+        self.pending_synapses = conf.max_synapses
 
         handshake.onopen = function(uid)
         {
             handshake.onmessage = function(uid, data)
             {
-                switch(data[0])
-                {
-                    case 'offer':
-                        if(self.onoffer)
-                            self.onoffer(uid, data[1])
-                        break
+                if(data)
+                    switch(data[0])
+                    {
+                        case 'offer':
+                            if(self.onoffer)
+                                self.onoffer(uid, data[1])
+                            break
 
-                    case 'answer':
-                        if(self.onanswer)
-                            self.onanswer(uid, data[1])
-                }
+                        case 'answer':
+                            if(self.onanswer)
+                                self.onanswer(uid, data[1])
+                    }
+                else if(self.onsynapse)
+                    self.onsynapse(uid)
             }
+
+            // Notify our presence to the other peers on the handshake server
+            handshake.send()
 
             if(self.onopen)
                self.onopen(uid)
         }
-        handshake.onerror = function(error)
+        handshake.onclose = function()
         {
-            console.error(error)
+            delete self.pending_synapses
 
-            // Try to get an alternative handshake channel
             configuration.splice(index, 1)
             getRandomHandshake(configuration)
         }
+        handshake.onerror = onerror
     }
 
     var http_request = new XMLHttpRequest();
@@ -127,5 +154,11 @@ function HandshakeManager(json_uri)
             handshake.send(uid, ["answer", sdp]);
         else
             console.warn("Handshake channel is not available");
+    }
+
+    this.close = function()
+    {
+        if(handshake)
+            handshake.close();
     }
 }
