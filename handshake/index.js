@@ -159,7 +159,7 @@ function HandshakeManager(json_uri)
     /**
      * Return the handshake server instance we are connected
      */
-    this.handshake()
+    this.handshake = function()
     {
         return handshake
     }

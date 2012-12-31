@@ -274,7 +274,7 @@ function PeersManager(db, stun_server)
         /**
          * Check if we are connected to a handshake server
          */
-        this.handshakeReady()
+        this.handshakeReady = function()
         {
             return handshake.handshake()
         }
