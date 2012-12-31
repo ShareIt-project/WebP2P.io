@@ -156,6 +156,14 @@ function HandshakeManager(json_uri)
             console.warn("Handshake channel is not available");
     }
 
+    /**
+     * Return the handshake server instance we are connected
+     */
+    this.handshake()
+    {
+        return handshake
+    }
+
     this.close = function()
     {
         if(handshake)

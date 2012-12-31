@@ -272,6 +272,14 @@ function PeersManager(db, stun_server)
     this.setHandshake = function(handshake)
     {
         /**
+         * Check if we are connected to a handshake server
+         */
+        this.handshakeReady()
+        {
+            return handshake.handshake()
+        }
+
+        /**
          * Connects to another peer based on its UID. If we are already connected,
          * it does nothing.
          * @param {UUID} uid Identifier of the other peer to be connected
