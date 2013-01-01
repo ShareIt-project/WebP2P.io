@@ -97,29 +97,8 @@ function PeersManager(db, stun_server)
 
     this.transfer_end = function(fileentry)
     {
-        /**
-         * Save the downloaded file to the hard disk
-         * @param {Fileentry} fileentry {Fileentry} to be saved
-         */
-        function _savetodisk(fileentry)
-        {
-            // Auto-save downloaded file
-            var save = document.createElement("A");
-                save.href = window.URL.createObjectURL(fileentry.blob)
-                save.target = "_blank"          // This can give problems...
-                save.download = fileentry.name  // This force to download with a filename instead of navigate
-
-            save.click()
-
-            // Hack to remove the ObjectURL after it have been saved and not before
-            setTimeout(function()
-            {
-                window.URL.revokeObjectURL(save.href)
-            }, 1000)
-        }
-
         // Auto-save downloaded file
-        _savetodisk(fileentry)
+        savetodisk(fileentry.blob, fileentry.name)
 
         // Notify about transfer end
         self.dispatchEvent({type: "transfer.end", data: [fileentry]})

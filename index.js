@@ -16,8 +16,10 @@ var webp2p =
   {
     var includes =
     ['bitmap',
+     'cacheBackup',
      'db',
      'peersManager',
+     'utils',
 
      'hasher/index',
 
