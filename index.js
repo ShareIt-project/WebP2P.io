@@ -23,6 +23,11 @@ var webp2p =
 
      'hasher/index',
 
+     'lib/zip.js/deflate',
+     'lib/zip.js/inflate',
+     'lib/zip.js/zip',
+     'lib/zip.js/zip-fs',
+
      'polyfills/FileWriter',
      'polyfills/IndexedDB-javascript',
 
