@@ -43,8 +43,14 @@ webp2p.load(/webp2p\/index\.js$/, 'webp2p/',
             ['bitmap',
              'db',
              'peersManager',
+             'utils',
 
              'hasher/index',
+
+             'lib/zip.js/deflate',
+             'lib/zip.js/inflate',
+             'lib/zip.js/zip',
+             'lib/zip.js/zip-fs',
 
              'polyfills/FileWriter',
              'polyfills/IndexedDB-javascript',

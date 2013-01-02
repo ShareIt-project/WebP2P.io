@@ -22,6 +22,24 @@ function Transport_Host_init(transport, db)
 
     // filelist
 
+    function generateFileObject(fileentry)
+    {
+        var blob = fileentry.file || fileentry.blob
+        var path = ""
+        if(fileentry.sharedpoint)
+        {
+            path += fileentry.sharedpoint.name
+            if(fileentry.path != "")
+                path += '/'+fileentry.path
+        }
+
+        return {'hash': fileentry.hash,
+                'path': path,
+                'name': blob.name || fileentry.name,
+                'size': blob.size,
+                'type': blob.type}
+    }
+
     /**
      * Addapt and send to the other peer our list of shared files
      * @param {Array} fileslist Our list of {Fileentry}s
@@ -31,22 +49,7 @@ function Transport_Host_init(transport, db)
         var files_send = []
 
         for(var i = 0, fileentry; fileentry = fileslist[i]; i++)
-        {
-            var blob = fileentry.file || fileentry.blob
-            var path = ""
-            if(fileentry.sharedpoint)
-            {
-                path += fileentry.sharedpoint.name
-                if(fileentry.path != "")
-                    path += '/'+fileentry.path
-            }
-
-            files_send.push({'hash': fileentry.hash,
-                             'path': path,
-                             'name': blob.name || fileentry.name,
-                             'size': blob.size,
-                             'type': blob.type});
-        }
+            files_send.push(generateFileObject(fileentry));
 
         transport.emit('fileslist.send', files_send);
     }
@@ -57,20 +60,7 @@ function Transport_Host_init(transport, db)
      */
     transport._send_file_added = function(fileentry)
     {
-        var blob = fileentry.file || fileentry.blob
-        var path = ""
-            if(fileentry.sharedpoint)
-            {
-                path += fileentry.sharedpoint.name
-                if(fileentry.path != "")
-                    path += '/'+fileentry.path
-            }
-
-        transport.emit('fileslist.added', {'hash': fileentry.hash,
-                                           'path': path,
-                                           'name': blob.name || fileentry.name,
-                                           'size': blob.size,
-                                           'type': blob.type});
+        transport.emit('fileslist.added', generateFileObject(fileentry));
     }
 
     /**
