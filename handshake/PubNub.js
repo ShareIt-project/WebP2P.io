@@ -4,6 +4,9 @@
  */
 function Handshake_PubNub(configuration)
 {
+    Transport_init(this)
+    Transport_Handshake_init(this)
+
     var self = this
 
     // Connect a handshake channel to the PubNub server
@@ -15,19 +18,20 @@ function Handshake_PubNub(configuration)
             // Receive messages
             callback: function(message)
             {
-                var uid  = message[0]
-                var dest = message[1]
+                self.onmessage(message)
 
-                // Only launch callback if message is not from ours
-                // and it's a broadcast or send directly to us
-                if( uid  != configuration.uuid
-                &&(!dest || dest == configuration.uuid))
-                {
-                    var data = message[2]
-
-                    if(self.onmessage)
-                        self.onmessage(uid, data)
-                }
+//                var uid  = message[0]
+//                var dest = message[1]
+//
+//                // Only launch callback if message is not from ours
+//                // and it's a broadcast or send directly to us
+//                if( uid  != configuration.uuid
+//                &&(!dest || dest == configuration.uuid))
+//                {
+//                    var data = message[2]
+//
+//                    self.onmessage(uid, data)
+//                }
             },
 
             connect: function()
@@ -43,6 +47,11 @@ function Handshake_PubNub(configuration)
 
                         message: removeLeadingFalsy(message)
                     })
+                }
+
+                self.presence = function()
+                {
+                    self.emit('presence', configuration.uuid)
                 }
 
                 // Set handshake as open

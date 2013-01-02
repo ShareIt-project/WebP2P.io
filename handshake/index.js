@@ -78,26 +78,13 @@ function HandshakeManager(json_uri)
 
         handshake.onopen = function(uid)
         {
-            handshake.onmessage = function(uid, data)
+            handshake.addEventListener('presence', function(event)
             {
-                if(data)
-                    switch(data[0])
-                    {
-                        case 'offer':
-                            if(self.onoffer)
-                                self.onoffer(uid, data[1])
-                            break
-
-                        case 'answer':
-                            if(self.onanswer)
-                                self.onanswer(uid, data[1])
-                    }
-                else if(self.onsynapse)
-                    self.onsynapse(uid)
-            }
+                
+            })
 
             // Notify our presence to the other peers on the handshake server
-            handshake.send()
+            handshake.presence()
 
             if(self.onopen)
                self.onopen(uid)
