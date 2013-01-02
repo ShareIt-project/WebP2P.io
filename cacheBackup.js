@@ -1,11 +1,13 @@
 function CacheBackup(db)
 {
+    zip.workerScriptsPath = "../../js/webp2p/lib/zip.js/";
+
     this.export = function(onprogress, onerror)
     {
         db.files_getAll(null, function(fileslist)
         {
             // Create a new filesystem inside the Zip file
-            var fs = zip.fs.FS()
+            var fs = new zip.fs.FS()
 
             // Create folder to store the blobs
             var blobs = fs.root.addDirectory('blobs')
@@ -58,7 +60,7 @@ function CacheBackup(db)
 
     this.import = function(blob, onerror)
     {
-        var fs = zip.fs.FS()
+        var fs = new zip.fs.FS()
             fs.importBlob(blob, function()
             {
                 // Check blobs metadata
@@ -136,7 +138,7 @@ function CacheBackup(db)
 
                                     db.files_add(fileentry)
                                 })
-                        }
+                        })
                 })
             },
             onerror)
