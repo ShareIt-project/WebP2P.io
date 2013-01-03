@@ -70,7 +70,7 @@ function HandshakeManager(json_uri, peersManager)
                 return
         }
 
-        channel.onopen = function(uid)
+        channel.onopen = function()
         {
             Transport_init(channel)
             Transport_Routing_init(channel, peersManager)
@@ -82,7 +82,7 @@ function HandshakeManager(json_uri, peersManager)
 
             channel.presence = function()
             {
-                channel.emit('presence', configuration.uuid)
+                channel.emit('presence', peersManager.uid)
             }
 
             channel.addEventListener('presence', function(event)
@@ -90,7 +90,7 @@ function HandshakeManager(json_uri, peersManager)
                 var uid = event.data[0]
 
                 // Don't try to connect to ourselves
-                if(uid != configuration.uuid)
+                if(uid != peersManager.uid)
                 {
                     // Check if we should ignore this peer to increase entropy
                     // in the network mesh
@@ -118,7 +118,7 @@ function HandshakeManager(json_uri, peersManager)
             channel.presence()
 
             if(self.onopen)
-               self.onopen(uid)
+               self.onopen()
         }
         channel.onclose = function()
         {

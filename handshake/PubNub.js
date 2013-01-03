@@ -33,7 +33,7 @@ function Handshake_PubNub(configuration)
 
                 // Set handshake as open
                 if(self.onopen)
-                   self.onopen(configuration.uuid)
+                   self.onopen()
             },
 
             error: function(error)
