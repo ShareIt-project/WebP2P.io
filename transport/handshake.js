@@ -38,15 +38,7 @@ function Transport_Handshake_init(transport, peersManager)
 
         // Offer is not for us, route it over the other connected peers
         else
-        {
-            route.push(transport.uid)
-
-            var peer = peersManager.peers[dest]
-            if(peer)
-                peer.sendOffer(dest, sdp, route)
-            else
-                peersManager.sendOffer(dest, sdp, route)
-        }
+            peersManager.sendOffer(dest, sdp, route, transport.uid)
     })
 
     transport.addEventListener('answer', function(event)
@@ -65,25 +57,6 @@ function Transport_Handshake_init(transport, peersManager)
 
         // Answer is not for us, search peers on route that we could send it
         else
-        {
-            var routed = false
-
-            // Run over all the route peers looking for possible "shortcuts"
-            for(var i=0, uid; uid=route[i]; i++)
-            {
-                var peer = peersManager.peers[uid]
-                if(peer)
-                {
-                    peer.sendAnswer(orig, sdp, route.slice(0, i))
-
-                    routed = true
-                }
-            }
-
-//            // Answer couldn't be routed (maybe a peer was disconnected?),
-//            // try to find the initiator peers
-//            if(!routed)
-//                peersManager.
-        }
+            peersManager.sendAnswer(orig, sdp, route, transport.uid)
     })
 }

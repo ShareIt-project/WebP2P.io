@@ -319,6 +319,66 @@ function PeersManager(db, stun_server)
         }
     }
 
+    this.sendOffer = function(dest, sdp, route, transport_uid)
+    {
+        route.push(transport_uid)
+
+        // Search the peer between the list of currently connected peers
+        var peer = peers[dest]
+
+        // Requested peer is one of the connected, notify directly to it
+        if(peer)
+            peer._channel.sendOffer(dest, sdp, route)
+
+        // Requested peer is not one of the directly connected, broadcast it
+        else
+            for(var uid in peers)
+            {
+                // Ignore peers already on the route path
+                var routed = false
+                for(var i=0, peer; peer=route[i]; i++)
+                    if(peer == uid)
+                    {
+                        routed = true
+                        break
+                    }
+
+                // Notify the offer request to the other connected peers
+                if(!routed)
+                    peers[uid]._channel.sendOffer(dest, sdp, route)
+            }
+    }
+
+    this.sendAnswer = function(orig, sdp, route, transport_uid)
+    {
+        var routed = false
+
+        // Run over all the route peers looking for possible "shortcuts"
+        for(var i=0, uid; uid=route[i]; i++)
+        {
+            var peer = peersManager.peers[uid]
+            if(peer)
+            {
+                peer._channel.sendAnswer(orig, sdp, route.slice(0, i-1))
+
+                routed = true
+            }
+        }
+
+      // Answer couldn't be routed (maybe a peer was disconnected?),
+      // try to find the connection request initiator peer by broadcast
+      if(!routed)
+          for(var uid in peers)
+          {
+              // Ignore the transport where we got the notification
+              if(uid == transport_uid)
+                  continue
+
+              // Notify the offer request to the other connected peers
+              peers[uid]._channel.sendOffer(dest, sdp, route)
+          }
+    }
+
     /**
      * Get the number of peers currently connected with this node
      * @returns {Number} The number of peers connected

@@ -16,11 +16,10 @@ function removeLeadingFalsy(array)
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration
  */
-function HandshakeManager(json_uri)
+function HandshakeManager(json_uri, peersManager)
 {
     var self = this
 
-    var handshake = null
 
     /**
      * UUID generator
@@ -55,16 +54,17 @@ function HandshakeManager(json_uri)
             getRandomHandshake(configuration)
         }
 
+        var channel
         switch(type)
         {
             case 'PubNub':
                 conf.uuid = conf.uuid || UUIDv4()
-                handshake = new Handshake_PubNub(conf)
+                channel = new Handshake_PubNub(conf)
                 break;
 
             case 'SimpleSignaling':
                 conf.uid = conf.uid || UUIDv4()
-                handshake = new Handshake_SimpleSignaling(conf)
+                channel = new Handshake_SimpleSignaling(conf)
                 break;
 
             default:
@@ -72,31 +72,62 @@ function HandshakeManager(json_uri)
                 return
         }
 
-        // Count the maximum number of pending connections allowed to be done
-        // with this handshake server (undefined == unlimited)
-        self.pending_synapses = conf.max_synapses
-
-        handshake.onopen = function(uid)
+        channel.onopen = function(uid)
         {
-            handshake.addEventListener('presence', function(event)
+            Transport_init(channel)
+            Transport_Handshake_init(channel, peersManager)
+
+            // Count the maximum number of pending connections allowed to be
+            // done with this handshake server (undefined == unlimited)
+            channel.connections = 0
+            channel.max_connections = conf.max_connections
+
+            channel.presence = function()
             {
-                
+                channel.emit('presence', configuration.uuid)
+            }
+
+            channel.addEventListener('presence', function(event)
+            {
+                var uid = event.data[0]
+
+                // Don't try to connect to ourselves
+                if(uid != configuration.uuid)
+                {
+                    // Check if we should ignore this peer to increase entropy
+                    // in the network mesh
+
+                    // Do the connection with the new peer
+                    peersManager.connectTo(uid, function()
+                    {
+                        // Increase the number of connections reached throught
+                        // this handshake server
+                        channel.connections++
+
+                        // Close connection with handshake server if we got its
+                        // quota of peers
+                        if(channel.connections == channel.max_connections)
+                           channel.close()
+                    },
+                    function(uid, peer, channel)
+                    {
+                        console.error(uid, peer, channel)
+                    })
+                }
             })
 
             // Notify our presence to the other peers on the handshake server
-            handshake.presence()
+            channel.presence()
 
             if(self.onopen)
                self.onopen(uid)
         }
-        handshake.onclose = function()
+        channel.onclose = function()
         {
-            delete self.pending_synapses
-
             configuration.splice(index, 1)
             getRandomHandshake(configuration)
         }
-        handshake.onerror = onerror
+        channel.onerror = onerror
     }
 
     var http_request = new XMLHttpRequest();
