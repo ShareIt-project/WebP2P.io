@@ -19,12 +19,8 @@ function removeLeadingFalsy(array)
 function HandshakeManager(json_uri, peersManager)
 {
     var self = this
+    var channels = {}
 
-
-    /**
-     * UUID generator
-     */
-    var UUIDv4 = function b(a){return a?(a^Math.random()*16>>a/4).toString(16):([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,b)}
 
     /**
      * Get a random handshake channel or test for the next one
@@ -58,13 +54,15 @@ function HandshakeManager(json_uri, peersManager)
         switch(type)
         {
             case 'PubNub':
-                conf.uuid = conf.uuid || UUIDv4()
-                channel = new Handshake_PubNub(conf)
+                conf.uuid = peersManager.uid
+                channels['PubNub'] = channel = new Handshake_PubNub(conf)
+                channel.uid = 'PubNub'
                 break;
 
             case 'SimpleSignaling':
-                conf.uid = conf.uid || UUIDv4()
-                channel = new Handshake_SimpleSignaling(conf)
+                conf.uid = peersManager.uid
+                channels['SimpleSignaling'] = channel = new Handshake_SimpleSignaling(conf)
+                channel.uid = 'SimpleSignaling'
                 break;
 
             default:
@@ -124,11 +122,25 @@ function HandshakeManager(json_uri, peersManager)
         }
         channel.onclose = function()
         {
+            delete channels[channel.uid]
+
+            // Notify the close on PeersManager
+
             configuration.splice(index, 1)
             getRandomHandshake(configuration)
         }
         channel.onerror = onerror
     }
+
+
+    /**
+     * Get the channels of all the connected peers and handshake servers
+     */
+    this.getChannels = function()
+    {
+        return channels
+    }
+
 
     var http_request = new XMLHttpRequest();
         http_request.open("GET", json_uri);
@@ -146,45 +158,4 @@ function HandshakeManager(json_uri, peersManager)
                 self.onerror()
         }
         http_request.send();
-
-
-    /**
-     * Send a RTCPeerConnection offer through the active handshake channel
-     * @param {UUID} uid Identifier of the other peer
-     * @param {String} sdp Content of the SDP object
-     */
-    this.sendOffer = function(uid, sdp)
-    {
-        if(handshake && handshake.send)
-            handshake.send(uid, ["offer", sdp]);
-        else
-            console.warn("Handshake channel is not available");
-    }
-
-    /**
-     * Send a RTCPeerConnection answer through the active handshake channel
-     * @param {UUID} uid Identifier of the other peer
-     * @param {String} sdp Content of the SDP object
-     */
-    this.sendAnswer = function(uid, sdp)
-    {
-        if(handshake)
-            handshake.send(uid, ["answer", sdp]);
-        else
-            console.warn("Handshake channel is not available");
-    }
-
-    /**
-     * Return the handshake server instance we are connected
-     */
-    this.handshake = function()
-    {
-        return handshake
-    }
-
-    this.close = function()
-    {
-        if(handshake)
-            handshake.close();
-    }
 }

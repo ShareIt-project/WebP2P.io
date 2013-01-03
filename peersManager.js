@@ -23,6 +23,13 @@ function PeersManager(db, stun_server)
 
 
     /**
+     * UUID generator
+     */
+    var UUIDv4 = function b(a){return a?(a^Math.random()*16>>a/4).toString(16):([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,b)}
+
+    this.uid = UUIDv4()
+
+    /**
      * Get the channel of one of the peers that have the file from its hash.
      * Since the hash and the tracker system are currently not implemented we'll
      * get just the channel of the peer where we got the file that we added
@@ -160,6 +167,7 @@ function PeersManager(db, stun_server)
         })
     }
 
+
     /**
      * Create a new RTCPeerConnection
      * @param {UUID} id Identifier of the other peer so later can be accessed
@@ -177,20 +185,24 @@ function PeersManager(db, stun_server)
      * @param {RTCPeerConnection} pc PeerConnection owner of the DataChannel
      * @param {RTCDataChannel} channel Communication channel with the other peer
      */
-	function initDataChannel(pc, channel)
+	function initDataChannel(pc, channel, uid)
 	{
+        channel.uid = uid
+
         pc._channel = channel
 
         Transport_init(channel)
 
-        Transport_Peer_init(channel, db, self)
         Transport_Host_init(channel, db)
+        Transport_Peer_init(channel, db, self)
+        Transport_Routing_init(channel, self)
 
 		channel.onclose = function()
 		{
 			delete pc._channel
 		}
 	}
+
 
     /**
      * Process the offer to connect to a new peer
@@ -210,7 +222,7 @@ function PeersManager(db, stun_server)
             peer.ondatachannel = function(event)
             {
                 console.log("Created datachannel with peer "+uid)
-                initDataChannel(peer, event.channel)
+                initDataChannel(peer, event.channel, uid)
             }
             peer.onerror = function(event)
             {
@@ -251,14 +263,6 @@ function PeersManager(db, stun_server)
     this.setHandshakeManager = function(handshakeManager)
     {
         /**
-         * Check if we are connected to a handshake server
-         */
-        this.handshakeReady = function()
-        {
-            return handshakeManager.handshake()
-        }
-
-        /**
          * Connects to another peer based on its UID. If we are already connected,
          * it does nothing.
          * @param {UUID} uid Identifier of the other peer to be connected
@@ -273,12 +277,6 @@ function PeersManager(db, stun_server)
             // Peer is not connected, create a new channel
             if(!peer)
             {
-//                if(!handshakeManager)
-//                {
-//                    console.error("No handshake channel available")
-//                    return
-//                }
-
                 // Create PeerConnection
                 peer = createPeerConnection(uid);
                 peer.onopen = function()
@@ -286,7 +284,7 @@ function PeersManager(db, stun_server)
                     var channel = peer.createDataChannel('webp2p')
                     channel.onopen = function()
                     {
-                        initDataChannel(peer, channel)
+                        initDataChannel(peer, channel, uid)
 
                         if(onsuccess)
                             onsuccess(channel)
@@ -306,7 +304,13 @@ function PeersManager(db, stun_server)
                 // Send offer to new PeerConnection
                 peer.createOffer(function(offer)
                 {
-                    handshakeManager.sendOffer(uid, offer.sdp)
+                    var channels = peersManager.getChannels()
+
+                    for(var channel_id in channels)
+                    {
+                        // Notify the offer request to the other connected peers
+                        channels[channel_id].sendOffer(uid, offer.sdp)
+                    }
 
                     peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
                                                                        type: 'offer'}))
@@ -317,67 +321,28 @@ function PeersManager(db, stun_server)
             else if(onsuccess)
                 onsuccess(peer._channel)
         }
-    }
 
-    this.sendOffer = function(dest, sdp, route, transport_uid)
-    {
-        route.push(transport_uid)
-
-        // Search the peer between the list of currently connected peers
-        var peer = peers[dest]
-
-        // Requested peer is one of the connected, notify directly to it
-        if(peer)
-            peer._channel.sendOffer(dest, sdp, route)
-
-        // Requested peer is not one of the directly connected, broadcast it
-        else
-            for(var uid in peers)
-            {
-                // Ignore peers already on the route path
-                var routed = false
-                for(var i=0, peer; peer=route[i]; i++)
-                    if(peer == uid)
-                    {
-                        routed = true
-                        break
-                    }
-
-                // Notify the offer request to the other connected peers
-                if(!routed)
-                    peers[uid]._channel.sendOffer(dest, sdp, route)
-            }
-    }
-
-    this.sendAnswer = function(orig, sdp, route, transport_uid)
-    {
-        var routed = false
-
-        // Run over all the route peers looking for possible "shortcuts"
-        for(var i=0, uid; uid=route[i]; i++)
+        /**
+         * Get the channels of all the connected peers and handshake servers
+         */
+        this.getChannels = function()
         {
-            var peer = peersManager.peers[uid]
-            if(peer)
-            {
-                peer._channel.sendAnswer(orig, sdp, route.slice(0, i-1))
+            var channels = {}
 
-                routed = true
-            }
+            // Peers channels
+            for(var uid in peers)
+                channels[uid] = peers[uid]._channel
+
+            // Handshake servers channels
+            var handshakeChannels = handshakeManager.getChannels()
+            for(var uid in handshakeChannels)
+                if(handshakeChannels.hasOwnProperty(uid))
+                    channels[uid] = handshakeChannels[uid]
+
+            return channels
         }
-
-      // Answer couldn't be routed (maybe a peer was disconnected?),
-      // try to find the connection request initiator peer by broadcast
-      if(!routed)
-          for(var uid in peers)
-          {
-              // Ignore the transport where we got the notification
-              if(uid == transport_uid)
-                  continue
-
-              // Notify the offer request to the other connected peers
-              peers[uid]._channel.sendOffer(dest, sdp, route)
-          }
     }
+
 
     /**
      * Get the number of peers currently connected with this node
