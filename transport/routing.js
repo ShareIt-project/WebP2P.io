@@ -1,4 +1,4 @@
-function Transport_Handshake_init(transport, peersManager)
+function Transport_Routing_init(transport, peersManager)
 {
     transport.sendOffer = function(dest, sdp, route)
     {
@@ -51,7 +51,7 @@ function Transport_Handshake_init(transport, peersManager)
         if(route[0] == peersManager.uid)
             peersManager.onanswer(orig, sdp, function(uid)
             {
-                console.error("[handshake.answer] PeerConnection '" + uid +
+                console.error("[routing.answer] PeerConnection '" + uid +
                               "' not found");
             })
 

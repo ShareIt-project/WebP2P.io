@@ -75,7 +75,7 @@ function HandshakeManager(json_uri, peersManager)
         channel.onopen = function(uid)
         {
             Transport_init(channel)
-            Transport_Handshake_init(channel, peersManager)
+            Transport_Routing_init(channel, peersManager)
 
             // Count the maximum number of pending connections allowed to be
             // done with this handshake server (undefined == unlimited)

@@ -37,7 +37,9 @@ var webp2p =
 
      'transport/index',
      'transport/host',
-     'transport/peer'
+     'transport/peer',
+     'transport/routing',
+     'transport/search'
      ];
 
     var scripts = document.getElementsByTagName("script");
