@@ -248,14 +248,14 @@ function PeersManager(db, stun_server)
      * Set the {SandshakeManager} to be used
      * @param {SandshakeManager} newHandshake The new {HandshakeManager}
      */
-    this.setHandshake = function(handshake)
+    this.setHandshakeManager = function(handshakeManager)
     {
         /**
          * Check if we are connected to a handshake server
          */
         this.handshakeReady = function()
         {
-            return handshake.handshake()
+            return handshakeManager.handshake()
         }
 
         /**
@@ -273,7 +273,7 @@ function PeersManager(db, stun_server)
             // Peer is not connected, create a new channel
             if(!peer)
             {
-//                if(!handshake)
+//                if(!handshakeManager)
 //                {
 //                    console.error("No handshake channel available")
 //                    return
@@ -306,7 +306,7 @@ function PeersManager(db, stun_server)
                 // Send offer to new PeerConnection
                 peer.createOffer(function(offer)
                 {
-                    handshake.sendOffer(uid, offer.sdp)
+                    handshakeManager.sendOffer(uid, offer.sdp)
 
                     peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
                                                                        type: 'offer'}))
