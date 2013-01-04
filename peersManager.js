@@ -358,6 +358,13 @@ function PeersManager(db, stun_server)
     }
 
 
+    this.handshakeDisconnected = function()
+    {
+        if(!this.numPeers())
+            this.dispatchEvent({type: "error.noPeers"})
+    }
+
+
     /**
      * Get the number of peers currently connected with this node
      * @returns {Number} The number of peers connected
