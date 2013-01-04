@@ -196,6 +196,7 @@ function PeersManager(db, stun_server)
         Transport_Host_init(channel, db)
         Transport_Peer_init(channel, db, self)
         Transport_Routing_init(channel, self)
+        Transport_Search_init(channel, db, self)
 
 		channel.onclose = function()
 		{
