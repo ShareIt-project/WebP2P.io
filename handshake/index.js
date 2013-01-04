@@ -1,17 +1,4 @@
 /**
- * Remove leading 'falsy' items (null, undefined, '0', {}...) from an array
- * @param {Array} array {Array} where to remove the leading 'falsy' items
- * @returns {Array} The cleaned {Array}
- */
-function removeLeadingFalsy(array)
-{
-    var end = array.length
-    while(!array[end-1])
-        end--
-    return array.slice(0, end)
-}
-
-/**
  * Manage the handshake channel using several servers
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration
@@ -70,6 +57,8 @@ function HandshakeManager(json_uri, peersManager)
                 return
         }
 
+        channel.isPuSH = true
+
         channel.onopen = function()
         {
             Transport_init(channel)
@@ -92,8 +81,8 @@ function HandshakeManager(json_uri, peersManager)
                 // Don't try to connect to ourselves
                 if(uid != peersManager.uid)
                 {
-                    // Check if we should ignore this peer to increase entropy
-                    // in the network mesh
+                    // Check if we should ignore this new peer to increase
+                    // entropy in the network mesh
 
                     // Do the connection with the new peer
                     peersManager.connectTo(uid, function()
@@ -110,7 +99,8 @@ function HandshakeManager(json_uri, peersManager)
                     function(uid, peer, channel)
                     {
                         console.error(uid, peer, channel)
-                    })
+                    },
+                    channel)
                 }
             })
 

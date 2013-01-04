@@ -4,9 +4,17 @@ function Transport_Routing_init(transport, peersManager)
      * Send a RTCPeerConnection offer through the active handshake channel
      * @param {UUID} uid Identifier of the other peer
      * @param {String} sdp Content of the SDP object
+     * @param {Array} [route] Route path where this offer have circulated
      */
     transport.sendOffer = function(dest, sdp, route)
     {
+        if(route == undefined)
+            route = []
+
+        if(transport.isPuSH)
+            route.push(peersManager.uid)
+
+        console.debug('offer', dest, sdp, route)
         transport.emit('offer', dest, sdp, route);
     }
 
@@ -14,9 +22,11 @@ function Transport_Routing_init(transport, peersManager)
      * Send a RTCPeerConnection answer through the active handshake channel
      * @param {UUID} uid Identifier of the other peer
      * @param {String} sdp Content of the SDP object
+     * @param {Array} [route] Route path where this answer have circulated
      */
     transport.sendAnswer = function(orig, sdp, route)
     {
+        console.debug('answer', orig, sdp, route)
         transport.emit('answer', orig, sdp, route);
     }
 
@@ -24,7 +34,7 @@ function Transport_Routing_init(transport, peersManager)
     {
         var dest  = event.data[0]
         var sdp   = event.data[1]
-        var route = Array.prototype.slice.call(event.data, 2)
+        var route = event.data[2]
 
         // Offer is for us
         if(dest == peersManager.uid)
@@ -49,6 +59,12 @@ function Transport_Routing_init(transport, peersManager)
         // Offer is not for us, route it over the other connected peers
         else
         {
+            // Check if a message have been already routed by this peer
+            for(var i=0, uid; uid=route[i]; i++)
+                if(uid == peersManager.uid)
+                    return
+
+            // Add the transport where it was received to the route path
             route.push(transport.uid)
 
             // Search the peer between the list of currently connected peers
@@ -83,7 +99,7 @@ function Transport_Routing_init(transport, peersManager)
     {
         var orig  = event.data[0]
         var sdp   = event.data[1]
-        var route = Array.prototype.slice.call(event.data, 2)
+        var route = event.data[2]
 
         // Answer is for us
         if(route[0] == peersManager.uid)

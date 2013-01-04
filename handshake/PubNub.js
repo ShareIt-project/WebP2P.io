@@ -16,7 +16,7 @@ function Handshake_PubNub(configuration)
             callback: function(message)
             {
                 if(self.onmessage)
-                   self.onmessage(message)
+                   self.onmessage({data: message})
             },
 
             connect: function()

@@ -268,8 +268,10 @@ function PeersManager(db, stun_server)
          * @param {UUID} uid Identifier of the other peer to be connected
          * @param {Function} onsuccess Callback called when the connection was done
          * @param {Function} onerror Callback called when connection was not possible
+         * @param {MessageChannel} incomingChannel Optional channel where to
+         * send the offer. If not defined send it to all connected peers
          */
-        this.connectTo = function(uid, onsuccess, onerror)
+        this.connectTo = function(uid, onsuccess, onerror, incomingChannel)
         {
             // Search the peer between the list of currently connected peers
             var peer = peers[uid]
@@ -304,16 +306,23 @@ function PeersManager(db, stun_server)
                 // Send offer to new PeerConnection
                 peer.createOffer(function(offer)
                 {
-                    var channels = peersManager.getChannels()
+                    // Send the offer only for the incoming channel
+                    if(incomingChannel)
+                        incomingChannel.sendOffer(uid, offer.sdp)
 
-                    for(var channel_id in channels)
+                    // Send the offer throught all the peers
+                    else
                     {
-                        // Notify the offer request to the other connected peers
-                        channels[channel_id].sendOffer(uid, offer.sdp)
+                        var channels = self.getChannels()
+
+                        // Send the connection offer to the other connected peers
+                        for(var channel_id in channels)
+                            channels[channel_id].sendOffer(uid, offer.sdp)
                     }
 
+                    // Set the peer local description
                     peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
-                                                                       type: 'offer'}))
+                                                                        type: 'offer'}))
                 });
             }
 
@@ -331,7 +340,11 @@ function PeersManager(db, stun_server)
 
             // Peers channels
             for(var uid in peers)
-                channels[uid] = peers[uid]._channel
+            {
+                var channel = peers[uid]._channel
+                if(channel)
+                    channels[uid] = channel
+            }
 
             // Handshake servers channels
             var handshakeChannels = handshakeManager.getChannels()
