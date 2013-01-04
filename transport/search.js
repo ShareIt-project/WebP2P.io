@@ -7,7 +7,7 @@ function Transport_Search_init(transport, db, peersManager)
 
     transport.search_hash = function(hashes)
     {
-        if(transport.isPuSH)
+        if(transport.isPubsub)
             route.push(peersManager.uid)
 
         console.debug('search.hash', hashes, route)

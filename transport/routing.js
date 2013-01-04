@@ -11,7 +11,7 @@ function Transport_Routing_init(transport, peersManager)
         if(route == undefined)
             route = []
 
-        if(transport.isPuSH)
+        if(transport.isPubsub)
             route.push(peersManager.uid)
 
         console.debug('offer', dest, sdp, route)
@@ -26,7 +26,7 @@ function Transport_Routing_init(transport, peersManager)
      */
     transport.sendAnswer = function(orig, sdp, route)
     {
-        if(transport.isPuSH)
+        if(transport.isPubsub)
             // Run over all the route peers looking for possible "shortcuts"
             for(var i=0, uid; uid=route[i]; i++)
                 if(uid == transport.uid)
