@@ -26,6 +26,15 @@ function Transport_Routing_init(transport, peersManager)
      */
     transport.sendAnswer = function(orig, sdp, route)
     {
+        if(transport.isPuSH)
+            // Run over all the route peers looking for possible "shortcuts"
+            for(var i=0, uid; uid=route[i]; i++)
+                if(uid == transport.uid)
+                {
+                    route.length = i
+                    break
+                }
+
         console.debug('answer', orig, sdp, route)
         transport.emit('answer', orig, sdp, route);
     }
