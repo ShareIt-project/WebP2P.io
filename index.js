@@ -61,5 +61,7 @@ webp2p.load(/webp2p\/index\.js$/, 'webp2p/',
 
              'transport/index',
              'transport/host',
-             'transport/peer'
+             'transport/peer',
+             'transport/routing',
+             'transport/search'
              ]);

@@ -54,13 +54,17 @@ function Transport_Host_init(transport, db)
         transport.emit('fileslist.send', files_send);
     }
 
+
+    var send_updates = false
+
     /**
      * Notify to the other peer that we have added a new file
      * @param {Fileentry} fileentry {Fileentry} of the new added file
      */
     transport._send_file_added = function(fileentry)
     {
-        transport.emit('fileslist.added', generateFileObject(fileentry));
+        if(send_updates)
+            transport.emit('fileslist.added', generateFileObject(fileentry));
     }
 
     /**
@@ -69,15 +73,30 @@ function Transport_Host_init(transport, db)
      */
     transport._send_file_deleted = function(fileentry)
     {
-        transport.emit('fileslist.deleted', fileentry.hash);
+        if(send_updates)
+            transport.emit('fileslist.deleted', fileentry.hash);
     }
+
+    var SEND_UPDATES = 1
 
     /**
      * Catch request for our files list
      */
     transport.addEventListener('fileslist.query', function(event)
     {
+        var flags = event.data[0]
+
         db.files_getAll(null, transport._send_files_list)
+
+        send_updates = flags & SEND_UPDATES
+    })
+
+    /**
+     * Catch request to disable sending our files list updates
+     */
+    transport.addEventListener('fileslist.disableUpdates', function(event)
+    {
+        send_updates = false
     })
 
     // transfer
