@@ -88,9 +88,9 @@ function Transport_Peer_init(transport, db, peersManager)
     /**
      * Request the other peer fileslist
      */
-    transport.fileslist_query = function()
+    transport.fileslist_query = function(flags)
     {
-        transport.emit('fileslist.query');
+        transport.emit('fileslist.query', flags);
     }
 
 
