@@ -45,6 +45,11 @@ function Transport_Routing_init(transport, peersManager)
         var sdp   = event.data[1]
         var route = event.data[2]
 
+        // If a message have been already routed by this peer, ignore it
+        for(var i=0, uid; uid=route[i]; i++)
+            if(uid == peersManager.uid)
+                return
+
         // Offer is for us
         if(dest == peersManager.uid)
         {
@@ -68,11 +73,6 @@ function Transport_Routing_init(transport, peersManager)
         // Offer is not for us, route it over the other connected peers
         else
         {
-            // Check if a message have been already routed by this peer
-            for(var i=0, uid; uid=route[i]; i++)
-                if(uid == peersManager.uid)
-                    return
-
             // Add the transport where it was received to the route path
             route.push(transport.uid)
 
@@ -109,6 +109,10 @@ function Transport_Routing_init(transport, peersManager)
         var orig  = event.data[0]
         var sdp   = event.data[1]
         var route = event.data[2]
+
+        // Answer is from ourselves, ignore it
+        if(orig == peersManager.uid)
+            return
 
         // Answer is for us
         if(route[0] == peersManager.uid)
