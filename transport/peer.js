@@ -93,6 +93,14 @@ function Transport_Peer_init(transport, db, peersManager)
         transport.emit('fileslist.query', flags);
     }
 
+    /**
+     * Request to the other peer don't send fileslist updates
+     */
+    transport.fileslist_disableUpdates = function()
+    {
+        transport.emit('fileslist.disableUpdates');
+    }
+
 
     // fileslist updates
 

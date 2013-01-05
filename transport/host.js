@@ -91,6 +91,14 @@ function Transport_Host_init(transport, db)
         send_updates = flags & SEND_UPDATES
     })
 
+    /**
+     * Catch request to disable sending our files list updates
+     */
+    transport.addEventListener('fileslist.disableUpdates', function(event)
+    {
+        send_updates = false
+    })
+
     // transfer
 
     /**
