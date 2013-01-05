@@ -201,6 +201,8 @@ function PeersManager(db, stun_server)
 		channel.onclose = function()
 		{
 			delete pc._channel
+
+			pc.close()
 		}
 	}
 
