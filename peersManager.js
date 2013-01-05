@@ -176,8 +176,14 @@ function PeersManager(db, stun_server)
     function createPeerConnection(id)
 	{
 	    var pc = peers[id] = new RTCPeerConnection({"iceServers": [{"url": 'stun:'+stun_server}]});
+	        pc.onstatechange = function(event)
+	        {
+	            // Remove the peer from the list of peers when gets closed
+	            if(event.target.readyState == "closed")
+	                delete peers[id]
+	        }
 
-		return pc
+	    return pc
 	}
 
     /**
