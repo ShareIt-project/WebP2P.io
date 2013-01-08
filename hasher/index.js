@@ -47,13 +47,37 @@ function Hasher(db, policy)
         // Remove hashed file from the queue
         queue.splice(queue.indexOf(fileentry.file))
 
-        // Add file to the database
-        db.files_put(fileentry, function()
+        /**
+         * Add file to the database
+         */
+        function addFile(fileentry)
         {
-            // Notify that the file have been hashed
-            if(self.onhashed)
-                self.onhashed(fileentry)
-        })
+            db.files_put(fileentry, function()
+            {
+                // Notify that the file have been hashed
+                if(self.onhashed)
+                    self.onhashed(fileentry)
+            })
+        }
+
+        // Dropbox plugin start
+        if(dropboxClient
+        && fileentry.sharedpoint.name == "Dropbox")
+        {
+            var options = {download: true, downloadHack: true}
+
+            dropboxClient.makeUrl(fileentry.path+'/'+name, options,
+            function(error, publicUrl)
+            {
+                if(publicUrl)
+                    fileentry.dropbox = publicUrl.url
+
+                addFile(fileentry)
+            })
+        }
+        else
+        // Dropbox plugin end
+            addFile(fileentry)
     }
 
     var worker = new Worker('../../js/webp2p/hasher/worker.js');
