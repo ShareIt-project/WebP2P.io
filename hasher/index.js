@@ -154,6 +154,12 @@ function Hasher(db, policy)
       }
     }
 
+    // Dropbox plugin start
+    dropboxClient = new Dropbox.Client({key: "iCoCBMCCU3A=|YyQQmo4XMmB5hH9JOrXLCcIH6ike807VOEwpHsdcWA==",
+                                        sandbox: true});
+    dropboxClient.authDriver(new Dropbox.Drivers.Popup({receiverFile: "oauth_receiver.html"}));
+    // Dropbox plugin end
+
     /**
      * Refresh the {Sharedpoint}s and {Fileentry}s on the database
      */
