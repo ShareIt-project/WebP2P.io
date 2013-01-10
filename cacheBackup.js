@@ -1,6 +1,6 @@
 function CacheBackup(db)
 {
-    zip.workerScriptsPath = "../../js/webp2p/lib/zip.js/";
+    zip.workerScriptsPath = "js/webp2p/lib/zip.js/";
 
     this.export = function(onprogress, onerror)
     {
