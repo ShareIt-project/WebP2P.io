@@ -60,23 +60,23 @@ function Hasher(db, policy)
             })
         }
 
-        // Dropbox plugin start
-        if(dropboxClient
-        && fileentry.sharedpoint.name == "Dropbox")
-        {
-            var options = {download: true, downloadHack: true}
-
-            dropboxClient.makeUrl(fileentry.path+'/'+name, options,
-            function(error, publicUrl)
-            {
-                if(publicUrl)
-                    fileentry.dropbox = publicUrl.url
-
-                addFile(fileentry)
-            })
-        }
-        else
-        // Dropbox plugin end
+//        // Dropbox plugin start
+//        if(dropboxClient
+//        && fileentry.sharedpoint == "Dropbox")
+//        {
+//            var options = {download: true, downloadHack: true}
+//
+//            dropboxClient.makeUrl(fileentry.path+'/'+name, options,
+//            function(error, publicUrl)
+//            {
+//                if(publicUrl)
+//                    fileentry.dropbox = publicUrl.url
+//
+//                addFile(fileentry)
+//            })
+//        }
+//        else
+//        // Dropbox plugin end
             addFile(fileentry)
     }
 
@@ -103,82 +103,49 @@ function Hasher(db, policy)
      * Hash the files from a {Sharedpoint}.
      * @param {Array} files List of files to be hashed
      */
-    this.hash = function(files)
+    this.hash = function(files, sharedpoint_name)
     {
-      // Add files to queue if they are not there yet
-	  for(var j=0, file; file=queue[j]; j++)
+      // Ignore files that are already on the queue
+      for(var j=0, q; q=queue[j]; j++)
         for(var i=0, sp; sp=files[i];)
-          if(!sp.size)          // File has zero size
+        {
+          // File has zero size
+          if(!sp.size)
           {
-              // Precalculated hash for zero sized files
-              sp.hash = "z4PhNX7vuL3xVChQ1m2AB9Yg5AULVxXcg/SpIdNs6c5H0NE8XYXysP+DGNKHfuwvY7kxvUdBeoGlODJ6+SfaPg=="
-              fileentry_hashed(sp)
+            // Precalculated hash for zero sized files
+            sp.hash = "z4PhNX7vuL3xVChQ1m2AB9Yg5AULVxXcg/SpIdNs6c5H0NE8XYXysP+DGNKHfuwvY7kxvUdBeoGlODJ6+SfaPg=="
+            fileentry_hashed(sp)
 
-              files.splice(i)
+            files.splice(i)
           }
-          else if(sp == file)   // File is already on the queue list
-	          files.splice(i)
-	      else                  // Normal file, hash it
-	        i++;
 
+          // File is already on the queue list
+          else if(sp == q)
+            files.splice(i)
+
+          // Normal file, hash it
+          else
+            i++;
+        }
+
+      // If any file was not on the queue, hash it
       if(files.length)
       {
-        var sharedpoint = {name: files[0].webkitRelativePath.split('/')[0],
-                           type: 'folder'}
-
         files = Array.prototype.slice.call(files)
         queue = queue.concat(files)
 
 
-        files.sort(function(a, b)
-        {
-            var str1 = a.webkitRelativePath
-            var str2 = b.webkitRelativePath
-
-            return ((str1 == str2) ? 0 : ((str1 > str2) ? 1 : -1));
-        })
-
         // Run over all the files on the queue and process them
         for(var i=0, file; file=files[i]; ++i)
         {
-            var fileentry = {'sharedpoint': sharedpoint,
-                             'path': file.webkitRelativePath.split('/').slice(1,-1).join('/'),
-                             'file': file}
+            var path = file.webkitRelativePath.split('/').slice(1,-1).join('/')
+            var fileentry = {'sharedpoint': sharedpoint_name,
+                             'path': path, 'file': file}
 
             worker.postMessage(['hash',fileentry]);
         }
-
-
-        sharedpoint.size = 0
-        db.sharepoints_put(sharedpoint)
       }
     }
-
-    // Dropbox plugin start
-    dropboxClient = new Dropbox.Client({key: "iCoCBMCCU3A=|YyQQmo4XMmB5hH9JOrXLCcIH6ike807VOEwpHsdcWA==",
-                                        sandbox: true});
-    dropboxClient.authDriver(new Dropbox.Drivers.Popup({receiverFile: "oauth_receiver.html"}));
-    dropboxClient.authenticate(function(error, client)
-    {
-        if(error)
-        {
-          // Replace with a call to your own error-handling code.
-          //
-          // Don't forget to return from the callback, so you don't execute the code
-          // that assumes everything went well.
-//          return showError(error);
-
-            console.error(error)
-            dropboxClient = null
-        }
-
-        // Replace with a call to your own application code.
-        //
-        // The user authorized your app, and everything went well.
-        // client is a Dropbox.Client instance that you can use to make API calls.
-//        doSomethingCool(client);
-      });
-    // Dropbox plugin end
 
     /**
      * Refresh the {Sharedpoint}s and {Fileentry}s on the database
@@ -195,10 +162,13 @@ function Hasher(db, policy)
         clearTimeout(timeout)
         timeout = 'hashing'
 
-        db.sharepoints_getAll(null, function(sharedpoints)
+        sharedpointsManager.getSharedpoints(function(sharedpoints)
         {
             db.files_getAll(null, function(fileentries)
             {
+                /**
+                 * Check if the sharedpoint of a file exists or have been removed
+                 */
                 function sharedpoint_exist(name)
                 {
                     for(var i=0; i<sharedpoints.length; i++)
@@ -208,11 +178,14 @@ function Hasher(db, policy)
 
                 // Remove all unaccesible files
                 for(var i=0, fileentry; fileentry=fileentries[i]; i++)
-                    if(!sharedpoint_exist(fileentry.sharedpoint.name))
+                    // Sharedpoint was removed, remove the file from database
+                    if(!sharedpoint_exist(fileentry.sharedpoint))
                         delete_fileentry(fileentry)
+                    // File is a real filesystem one, rehash it
                     else if(fileentry.file)
                         worker.postMessage(['refresh',fileentry]);
 
+                // Update timeout for the next refresh walkabout
                 if(sharedpoints.length & policy)
                     policy(updateTimeout)
                 else
@@ -222,5 +195,5 @@ function Hasher(db, policy)
     }
 
     // Start hashing new files from the shared points on load
-    self.refresh()
+//    self.refresh()
 }
