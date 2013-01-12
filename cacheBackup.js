@@ -26,7 +26,7 @@ function CacheBackup(db)
                     var path = ""
                     if(fileentry.sharedpoint)
                     {
-                        path += fileentry.sharedpoint.name
+                        path += fileentry.sharedpoint
                         if(fileentry.path != "")
                             path += '/'+fileentry.path
                     }
