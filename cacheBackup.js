@@ -69,65 +69,67 @@ function CacheBackup(db)
 
                 files.getText(function(text)
                 {
-                    // Extract blobs data and add it to cache
+                    // Get blobs folder from the zip file
                     var blobs = fs.root.getChildByName('blobs')
 
+                    // Extract blobs data and add it to cache
                     var files = JSON.parse(text)
-                    for(var i=0, file; file=files; i++)
+                    for(var i=0, file; file=files[i]; i++)
                         db.files_get(file.hash, function(fileentry)
                         {
                             var blob = blobs.getChildByName(file.hash)
 
-                            // Fileentry exists on cache
-                            if(fileentry)
+                            function fileentry_update(file)
                             {
+                                // Fileentry is completed, do nothing
+                                if(fileentry.bitmap == undefined)
+                                    return
+
                                 // Fileentry is not completed, update it
-                                if(fileentry.bitmap)
-                                {
-                                    var chunks = fileentry.bitmap.indexes()
-                                    for(var i=0, chunk; chunk=chunks[i]; i++)
-                                        if(blob.bitmap == undefined
-                                        || blob.bitmap.get(chunk))
-                                        {
-                                            var reader = new FileReader();
-                                                reader.onerror = function(evt)
-                                                {
-                                                    console.error("CacheBackup.import("+file.hash+", "+chunk+") = '"+evt.target.result+"'")
-                                                }
-                                                reader.onload = function(evt)
-                                                {
-                                                    var data = evt.target.result
+                                var chunks = fileentry.bitmap.indexes()
 
-                                                    updateFile(fileentry, chunk, data)
-
-                                                    // Check for pending chunks and require them or save the file
-                                                    var pending_chunks = fileentry.bitmap.indexes(false).length
-
-                                                    // There are no more chunks, set file as fully downloaded
-                                                    if(!pending_chunks)
-                                                        delete fileentry.bitmap;
-
-                                                    // Update the fileentry status on the database
-                                                    db.files_put(fileentry)
-                                                }
-
-                                            var start = chunk * chunksize;
-                                            var stop  = start + chunksize;
-
-                                            blob.getBlob(null, function(blob)
+                                for(var i=0, chunk; chunk=chunks[i]; i++)
+                                    if(blob.bitmap == undefined
+                                    || blob.bitmap.get(chunk))
+                                    {
+                                        var reader = new FileReader();
+                                            reader.onerror = function(evt)
                                             {
-                                                var filesize = parseInt(blob.size);
-                                                if(stop > filesize)
-                                                    stop = filesize;
+                                                console.error("CacheBackup.import("+file.hash+", "+chunk+") = '"+evt.target.result+"'")
+                                            }
+                                            reader.onload = function(evt)
+                                            {
+                                                var data = evt.target.result
 
-                                                reader.readAsBinaryString(blob.slice(start, stop));
-                                            })
-                                        }
-                                }
+                                                updateFile(fileentry, chunk, data)
+
+                                                // Check for pending chunks and require them or save the file
+                                                var pending_chunks = fileentry.bitmap.indexes(false).length
+
+                                                // There are no more chunks, set file as fully downloaded
+                                                if(!pending_chunks)
+                                                    delete fileentry.bitmap;
+
+                                                // Update the fileentry status on the database
+                                                db.files_put(fileentry)
+                                            }
+
+                                        var start = chunk * chunksize;
+                                        var stop  = start + chunksize;
+
+                                        blob.getBlob(null, function(blob)
+                                        {
+                                            var filesize = parseInt(blob.size);
+                                            if(stop > filesize)
+                                                stop = filesize;
+
+                                            reader.readAsBinaryString(blob.slice(start, stop));
+                                        })
+                                    }
                             }
 
-                            // Fileentry don't exists on cache, add it
-                            else
+                            function fileentry_add(file)
+                            {
                                 blob.getBlob(null, function(blob)
                                 {
                                     var fileentry = {hash: file.hash,
@@ -139,6 +141,15 @@ function CacheBackup(db)
 
                                     db.files_add(fileentry)
                                 })
+                            }
+
+                            // Fileentry exists on cache
+                            if(fileentry)
+                                fileentry_update(file)
+
+                            // Fileentry don't exists on cache, add it
+                            else
+                                fileentry_add(file)
                         })
                 })
             },
