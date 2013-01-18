@@ -17,7 +17,7 @@ importScripts('https://raw.github.com/Caligatio/jsSHA/master/src/sha512.js');
 function hashData(data, onsuccess)
 {
 	var shaObj = new window.jsSHA(data, "TEXT");
-	var hash = shaObj.getHash("SHA-512", "B64");
+	var hash = shaObj.getHash("SHA-512", "B64").replace('/', '-');
 
     onsuccess(hash)
 }
