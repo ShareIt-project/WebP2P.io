@@ -2,7 +2,7 @@ function CacheBackup(db)
 {
     zip.workerScriptsPath = "../../js/webp2p/lib/zip.js/";
 
-    this.export = function(onprogress, onerror)
+    this.export = function(onfinish, onprogress, onerror)
     {
         db.files_getAll(null, function(fileslist)
         {
@@ -43,18 +43,19 @@ function CacheBackup(db)
                     files.push(file)
                 }
 
-            // Store the JSON metadata file inside the Zip file
-            fs.root.addText('files.json', JSON.stringify(files))
-
-            // Generate and export the cache backup in the Zip file
-            fs.exportBlob(function(blob)
+            // Export the cache if it has items
+            if(files.length)
             {
-                var date = new Date()
-                var name = 'WebP2P-CacheBackup_'+date.toISOString()+'.zip'
+                // Store the JSON metadata file inside the Zip file
+                fs.root.addText('files.json', JSON.stringify(files))
 
-                savetodisk(blob, name)
-            },
-            onprogress, onerror)
+                // Generate and export the cache backup in the Zip file
+                fs.exportBlob(onfinish, onprogress, onerror)
+            }
+
+            // Cache has no files
+            else if(onfinish)
+                onfinish()
         })
     }
 
