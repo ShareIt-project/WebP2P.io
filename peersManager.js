@@ -42,29 +42,6 @@ function PeersManager(db, stun_server)
         return fileentry.channel
     }
 
-    this.transfer_update = function(fileentry, pending_chunks)
-    {
-        var chunks = fileentry.size/chunksize;
-        if(chunks % 1 != 0)
-            chunks = Math.floor(chunks) + 1;
-
-        // Notify about transfer update
-        this.dispatchEvent({type: "transfer.update",
-                            data: [fileentry, 1 - pending_chunks/chunks]})
-    }
-
-    /**
-     * Request (more) data for a file
-     * @param {Fileentry} Fileentry of the file to be requested
-     */
-    this.transfer_query = function(fileentry)
-    {
-        var channel = getChannel(fileentry)
-        var chunk = fileentry.bitmap.getRandom(false)
-
-        channel.transfer_query(fileentry, chunk)
-    }
-
     /**
      * Start the download of a file
      * @param {Fileentry} Fileentry of the file to be downloaded
@@ -111,6 +88,29 @@ function PeersManager(db, stun_server)
             self.transfer_query(fileentry)
         },
         onerror)
+    }
+
+    this.transfer_update = function(fileentry, pending_chunks)
+    {
+        var chunks = fileentry.size/chunksize;
+        if(chunks % 1 != 0)
+            chunks = Math.floor(chunks) + 1;
+
+        // Notify about transfer update
+        this.dispatchEvent({type: "transfer.update",
+                            data: [fileentry, 1 - pending_chunks/chunks]})
+    }
+
+    /**
+     * Request (more) data for a file
+     * @param {Fileentry} Fileentry of the file to be requested
+     */
+    this.transfer_query = function(fileentry)
+    {
+        var channel = getChannel(fileentry)
+        var chunk = fileentry.bitmap.getRandom(false)
+
+        channel.transfer_query(fileentry, chunk)
     }
 
     this.transfer_end = function(fileentry)
