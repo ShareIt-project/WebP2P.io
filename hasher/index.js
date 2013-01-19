@@ -178,12 +178,16 @@ function Hasher(db, policy)
 
                 // Remove all unaccesible files
                 for(var i=0, fileentry; fileentry=fileentries[i]; i++)
-                    // Sharedpoint was removed, remove the file from database
-                    if(!sharedpoint_exist(fileentry.sharedpoint))
-                        delete_fileentry(fileentry)
-                    // File is a real filesystem one, rehash it
-                    else if(fileentry.file)
-                        worker.postMessage(['refresh',fileentry]);
+                    if(fileentry.sharedpoint)
+                    {
+                        // Sharedpoint was removed, remove the file from database
+                        if(!sharedpoint_exist(fileentry.sharedpoint.name))
+                            delete_fileentry(fileentry)
+
+                        // File is a real filesystem one, rehash it
+                        else if(fileentry.file)
+                            worker.postMessage(['refresh',fileentry]);
+                    }
 
                 // Update timeout for the next refresh walkabout
                 if(sharedpoints.length & policy)

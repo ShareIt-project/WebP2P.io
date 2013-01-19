@@ -46,7 +46,7 @@ function PeersManager(db, stun_server)
      * Request (more) data for a file
      * @param {Fileentry} Fileentry of the file to be requested
      */
-    this.transfer_query = function(fileentry)
+    function transfer_query(fileentry)
     {
         var channel = getChannel(fileentry)
         var chunk = fileentry.bitmap.getRandom(false)
@@ -97,9 +97,20 @@ function PeersManager(db, stun_server)
             self.dispatchEvent({type: "transfer.begin", data: [fileentry]})
 
             // Demand data from the begining of the file
-            self.transfer_query(fileentry)
+            transfer_query(fileentry)
         },
         onerror)
+    }
+
+    this.transfer_update = function(fileentry, pending_chunks)
+    {
+        var chunks = fileentry.size/chunksize;
+        if(chunks % 1 != 0)
+            chunks = Math.floor(chunks) + 1;
+
+        // Notify about transfer update
+        this.dispatchEvent({type: "transfer.update",
+                            data: [fileentry, 1 - pending_chunks/chunks]})
     }
 
     this.transfer_end = function(fileentry)
@@ -110,6 +121,59 @@ function PeersManager(db, stun_server)
         // Notify about transfer end
         self.dispatchEvent({type: "transfer.end", data: [fileentry]})
         console.log("Transfer of "+fileentry.name+" finished!");
+    }
+
+    /**
+     * Update the data content of a {Fileentry}
+     * @param {Fileentry} fileentry {Fileentry} to be updated
+     * @param {Number} chunk Chunk position to be updated
+     * @param data Data to be set
+     */
+    this.updateFile = function(fileentry, chunk, data)
+    {
+        fileentry.bitmap.set(chunk, true)
+
+        // Create new FileWriter
+        var fw = new FileWriter(fileentry.blob)
+
+        // Calc and set pos, and increase blob size if necessary
+        var pos = chunk * chunksize;
+        if(fw.length < pos)
+            fw.truncate(pos)
+        fw.seek(pos)
+
+        // Write data to the blob
+        var blob = fw.write(data)
+
+        // This is not standard, but it's the only way to get out the
+        // created blob
+        if(blob != undefined)
+            fileentry.blob = blob
+
+        // Check for pending chunks and require them or save the file
+        var pending_chunks = fileentry.bitmap.indexes(false).length
+
+        if(pending_chunks)
+        {
+            // Demand more data from one of the pending chunks after update
+            // the fileentry status on the database
+            db.files_put(fileentry, function()
+            {
+                self.transfer_update(fileentry, pending_chunks)
+
+                transfer_query(fileentry)
+            })
+        }
+        else
+        {
+            // There are no more chunks, set file as fully downloaded
+            delete fileentry.bitmap;
+
+            db.files_put(fileentry, function()
+            {
+                self.transfer_end(fileentry)
+            })
+        }
     }
 
     /**
