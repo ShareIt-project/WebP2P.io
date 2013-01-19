@@ -101,10 +101,7 @@ function CacheBackup(db)
                                             {
                                                 var data = evt.target.result
 
-                                                updateFile(fileentry, chunk, data)
-
-                                                // Check for pending chunks and require them or save the file
-                                                var pending_chunks = fileentry.bitmap.indexes(false).length
+                                                var pending_chunks = updateFile(fileentry, chunk, data)
 
                                                 // There are no more chunks, set file as fully downloaded
                                                 if(!pending_chunks)

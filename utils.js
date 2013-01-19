@@ -46,4 +46,7 @@ function updateFile(fileentry, chunk, data)
     // created blob
     if(blob != undefined)
         fileentry.blob = blob
+
+    // Check for pending chunks and require them or save the file
+    return fileentry.bitmap.indexes(false).length
 }

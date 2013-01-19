@@ -177,10 +177,8 @@ function Transport_Peer_init(transport, db, peersManager)
 
         db.files_get(hash, function(fileentry)
         {
-            updateFile(fileentry, chunk, data)
+            var pending_chunks = updateFile(fileentry, chunk, data)
 
-            // Check for pending chunks and require them or save the file
-            var pending_chunks = fileentry.bitmap.indexes(false).length
             if(pending_chunks)
             {
                 var chunks = fileentry.size/chunksize;
