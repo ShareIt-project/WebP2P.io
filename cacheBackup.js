@@ -103,12 +103,33 @@ function CacheBackup(db)
 
                                                 var pending_chunks = updateFile(fileentry, chunk, data)
 
-                                                // There are no more chunks, set file as fully downloaded
-                                                if(!pending_chunks)
+                                                if(pending_chunks)
+                                                {
+                                                    var chunks = fileentry.size/chunksize;
+                                                    if(chunks % 1 != 0)
+                                                        chunks = Math.floor(chunks) + 1;
+
+                                                    // Notify about transfer update
+                                                    peersManager.dispatchEvent({type: "transfer.update",
+                                                                                data: [fileentry, 1 - pending_chunks/chunks]})
+
+                                                    // Demand more data from one of the pending chunks after update
+                                                    // the fileentry status on the database
+                                                    db.files_put(fileentry, function()
+                                                    {
+                                                        peersManager.transfer_query(fileentry)
+                                                    })
+                                                }
+                                                else
+                                                {
+                                                    // There are no more chunks, set file as fully downloaded
                                                     delete fileentry.bitmap;
 
-                                                // Update the fileentry status on the database
-                                                db.files_put(fileentry)
+                                                    db.files_put(fileentry, function()
+                                                    {
+                                                        peersManager.transfer_end(fileentry)
+                                                    })
+                                                }
                                             }
 
                                         var start = chunk * chunksize;
