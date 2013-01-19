@@ -158,10 +158,13 @@ function Hasher(db, policy)
 
                 // Remove all unaccesible files
                 for(var i=0, fileentry; fileentry=fileentries[i]; i++)
-                    if(!sharedpoint_exist(fileentry.sharedpoint.name))
-                        delete_fileentry(fileentry)
-                    else if(fileentry.file)
-                        worker.postMessage(['refresh',fileentry]);
+                    if(fileentry.sharedpoint)
+                    {
+                        if(!sharedpoint_exist(fileentry.sharedpoint.name))
+                            delete_fileentry(fileentry)
+                        else if(fileentry.file)
+                            worker.postMessage(['refresh',fileentry]);
+                    }
 
                 if(sharedpoints.length & policy)
                     policy(updateTimeout)
