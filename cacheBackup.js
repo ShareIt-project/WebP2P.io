@@ -1,4 +1,4 @@
-function CacheBackup(db)
+function CacheBackup(db, peersManager)
 {
     zip.workerScriptsPath = "../../js/webp2p/lib/zip.js/";
 
@@ -157,7 +157,17 @@ function CacheBackup(db)
                                     if(file.bitmap)
                                         fileentry.bitmap = file.bitmap
 
-                                    db.files_add(fileentry)
+                                    db.files_add(fileentry, function()
+                                    {
+                                        // File was not completed, notify update
+                                        if(file.bitmap)
+                                            peersManager.dispatchEvent({type: "transfer.update",
+                                                                        data: [fileentry]})
+
+                                        // File was completed, notify finished
+                                        else
+                                            peersManager.transfer_end(fileentry)
+                                    })
                                 })
                             }
 
