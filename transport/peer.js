@@ -177,29 +177,7 @@ function Transport_Peer_init(transport, db, peersManager)
 
         db.files_get(hash, function(fileentry)
         {
-            var pending_chunks = updateFile(fileentry, chunk, data)
-
-            if(pending_chunks)
-            {
-                // Demand more data from one of the pending chunks after update
-                // the fileentry status on the database
-                db.files_put(fileentry, function()
-                {
-                    peersManager.transfer_update(fileentry, pending_chunks)
-
-                    peersManager.transfer_query(fileentry)
-                })
-            }
-            else
-            {
-                // There are no more chunks, set file as fully downloaded
-                delete fileentry.bitmap;
-
-                db.files_put(fileentry, function()
-                {
-                    peersManager.transfer_end(fileentry)
-                })
-            }
+            peersManager.updateFile(fileentry, chunk, data)
         })
     })
 

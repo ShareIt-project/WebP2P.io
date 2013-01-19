@@ -124,6 +124,59 @@ function PeersManager(db, stun_server)
     }
 
     /**
+     * Update the data content of a {Fileentry}
+     * @param {Fileentry} fileentry {Fileentry} to be updated
+     * @param {Number} chunk Chunk position to be updated
+     * @param data Data to be set
+     */
+    this.updateFile = function(fileentry, chunk, data)
+    {
+        fileentry.bitmap.set(chunk, true)
+
+        // Create new FileWriter
+        var fw = new FileWriter(fileentry.blob)
+
+        // Calc and set pos, and increase blob size if necessary
+        var pos = chunk * chunksize;
+        if(fw.length < pos)
+            fw.truncate(pos)
+        fw.seek(pos)
+
+        // Write data to the blob
+        var blob = fw.write(data)
+
+        // This is not standard, but it's the only way to get out the
+        // created blob
+        if(blob != undefined)
+            fileentry.blob = blob
+
+        // Check for pending chunks and require them or save the file
+        var pending_chunks = fileentry.bitmap.indexes(false).length
+
+        if(pending_chunks)
+        {
+            // Demand more data from one of the pending chunks after update
+            // the fileentry status on the database
+            db.files_put(fileentry, function()
+            {
+                self.transfer_update(fileentry, pending_chunks)
+
+                self.transfer_query(fileentry)
+            })
+        }
+        else
+        {
+            // There are no more chunks, set file as fully downloaded
+            delete fileentry.bitmap;
+
+            db.files_put(fileentry, function()
+            {
+                self.transfer_end(fileentry)
+            })
+        }
+    }
+
+    /**
      * Notify to all peers that I have added a new file (both by the user or
      * downloaded)
      * @param {Fileentry} Fileentry of the file that have been added
