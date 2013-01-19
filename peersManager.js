@@ -191,7 +191,7 @@ function PeersManager(db, stun_server)
             peers[uid]._channel._send_file_added(fileentry);
 
         // Update fileentry sharedpoint size
-        db.sharepoints_get(fileentry.sharedpoint.name,
+        db.sharepoints_get(fileentry.sharedpoint,
         function(sharedpoint)
         {
             // Increase sharedpoint shared size
@@ -218,7 +218,7 @@ function PeersManager(db, stun_server)
             peers[uid]._channel._send_file_deleted(fileentry);
 
         // Update fileentry sharedpoint size
-        db.sharepoints_get(fileentry.sharedpoint.name,
+        db.sharepoints_get(fileentry.sharedpoint,
         function(sharedpoint)
         {
             // Increase sharedpoint shared size

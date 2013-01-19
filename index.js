@@ -23,6 +23,10 @@ var webp2p =
 
      'hasher/index',
 
+     'handshake/index',
+     'handshake/PubNub',
+     'handshake/simpleSignaling',
+
      'lib/zip.js/deflate',
      'lib/zip.js/inflate',
      'lib/zip.js/zip',
@@ -32,9 +36,9 @@ var webp2p =
      'polyfills/FileWriter',
      'polyfills/IndexedDB-javascript',
 
-     'handshake/index',
-     'handshake/PubNub',
-     'handshake/simpleSignaling',
+     'sharedpoints/index',
+     'sharedpoints/dropbox',
+     'sharedpoints/mega',
 
      'transport/index',
      'transport/host',

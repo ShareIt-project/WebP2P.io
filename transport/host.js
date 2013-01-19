@@ -25,19 +25,27 @@ function Transport_Host_init(transport, db)
     function generateFileObject(fileentry)
     {
         var blob = fileentry.file || fileentry.blob
+        var name = blob.name || fileentry.name
         var path = ""
         if(fileentry.sharedpoint)
         {
-            path += fileentry.sharedpoint.name
+            path += fileentry.sharedpoint
             if(fileentry.path != "")
                 path += '/'+fileentry.path
         }
 
-        return {'hash': fileentry.hash,
-                'path': path,
-                'name': blob.name || fileentry.name,
-                'size': blob.size,
-                'type': blob.type}
+        var result = {hash: fileentry.hash,
+                      path: path,
+                      name: name,
+                      size: blob.size,
+                      type: blob.type}
+
+        // Dropbox plugin start
+        if(fileentry.dropbox)
+            result.dropbox = fileentry.dropbox
+        // Dropbox plugin end
+
+        return result
     }
 
     /**
