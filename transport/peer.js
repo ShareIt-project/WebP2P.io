@@ -181,18 +181,12 @@ function Transport_Peer_init(transport, db, peersManager)
 
             if(pending_chunks)
             {
-                var chunks = fileentry.size/chunksize;
-                if(chunks % 1 != 0)
-                    chunks = Math.floor(chunks) + 1;
-
-                // Notify about transfer update
-                peersManager.dispatchEvent({type: "transfer.update",
-                                            data: [fileentry, 1 - pending_chunks/chunks]})
-
                 // Demand more data from one of the pending chunks after update
                 // the fileentry status on the database
                 db.files_put(fileentry, function()
                 {
+                    peersManager.transfer_update(fileentry, pending_chunks)
+
                     peersManager.transfer_query(fileentry)
                 })
             }

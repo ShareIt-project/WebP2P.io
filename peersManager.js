@@ -42,6 +42,17 @@ function PeersManager(db, stun_server)
         return fileentry.channel
     }
 
+    this.transfer_update = function(fileentry, pending_chunks)
+    {
+        var chunks = fileentry.size/chunksize;
+        if(chunks % 1 != 0)
+            chunks = Math.floor(chunks) + 1;
+
+        // Notify about transfer update
+        this.dispatchEvent({type: "transfer.update",
+                            data: [fileentry, 1 - pending_chunks/chunks]})
+    }
+
     /**
      * Request (more) data for a file
      * @param {Fileentry} Fileentry of the file to be requested
