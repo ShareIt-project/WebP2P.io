@@ -27,6 +27,7 @@ var webp2p =
      'lib/zip.js/inflate',
      'lib/zip.js/zip',
      'lib/zip.js/zip-fs',
+     'lib/zip.js/mime-types',
 
      'polyfills/FileWriter',
      'polyfills/IndexedDB-javascript',

@@ -107,7 +107,8 @@ function CacheBackup(db, peersManager)
                                         var start = chunk * chunksize;
                                         var stop  = start + chunksize;
 
-                                        blob.getBlob(null, function(blob)
+                                        blob.getBlob(zip.getMimeType(file.name),
+                                        function(blob)
                                         {
                                             var filesize = parseInt(blob.size);
                                             if(stop > filesize)
@@ -120,7 +121,8 @@ function CacheBackup(db, peersManager)
 
                             function fileentry_add(file)
                             {
-                                blob.getBlob(null, function(blob)
+                                blob.getBlob(zip.getMimeType(file.name),
+                                function(blob)
                                 {
                                     var fileentry = {hash: file.hash,
                                                      path: file.path,
