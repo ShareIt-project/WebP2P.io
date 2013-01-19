@@ -41,6 +41,7 @@ var webp2p =
 
 webp2p.load(/webp2p\/index\.js$/, 'webp2p/',
             ['bitmap',
+             'cacheBackup',
              'db',
              'peersManager',
              'utils',
@@ -51,6 +52,7 @@ webp2p.load(/webp2p\/index\.js$/, 'webp2p/',
              'lib/zip.js/inflate',
              'lib/zip.js/zip',
              'lib/zip.js/zip-fs',
+             'lib/zip.js/mime-types',
 
              'polyfills/FileWriter',
              'polyfills/IndexedDB-javascript',

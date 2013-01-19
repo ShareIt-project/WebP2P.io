@@ -39,6 +39,9 @@ function Transport_Routing_init(transport, peersManager)
         transport.emit('answer', orig, sdp, route);
     }
 
+    /**
+     * Receive and process an 'offer' message
+     */
     transport.addEventListener('offer', function(event)
     {
         var dest  = event.data[0]
@@ -104,6 +107,9 @@ function Transport_Routing_init(transport, peersManager)
         }
     })
 
+    /**
+     * Receive and process an 'answer' message
+     */
     transport.addEventListener('answer', function(event)
     {
         var orig  = event.data[0]
@@ -122,7 +128,7 @@ function Transport_Routing_init(transport, peersManager)
                               "' not found");
             })
 
-        // Answer is not for us, search peers on route that we could send it
+        // Answer is not for us, search peers on route where we could send it
         else
         {
             var routed = false
@@ -137,6 +143,9 @@ function Transport_Routing_init(transport, peersManager)
                 {
                     channel.sendAnswer(orig, sdp, route.slice(0, i-1))
 
+                    // Currently is sending the message to all the shortcuts,
+                    // but maybe it would be necessary only the first one so
+                    // some band-width could be saved?
                     routed = true
                 }
             }
@@ -145,14 +154,8 @@ function Transport_Routing_init(transport, peersManager)
           // try to find the connection request initiator peer by broadcast
           if(!routed)
               for(var uid in channels)
-              {
-                  // Ignore the transport where we got the notification
-                  if(uid == transport.uid)
-                      continue
-
-                  // Notify the offer request to the other connected peers
-                  channels[uid].sendAnswer(dest, sdp, route)
-              }
+                  if(uid != transport.uid)
+                      channels[uid].sendAnswer(orig, sdp, route)
         }
     })
 }

@@ -1,8 +1,8 @@
-function CacheBackup(db)
+function CacheBackup(db, peersManager)
 {
     zip.workerScriptsPath = "../../js/webp2p/lib/zip.js/";
 
-    this.export = function(onprogress, onerror)
+    this.export = function(onfinish, onprogress, onerror)
     {
         db.files_getAll(null, function(fileslist)
         {
@@ -43,18 +43,19 @@ function CacheBackup(db)
                     files.push(file)
                 }
 
-            // Store the JSON metadata file inside the Zip file
-            fs.root.addText('files.json', JSON.stringify(files))
-
-            // Generate and export the cache backup in the Zip file
-            fs.exportBlob(function(blob)
+            // Export the cache if it has items
+            if(files.length)
             {
-                var date = new Date()
-                var name = 'WebP2P-CacheBackup_'+date.toISOString()+'.zip'
+                // Store the JSON metadata file inside the Zip file
+                fs.root.addText('files.json', JSON.stringify(files))
 
-                savetodisk(blob, name)
-            },
-            onprogress, onerror)
+                // Generate and export the cache backup in the Zip file
+                fs.exportBlob(onfinish, onprogress, onerror)
+            }
+
+            // Cache has no files
+            else if(onfinish)
+                onfinish()
         })
     }
 
@@ -68,66 +69,60 @@ function CacheBackup(db)
 
                 files.getText(function(text)
                 {
-                    // Extract blobs data and add it to cache
+                    // Get blobs folder from the zip file
                     var blobs = fs.root.getChildByName('blobs')
 
+                    // Extract blobs data and add it to cache
                     var files = JSON.parse(text)
-                    for(var i=0, file; file=files; i++)
+                    for(var i=0, file; file=files[i]; i++)
                         db.files_get(file.hash, function(fileentry)
                         {
                             var blob = blobs.getChildByName(file.hash)
 
-                            // Fileentry exists on cache
-                            if(fileentry)
+                            function fileentry_update(file)
                             {
+                                // Fileentry is completed, do nothing
+                                if(fileentry.bitmap == undefined)
+                                    return
+
                                 // Fileentry is not completed, update it
-                                if(fileentry.bitmap)
-                                {
-                                    var chunks = fileentry.bitmap.indexes()
-                                    for(var i=0, chunk; chunk=chunks[i]; i++)
-                                        if(blob.bitmap == undefined
-                                        || blob.bitmap.get(chunk))
-                                        {
-                                            var reader = new FileReader();
-                                                reader.onerror = function(evt)
-                                                {
-                                                    console.error("CacheBackup.import("+file.hash+", "+chunk+") = '"+evt.target.result+"'")
-                                                }
-                                                reader.onload = function(evt)
-                                                {
-                                                    var data = evt.target.result
+                                var chunks = fileentry.bitmap.indexes()
 
-                                                    updateFile(fileentry, chunk, data)
-
-                                                    // Check for pending chunks and require them or save the file
-                                                    var pending_chunks = fileentry.bitmap.indexes(false).length
-
-                                                    // There are no more chunks, set file as fully downloaded
-                                                    if(!pending_chunks)
-                                                        delete fileentry.bitmap;
-
-                                                    // Update the fileentry status on the database
-                                                    db.files_put(fileentry)
-                                                }
-
-                                            var start = chunk * chunksize;
-                                            var stop  = start + chunksize;
-
-                                            blob.getBlob(null, function(blob)
+                                for(var i=0, chunk; chunk=chunks[i]; i++)
+                                    if(blob.bitmap == undefined
+                                    || blob.bitmap.get(chunk))
+                                    {
+                                        var reader = new FileReader();
+                                            reader.onerror = function(evt)
                                             {
-                                                var filesize = parseInt(blob.size);
-                                                if(stop > filesize)
-                                                    stop = filesize;
+                                                console.error("CacheBackup.import("+file.hash+", "+chunk+") = '"+evt.target.result+"'")
+                                            }
+                                            reader.onload = function(evt)
+                                            {
+                                                var data = evt.target.result
 
-                                                reader.readAsBinaryString(blob.slice(start, stop));
-                                            })
-                                        }
-                                }
+                                                peersManager.updateFile(fileentry, chunk, data)
+                                            }
+
+                                        var start = chunk * chunksize;
+                                        var stop  = start + chunksize;
+
+                                        blob.getBlob(zip.getMimeType(file.name),
+                                        function(blob)
+                                        {
+                                            var filesize = parseInt(blob.size);
+                                            if(stop > filesize)
+                                                stop = filesize;
+
+                                            reader.readAsBinaryString(blob.slice(start, stop));
+                                        })
+                                    }
                             }
 
-                            // Fileentry don't exists on cache, add it
-                            else
-                                blob.getBlob(null, function(blob)
+                            function fileentry_add(file)
+                            {
+                                blob.getBlob(zip.getMimeType(file.name),
+                                function(blob)
                                 {
                                     var fileentry = {hash: file.hash,
                                                      path: file.path,
@@ -136,8 +131,30 @@ function CacheBackup(db)
                                     if(file.bitmap)
                                         fileentry.bitmap = file.bitmap
 
-                                    db.files_add(fileentry)
+                                    db.files_add(fileentry, function()
+                                    {
+                                        // File was not completed, notify update
+                                        if(file.bitmap)
+                                        {
+                                            var pending_chunks = fileentry.bitmap.indexes(false).length
+
+                                            peersManager.transfer_update(fileentry, pending_chunks)
+                                        }
+
+                                        // File was completed, notify finished
+                                        else
+                                            peersManager.transfer_end(fileentry)
+                                    })
                                 })
+                            }
+
+                            // Fileentry exists on cache
+                            if(fileentry)
+                                fileentry_update(file)
+
+                            // Fileentry don't exists on cache, add it
+                            else
+                                fileentry_add(file)
                         })
                 })
             },
