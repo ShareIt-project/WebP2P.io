@@ -43,6 +43,18 @@ function PeersManager(db, stun_server)
     }
 
     /**
+     * Request (more) data for a file
+     * @param {Fileentry} Fileentry of the file to be requested
+     */
+    function transfer_query(fileentry)
+    {
+        var channel = getChannel(fileentry)
+        var chunk = fileentry.bitmap.getRandom(false)
+
+        channel.transfer_query(fileentry, chunk)
+    }
+
+    /**
      * Start the download of a file
      * @param {Fileentry} Fileentry of the file to be downloaded
      */
@@ -85,7 +97,7 @@ function PeersManager(db, stun_server)
             self.dispatchEvent({type: "transfer.begin", data: [fileentry]})
 
             // Demand data from the begining of the file
-            self.transfer_query(fileentry)
+            transfer_query(fileentry)
         },
         onerror)
     }
@@ -99,18 +111,6 @@ function PeersManager(db, stun_server)
         // Notify about transfer update
         this.dispatchEvent({type: "transfer.update",
                             data: [fileentry, 1 - pending_chunks/chunks]})
-    }
-
-    /**
-     * Request (more) data for a file
-     * @param {Fileentry} Fileentry of the file to be requested
-     */
-    this.transfer_query = function(fileentry)
-    {
-        var channel = getChannel(fileentry)
-        var chunk = fileentry.bitmap.getRandom(false)
-
-        channel.transfer_query(fileentry, chunk)
     }
 
     this.transfer_end = function(fileentry)
@@ -161,7 +161,7 @@ function PeersManager(db, stun_server)
             {
                 self.transfer_update(fileentry, pending_chunks)
 
-                self.transfer_query(fileentry)
+                transfer_query(fileentry)
             })
         }
         else
