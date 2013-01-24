@@ -445,4 +445,35 @@ function PeersManager(db, stun_server)
     {
         return Object.keys(peers).length
     }
+
+
+    this.files_downloading = function(onsuccess)
+    {
+        db.files_getAll(null, function(filelist)
+        {
+            var downloading = []
+
+            for(var i=0, fileentry; fileentry=filelist[i]; i++)
+                if(fileentry.bitmap)
+                    downloading.push(fileentry)
+
+            // Update Downloading files list
+            onsuccess(downloading)
+        })
+    }
+
+    this.files_sharing = function(onsuccess)
+    {
+        db.files_getAll(null, function(filelist)
+        {
+            var sharing = []
+
+            for(var i=0, fileentry; fileentry=filelist[i]; i++)
+                if(!fileentry.bitmap)
+                    sharing.push(fileentry)
+
+            // Update Sharing files list
+            onsuccess(sharing)
+        })
+    }
 }
