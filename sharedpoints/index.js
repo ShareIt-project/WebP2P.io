@@ -60,4 +60,9 @@ function SharedpointsManager(db, peersManager)
               onsuccess()
       })
     }
+
+    this.delete = function(name, onsuccess)
+    {
+        db.sharepoints_delete(name, onsuccess)
+    }
 }
