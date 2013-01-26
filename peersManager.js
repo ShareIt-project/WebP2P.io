@@ -329,104 +329,119 @@ function PeersManager(db, stun_server)
             onerror(uid)
     }
 
-    /**
-     * Set the {SandshakeManager} to be used
-     * @param {SandshakeManager} newHandshake The new {HandshakeManager}
-     */
-    this.setHandshakeManager = function(handshakeManager)
-    {
-        /**
-         * Connects to another peer based on its UID. If we are already connected,
-         * it does nothing.
-         * @param {UUID} uid Identifier of the other peer to be connected
-         * @param {Function} onsuccess Callback called when the connection was done
-         * @param {Function} onerror Callback called when connection was not possible
-         * @param {MessageChannel} incomingChannel Optional channel where to
-         * send the offer. If not defined send it to all connected peers
-         */
-        this.connectTo = function(uid, onsuccess, onerror, incomingChannel)
+    // Init handshake manager
+    var handshakeManager = new HandshakeManager('json/handshake.json', this)
+        handshakeManager.onerror = function(error)
         {
-            // Search the peer between the list of currently connected peers
-            var peer = peers[uid]
+            console.error(error)
+            alert(error)
+        }
+//        handshake.onopen = function()
+//        {
+//            // Restart downloads
+//            db.files_getAll(null, function(filelist)
+//            {
+//                if(filelist.length)
+//                    policy(function()
+//                    {
+//                        for(var i=0, fileentry; fileentry=filelist[i]; i++)
+//                            if(fileentry.bitmap)
+//                                self.transfer_query(fileentry)
+//                    })
+//            })
+//        }
 
-            // Peer is not connected, create a new channel
-            if(!peer)
+    /**
+     * Connects to another peer based on its UID. If we are already connected,
+     * it does nothing.
+     * @param {UUID} uid Identifier of the other peer to be connected
+     * @param {Function} onsuccess Callback called when the connection was done
+     * @param {Function} onerror Callback called when connection was not possible
+     * @param {MessageChannel} incomingChannel Optional channel where to
+     * send the offer. If not defined send it to all connected peers
+     */
+    this.connectTo = function(uid, onsuccess, onerror, incomingChannel)
+    {
+        // Search the peer between the list of currently connected peers
+        var peer = peers[uid]
+
+        // Peer is not connected, create a new channel
+        if(!peer)
+        {
+            // Create PeerConnection
+            peer = createPeerConnection(uid);
+            peer.onopen = function()
             {
-                // Create PeerConnection
-                peer = createPeerConnection(uid);
-                peer.onopen = function()
+                var channel = peer.createDataChannel('webp2p')
+                channel.onopen = function()
                 {
-                    var channel = peer.createDataChannel('webp2p')
-                    channel.onopen = function()
-                    {
-                        initDataChannel(peer, channel, uid)
+                    initDataChannel(peer, channel, uid)
 
-                        if(onsuccess)
-                            onsuccess(channel)
-                    }
-                    channel.onerror = function()
-                    {
-                        if(onerror)
-                            onerror(uid, peer, channel)
-                    }
+                    if(onsuccess)
+                        onsuccess(channel)
                 }
-                peer.onerror = function()
+                channel.onerror = function()
                 {
                     if(onerror)
-                        onerror(uid, peer)
+                        onerror(uid, peer, channel)
+                }
+            }
+            peer.onerror = function()
+            {
+                if(onerror)
+                    onerror(uid, peer)
+            }
+
+            // Send offer to new PeerConnection
+            peer.createOffer(function(offer)
+            {
+                // Send the offer only for the incoming channel
+                if(incomingChannel)
+                    incomingChannel.sendOffer(uid, offer.sdp)
+
+                // Send the offer throught all the peers
+                else
+                {
+                    var channels = self.getChannels()
+
+                    // Send the connection offer to the other connected peers
+                    for(var channel_id in channels)
+                        channels[channel_id].sendOffer(uid, offer.sdp)
                 }
 
-                // Send offer to new PeerConnection
-                peer.createOffer(function(offer)
-                {
-                    // Send the offer only for the incoming channel
-                    if(incomingChannel)
-                        incomingChannel.sendOffer(uid, offer.sdp)
-
-                    // Send the offer throught all the peers
-                    else
-                    {
-                        var channels = self.getChannels()
-
-                        // Send the connection offer to the other connected peers
-                        for(var channel_id in channels)
-                            channels[channel_id].sendOffer(uid, offer.sdp)
-                    }
-
-                    // Set the peer local description
-                    peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
-                                                                        type: 'offer'}))
-                });
-            }
-
-            // Peer is connected and we have defined an 'onsucess' callback
-            else if(onsuccess)
-                onsuccess(peer._channel)
+                // Set the peer local description
+                peer.setLocalDescription(new RTCSessionDescription({sdp: offer.sdp,
+                                                                    type: 'offer'}))
+            });
         }
 
-        /**
-         * Get the channels of all the connected peers and handshake servers
-         */
-        this.getChannels = function()
+        // Peer is connected and we have defined an 'onsucess' callback
+        else if(onsuccess)
+            onsuccess(peer._channel)
+    }
+
+    /**
+     * Get the channels of all the connected peers and handshake servers
+     */
+    this.getChannels = function()
+    {
+        var channels = {}
+
+        // Peers channels
+        for(var uid in peers)
         {
-            var channels = {}
-
-            // Peers channels
-            for(var uid in peers)
-            {
-                var channel = peers[uid]._channel
-                if(channel)
-                    channels[uid] = channel
-            }
-
-            // Handshake servers channels
-            var handshakeChannels = handshakeManager.getChannels()
-            for(var uid in handshakeChannels)
-                if(handshakeChannels.hasOwnProperty(uid))
-                    channels[uid] = handshakeChannels[uid]
-
-            return channels
+            var channel = peers[uid]._channel
+            if(channel)
+                channels[uid] = channel
         }
+
+        // Handshake servers channels
+        var handshakeChannels = handshakeManager.getChannels()
+        for(var uid in handshakeChannels)
+            if(handshakeChannels.hasOwnProperty(uid))
+                channels[uid] = handshakeChannels[uid]
+
+        return channels
     }
 
 
