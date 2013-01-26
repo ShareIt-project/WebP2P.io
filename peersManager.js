@@ -336,8 +336,10 @@ function PeersManager(db, stun_server)
             console.error(error)
             alert(error)
         }
-//        handshake.onopen = function()
-//        {
+        handshakeManager.onopen = function()
+        {
+            self.dispatchEvent({type: "uid", data: [self.uid]})
+
 //            // Restart downloads
 //            db.files_getAll(null, function(filelist)
 //            {
@@ -349,7 +351,7 @@ function PeersManager(db, stun_server)
 //                                self.transfer_query(fileentry)
 //                    })
 //            })
-//        }
+        }
 
     /**
      * Connects to another peer based on its UID. If we are already connected,
