@@ -14,7 +14,7 @@ function Transport_Routing_init(transport, peersManager)
         if(transport.isPubsub)
             route.push(peersManager.uid)
 
-        console.debug('offer', dest, sdp, route)
+        console.debug('send offer', dest, route)
         transport.emit('offer', dest, sdp, route);
     }
 
@@ -35,7 +35,7 @@ function Transport_Routing_init(transport, peersManager)
                     break
                 }
 
-        console.debug('answer', orig, sdp, route)
+        console.debug('send answer', orig, route)
         transport.emit('answer', orig, sdp, route);
     }
 

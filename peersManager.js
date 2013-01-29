@@ -231,14 +231,14 @@ function PeersManager(db, stun_server)
      * @param {UUID} id Identifier of the other peer so later can be accessed
      * @returns {RTCPeerConnection}
      */
-    function createPeerConnection(id)
+    function createPeerConnection(uid)
 	{
-	    var pc = peers[id] = new RTCPeerConnection({"iceServers": [{"url": 'stun:'+stun_server}]});
+	    var pc = peers[uid] = new RTCPeerConnection({"iceServers": [{"url": 'stun:'+stun_server}]});
 	        pc.onstatechange = function(event)
 	        {
 	            // Remove the peer from the list of peers when gets closed
 	            if(event.target.readyState == "closed")
-	                delete peers[id]
+	                delete peers[uid]
 	        }
 
 	    return pc
@@ -281,7 +281,7 @@ function PeersManager(db, stun_server)
 
             channel._send_file_deleted(fileentry);
         })
-	}
+    }
 
 
     /**
@@ -375,7 +375,8 @@ function PeersManager(db, stun_server)
         var peer = peers[uid]
 
         // Peer is not connected, create a new channel
-        if(!peer)
+        // [To-Do] Check if PeerConnection is connected but channel not created
+        if(!peer || !peer._channel)
         {
             // Create PeerConnection
             peer = createPeerConnection(uid);
