@@ -187,9 +187,6 @@ function PeersManager(db, stun_server)
 
         this.dispatchEvent({type: "file.added", data: [fileentry]})
 
-        for(var uid in peers)
-            peers[uid]._channel._send_file_added(fileentry);
-
         // Update fileentry sharedpoint size
         db.sharepoints_get(fileentry.sharedpoint,
         function(sharedpoint)
@@ -213,9 +210,6 @@ function PeersManager(db, stun_server)
         var self = this
 
         this.dispatchEvent({type: "file.deleted", data: [fileentry]})
-
-        for(var uid in peers)
-            peers[uid]._channel._send_file_deleted(fileentry);
 
         // Update fileentry sharedpoint size
         db.sharepoints_get(fileentry.sharedpoint,
@@ -274,6 +268,19 @@ function PeersManager(db, stun_server)
 
 			pc.close()
 		}
+
+        self.addEventListener("file.added", function(event)
+        {
+            var fileentry = event.data[0]
+
+            channel._send_file_added(fileentry);
+        })
+        self.addEventListener("file.deleted", function(event)
+        {
+            var fileentry = event.data[0]
+
+            channel._send_file_deleted(fileentry);
+        })
 	}
 
 
