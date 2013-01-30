@@ -375,8 +375,7 @@ function PeersManager(db, stun_server)
         var peer = peers[uid]
 
         // Peer is not connected, create a new channel
-        // [To-Do] Check if PeerConnection is connected but channel not created
-        if(!peer || !peer._channel)
+        if(!peer)
         {
             // Create PeerConnection
             peer = createPeerConnection(uid);
@@ -425,7 +424,12 @@ function PeersManager(db, stun_server)
             });
         }
 
-        // Peer is connected and we have defined an 'onsucess' callback
+        // Peer is connected but channel is not ready (it's being negotiated)
+        else if(!peer._channel)
+            // [To-Do] Launch and event when channel is ready
+            alert('Peer connection is not ready, wait some more seconds')
+
+        // Peer is fully connected and we have defined an 'onsucess' callback
         else if(onsuccess)
             onsuccess(peer._channel)
     }
