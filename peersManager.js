@@ -501,4 +501,10 @@ function PeersManager(db, stun_server)
             onsuccess(sharing)
         })
     }
+
+    // Init cache backup system
+    this.cacheBackup = new CacheBackup(db, this)
+
+    // Init sharedpoints manager
+    this.sharedpointsManager = new SharedpointsManager(db, this)
 }
