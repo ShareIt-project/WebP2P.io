@@ -4,20 +4,16 @@
  * @author Jesús Leganés Combarro "Piranna" piranna@gmail.com (webp2p)
  */
 
-var webp2p = {
-  require: function(libraryName) {
+var webp2p =
+{
+  require: function(libraryName)
+  {
     // inserting via DOM fails in Safari 2.0, so brute force approach
     document.write('<script type="text/javascript" src="' + libraryName + '"></script>');
   },
 
-  load: function() {
-    var includes = ['bitmap', 'cacheBackup', 'db', 'peersManager', 'utils',
-      'hasher/index', 'handshake/index', 'handshake/PubNub', 'handshake/simpleSignaling',
-      'lib/zip.js/deflate', 'lib/zip.js/inflate', 'lib/zip.js/zip', 'lib/zip.js/zip-fs', 'lib/zip.js/mime-types',
-      'polyfills/FileWriter', 'polyfills/IndexedDB-javascript',
-      'sharedpoints/index', 'sharedpoints/dropbox', 'sharedpoints/mega',
-      'transport/index', 'transport/host', 'transport/peer', 'transport/routing', 'transport/search'];
-
+  load: function(includes)
+  {
     var scripts = document.getElementsByTagName('script');
     var path = './',
         i;
@@ -41,4 +37,37 @@ var webp2p = {
   }
 };
 
-webp2p.load();
+webp2p.load(
+['bitmap',
+ 'cacheBackup',
+ 'db',
+ 'peersManager',
+ 'utils',
+
+ 'hasher/index',
+
+ 'handshake/index',
+ 'handshake/PubNub',
+ 'handshake/simpleSignaling',
+
+ 'lib/BoolArray',
+ 'lib/datachannel',
+
+ 'lib/zip.js/deflate',
+ 'lib/zip.js/inflate',
+ 'lib/zip.js/zip',
+ 'lib/zip.js/zip-fs',
+ 'lib/zip.js/mime-types',
+
+ 'polyfills/FileWriter',
+ 'polyfills/IndexedDB-javascript',
+
+ 'sharedpoints/index',
+ 'sharedpoints/dropbox',
+ 'sharedpoints/mega',
+
+ 'transport/index',
+ 'transport/host',
+ 'transport/peer',
+ 'transport/routing',
+ 'transport/search']);
