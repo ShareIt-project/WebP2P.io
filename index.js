@@ -9,25 +9,27 @@ var webp2p =
   require: function(libraryName)
   {
     // inserting via DOM fails in Safari 2.0, so brute force approach
-    document.write('<script type="text/javascript" src="'+libraryName+'"></script>');
+    document.write('<script type="text/javascript" src="' + libraryName + '"></script>');
   },
 
-  load: function(regex, basepath, includes)
+  load: function(includes)
   {
-    var scripts = document.getElementsByTagName("script");
-    var path = './', i;
-    for(i=0; i<scripts.length; i++)
+    var scripts = document.getElementsByTagName('script');
+    var path = './';
+
+    for(var i = 0; i < scripts.length; i++)
     {
-      var src = scripts.item(i).src
+      var src = scripts.item(i).src;
+      var regex = /webp2p\/index\.js$/;
       if(src && src.match(regex))
       {
-        path = src.replace(regex,basepath);
+        path = src.replace(regex, 'webp2p/');
         break;
       }
     }
 
-    for(i=0; i<includes.length; i++)
-      this.require(path+includes[i]+'.js');
+    for(var i = 0; i < includes.length; i++)
+      this.require(path + includes[i] + '.js');
   },
 
   bind: function(fn, obj, optArg)
@@ -39,35 +41,38 @@ var webp2p =
   }
 };
 
-webp2p.load(/webp2p\/index\.js$/, 'webp2p/',
-            ['bitmap',
-             'cacheBackup',
-             'db',
-             'peersManager',
-             'utils',
+webp2p.load(
+['bitmap',
+ 'cacheBackup',
+ 'db',
+ 'peersManager',
+ 'utils',
 
-             'hasher/index',
+ 'hasher/index',
 
-             'handshake/index',
-             'handshake/PubNub',
-             'handshake/simpleSignaling',
+ 'handshake/index',
+ 'handshake/PubNub',
+ 'handshake/simpleSignaling',
 
-             'lib/zip.js/deflate',
-             'lib/zip.js/inflate',
-             'lib/zip.js/zip',
-             'lib/zip.js/zip-fs',
-             'lib/zip.js/mime-types',
+ 'lib/BoolArray',
+ 'lib/datachannel',
+ 'lib/EventTarget',
 
-             'polyfills/FileWriter',
-             'polyfills/IndexedDB-javascript',
+ 'lib/zip.js/deflate',
+ 'lib/zip.js/inflate',
+ 'lib/zip.js/zip',
+ 'lib/zip.js/zip-fs',
+ 'lib/zip.js/mime-types',
 
-             'sharedpoints/index',
-             'sharedpoints/dropbox',
-             'sharedpoints/mega',
+ 'polyfills/FileWriter',
+ 'polyfills/IndexedDB-javascript',
 
-             'transport/index',
-             'transport/host',
-             'transport/peer',
-             'transport/routing',
-             'transport/search'
-             ]);
+ 'sharedpoints/index',
+ 'sharedpoints/dropbox',
+ 'sharedpoints/mega',
+
+ 'transport/index',
+ 'transport/host',
+ 'transport/peer',
+ 'transport/routing',
+ 'transport/search']);

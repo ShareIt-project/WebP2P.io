@@ -1,68 +1,72 @@
 function SharedpointsManager(db, peersManager)
 {
-    // Init hasher
-    var hasher = new Hasher(db, policy)
-        hasher.onhashed  = function(fileentry)
-        {
-            // Notify the other peers about the new hashed file
-            peersManager._send_file_added(fileentry)
-        }
-        hasher.ondeleted = function(fileentry)
-        {
-            // Notify the other peers about the deleted file
-            peersManager._send_file_deleted(fileentry)
-        }
+  // Init hasher
+  var hasher = new Hasher(db, policy, this);
+  hasher.onhashed = function(fileentry)
+  {
+    // Notify the other peers about the new hashed file
+    peersManager._send_file_added(fileentry);
+  };
+  hasher.ondeleted = function(fileentry)
+  {
+    // Notify the other peers about the deleted file
+    peersManager._send_file_deleted(fileentry);
+  };
 
-    this.getSharedpoints = function(onsuccess)
-    {
-        db.sharepoints_getAll(null, onsuccess)
-    }
+  this.getSharedpoints = function(onsuccess)
+  {
+    db.sharepoints_getAll(null, onsuccess);
+  };
 
 //    var sharedpoints = []
 //
 //    this.getSharedpoints(function(sharedpoints)
 //    {
-//        for(var i=0, sharedpoint; sharedpoint= sharedpoints[i]; i++)
+//      for(var i=0, sharedpoint; sharedpoint= sharedpoints[i]; i++)
+//      {
+//        switch(sharedpoint.type)
 //        {
-//            switch(sharedpoint.type)
-//            {
-//                case 'dropbox':
-//                    break
+//          case 'dropbox':
+//            break
 //
-//                case 'folder':
-//                    break
-//            }
+//          case 'folder':
+//            break
 //        }
+//      }
 //    })
+  this.addSharedpoint_Folder = function(files, onsuccess, onerror)
+  {
+    var sharedpoint_name = files[0].webkitRelativePath.split('/')[0];
 
-    this.addSharedpoint_Folder = function(files, onsuccess, onerror)
+    this.getSharedpoints(function(sharedpoints)
     {
-      var sharedpoint_name = files[0].webkitRelativePath.split('/')[0]
+      for(var i = 0, sharedpoint; sharedpoint = sharedpoints[i]; i++)
+        if(sharedpoint.name == name)
+        {
+          if(onerror)
+            onerror();
 
-      this.getSharedpoints(function(sharedpoints)
-      {
-          for(var i=0, sharedpoint; sharedpoint= sharedpoints[i]; i++)
-              if(sharedpoint.name == name)
-              {
-                  if(onerror)
-                      onerror()
+          return;
+        }
 
-                  return
-              }
+        var sharedpoint =
+        {
+          name: sharedpoint_name,
+          type: 'folder',
+          size: 0
+        };
 
-          var sharedpoint = {name: sharedpoint_name, type: 'folder', size: 0}
+      db.sharepoints_put(sharedpoint);
 
-          db.sharepoints_put(sharedpoint)
+      hasher.hash(files, sharedpoint_name);
 
-          hasher.hash(files, sharedpoint_name)
+      if(onsuccess)
+        onsuccess();
+    });
+  };
 
-          if(onsuccess)
-              onsuccess()
-      })
-    }
-
-    this.delete = function(name, onsuccess)
-    {
-        db.sharepoints_delete(name, onsuccess)
-    }
+  this.delete = function(name, onsuccess)
+  {
+    db.sharepoints_delete(name, onsuccess);
+  };
 }
