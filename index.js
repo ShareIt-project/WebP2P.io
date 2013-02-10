@@ -52,6 +52,7 @@ webp2p.load(
 
  'lib/BoolArray',
  'lib/datachannel',
+ 'lib/EventTarget',
 
  'lib/zip.js/deflate',
  'lib/zip.js/inflate',
