@@ -53,6 +53,9 @@ webp2p.load(
  'lib/BoolArray',
  'lib/datachannel',
  'lib/EventTarget',
+ 'lib/dropbox.min',
+ 'lib/pubnub-3.3.1',
+ 'lib/simpleSignaling',
 
  'lib/zip.js/deflate',
  'lib/zip.js/inflate',

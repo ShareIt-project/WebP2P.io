@@ -365,28 +365,27 @@ function PeersManager(db, stun_server) {
     var peer = peers[uid];
 
     // Peer is not connected, create a new channel
-    // [To-Do] Check if PeerConnection is connected but channel not created
     if(!peer)
     {
       // Create PeerConnection
       peer = createPeerConnection(uid);
-      peer.onopen = function()
+      peer.onopen = function(event)
       {
         var channel = peer.createDataChannel('webp2p');
-        channel.onopen = function()
+        channel.addEventListener('open', function(event)
         {
           initDataChannel(peer, channel, uid);
 
           if(onsuccess)
              onsuccess(channel);
-        };
-        channel.onerror = function()
+        });
+        channel.onerror = function(event)
         {
           if(onerror)
              onerror(uid, peer, channel);
         };
       };
-      peer.onerror = function()
+      peer.onerror = function(event)
       {
         if(onerror)
            onerror(uid, peer);
@@ -410,21 +409,33 @@ function PeersManager(db, stun_server) {
         }
 
         // Set the peer local description
-        peer.setLocalDescription(new RTCSessionDescription({
+        peer.setLocalDescription(new RTCSessionDescription(
+        {
           sdp: offer.sdp,
           type: 'offer'
         }));
       });
     }
 
-    // Peer is connected but channel is not ready (it's being negotiated)
+    // PeerConnection is connected but channel not created
     else if(!peer._channel)
-      // [To-Do] Launch and event when channel is ready
-      alert('Peer connection is not ready, wait some more seconds')
+      alert('PeerConnection is connected but channel not created, please wait'+
+            'some more seconds')
 
-    // Peer is connected and we have defined an 'onsucess' callback
+    // Channel is created and we have defined an 'onsucess' callback
     else if(onsuccess)
-      onsuccess(peer._channel);
+    {
+      // Channel is open
+      if(peer._channel.readyState == 'open')
+        onsuccess(peer._channel);
+
+      // Channel is not yet open
+      else
+        peer._channel.addEventListener('open', function(event)
+        {
+          onsuccess(event.target);
+        })
+    }
   };
 
   /**
@@ -472,52 +483,39 @@ function PeersManager(db, stun_server) {
   };
 
 
-  this.files_downloading = function(onsuccess) {
-    db.files_getAll(null, function(filelist) {
+  this.files_downloading = function(onsuccess)
+  {
+    db.files_getAll(null, function(filelist)
+    {
       var downloading = [];
 
-      for (var i = 0, fileentry; fileentry = filelist[i]; i++)
-        if (fileentry.bitmap) downloading.push(fileentry);
+      for(var i = 0, fileentry; fileentry = filelist[i]; i++)
+        if(fileentry.bitmap)
+          downloading.push(fileentry);
 
         // Update Downloading files list
         onsuccess(downloading);
     });
   };
 
-  this.files_sharing = function(onsuccess) {
-    db.files_getAll(null, function(filelist) {
-      var sharing = [];
-
-      for (var i = 0, fileentry; fileentry = filelist[i]; i++)
-        if (!fileentry.bitmap) sharing.push(fileentry);
-
-            for(var i=0, fileentry; fileentry=filelist[i]; i++)
-                if(fileentry.bitmap)
-                    downloading.push(fileentry)
-
-            // Update Downloading files list
-            onsuccess(downloading)
-        })
-    }
-
-    this.files_sharing = function(onsuccess)
+  this.files_sharing = function(onsuccess)
+  {
+    db.files_getAll(null, function(filelist)
     {
-        db.files_getAll(null, function(filelist)
-        {
-            var sharing = []
+      var sharing = []
 
-            for(var i=0, fileentry; fileentry=filelist[i]; i++)
-                if(!fileentry.bitmap)
-                    sharing.push(fileentry)
+      for(var i=0, fileentry; fileentry=filelist[i]; i++)
+        if(!fileentry.bitmap)
+          sharing.push(fileentry)
 
-            // Update Sharing files list
-            onsuccess(sharing)
-        })
-    }
+      // Update Sharing files list
+      onsuccess(sharing)
+    })
+  }
 
-    // Init cache backup system
-    this.cacheBackup = new CacheBackup(db, this)
+  // Init cache backup system
+  this.cacheBackup = new CacheBackup(db, this)
 
-    // Init sharedpoints manager
-    this.sharedpointsManager = new SharedpointsManager(db, this)
+  // Init sharedpoints manager
+  this.sharedpointsManager = new SharedpointsManager(db, this)
 }
