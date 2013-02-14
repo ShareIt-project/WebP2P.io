@@ -335,17 +335,17 @@ function PeersManager(db, stun_server) {
       data: [self.uid]
     });
 
-    //            // Restart downloads
-    //            db.files_getAll(null, function(filelist)
-    //            {
-    //                if(filelist.length)
-    //                    policy(function()
-    //                    {
-    //                        for(var i=0, fileentry; fileentry=filelist[i]; i++)
-    //                            if(fileentry.bitmap)
-    //                                self.transfer_query(fileentry)
-    //                    })
-    //            })
+//    // Restart downloads
+//    db.files_getAll(null, function(filelist)
+//    {
+//      if(filelist.length)
+//        policy(function()
+//        {
+//          for(var i=0, fileentry; fileentry=filelist[i]; i++)
+//            if(fileentry.bitmap)
+//              self.transfer_query(fileentry)
+//        })
+//    })
   };
 
   /**
@@ -357,81 +357,117 @@ function PeersManager(db, stun_server) {
    * @param {MessageChannel} incomingChannel Optional channel where to
    * send the offer. If not defined send it to all connected peers.
    */
-  this.connectTo = function(uid, onsuccess, onerror, incomingChannel) {
+  this.connectTo = function(uid, onsuccess, onerror, incomingChannel)
+  {
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
 
     // Peer is not connected, create a new channel
-    // [To-Do] Check if PeerConnection is connected but channel not created
-    if (!peer || !peer._channel) {
+    if(!peer)
+    {
       // Create PeerConnection
       peer = createPeerConnection(uid);
-      peer.onopen = function() {
+      peer.onopen = function(event)
+      {
         var channel = peer.createDataChannel('webp2p');
-        channel.onopen = function() {
+        channel.addEventListener('open', function(event)
+        {
           initDataChannel(peer, channel, uid);
 
-          if (onsuccess) onsuccess(channel);
-        };
-        channel.onerror = function() {
-          if (onerror) onerror(uid, peer, channel);
+          if(onsuccess)
+             onsuccess(channel);
+        });
+        channel.onerror = function(event)
+        {
+          if(onerror)
+             onerror(uid, peer, channel);
         };
       };
-      peer.onerror = function() {
-        if (onerror) onerror(uid, peer);
+      peer.onerror = function(event)
+      {
+        if(onerror)
+           onerror(uid, peer);
       };
 
       // Send offer to new PeerConnection
-      peer.createOffer(function(offer) {
+      peer.createOffer(function(offer)
+      {
         // Send the offer only for the incoming channel
-        if (incomingChannel) incomingChannel.sendOffer(uid, offer.sdp);
+        if(incomingChannel)
+           incomingChannel.sendOffer(uid, offer.sdp);
 
         // Send the offer throught all the peers
-        else {
+        else
+        {
           var channels = self.getChannels();
 
           // Send the connection offer to the other connected peers
-          for (var channel_id in channels)
+          for(var channel_id in channels)
             channels[channel_id].sendOffer(uid, offer.sdp);
         }
 
         // Set the peer local description
-        peer.setLocalDescription(new RTCSessionDescription({
+        peer.setLocalDescription(new RTCSessionDescription(
+        {
           sdp: offer.sdp,
           type: 'offer'
         }));
       });
     }
 
-    // Peer is connected and we have defined an 'onsucess' callback
-    else if (onsuccess) onsuccess(peer._channel);
+    // PeerConnection is connected but channel not created
+    else if(!peer._channel)
+      alert('PeerConnection is connected but channel not created, please wait'+
+            'some more seconds')
+
+    // Channel is created and we have defined an 'onsucess' callback
+    else if(onsuccess)
+    {
+      // Channel is open
+      if(peer._channel.readyState == 'open')
+        onsuccess(peer._channel);
+
+      // Channel is not yet open
+      else
+        peer._channel.addEventListener('open', function(event)
+        {
+          onsuccess(event.target);
+        })
+    }
   };
 
   /**
    * Get the channels of all the connected peers and handshake servers
    */
-  this.getChannels = function() {
+  this.getChannels = function()
+  {
     var channels = {};
 
     // Peers channels
-    for (var uid in peers) {
+    for(var uid in peers)
+    {
       var channel = peers[uid]._channel;
-      if (channel) channels[uid] = channel;
+      if(channel)
+        channels[uid] = channel;
     }
 
     // Handshake servers channels
     var handshakeChannels = handshakeManager.getChannels();
-    for (var uid in handshakeChannels)
-      if (handshakeChannels.hasOwnProperty(uid)) channels[uid] = handshakeChannels[uid];
+    for(var uid in handshakeChannels)
+      if(handshakeChannels.hasOwnProperty(uid))
+        channels[uid] = handshakeChannels[uid];
 
       return channels;
   };
 
 
-  this.handshakeDisconnected = function() {
-    if (!this.numPeers()) this.dispatchEvent({
-      type: 'error.noPeers'
-    });
+  this.handshakeDisconnected = function()
+  {
+    if(!this.numPeers())
+      this.dispatchEvent(
+      {
+        type: 'error.noPeers'
+      });
   };
 
 
@@ -439,57 +475,45 @@ function PeersManager(db, stun_server) {
    * Get the number of peers currently connected with this node
    * @return {Number} The number of peers connected.
    */
-  this.numPeers = function() {
+  this.numPeers = function()
+  {
     return Object.keys(peers).length;
   };
 
 
-  this.files_downloading = function(onsuccess) {
-    db.files_getAll(null, function(filelist) {
+  this.files_downloading = function(onsuccess)
+  {
+    db.files_getAll(null, function(filelist)
+    {
       var downloading = [];
 
-      for (var i = 0, fileentry; fileentry = filelist[i]; i++)
-        if (fileentry.bitmap) downloading.push(fileentry);
+      for(var i = 0, fileentry; fileentry = filelist[i]; i++)
+        if(fileentry.bitmap)
+          downloading.push(fileentry);
 
         // Update Downloading files list
         onsuccess(downloading);
     });
   };
 
-  this.files_sharing = function(onsuccess) {
-    db.files_getAll(null, function(filelist) {
-      var sharing = [];
-
-      for (var i = 0, fileentry; fileentry = filelist[i]; i++)
-        if (!fileentry.bitmap) sharing.push(fileentry);
-
-            for(var i=0, fileentry; fileentry=filelist[i]; i++)
-                if(fileentry.bitmap)
-                    downloading.push(fileentry)
-
-            // Update Downloading files list
-            onsuccess(downloading)
-        })
-    }
-
-    this.files_sharing = function(onsuccess)
+  this.files_sharing = function(onsuccess)
+  {
+    db.files_getAll(null, function(filelist)
     {
-        db.files_getAll(null, function(filelist)
-        {
-            var sharing = []
+      var sharing = []
 
-            for(var i=0, fileentry; fileentry=filelist[i]; i++)
-                if(!fileentry.bitmap)
-                    sharing.push(fileentry)
+      for(var i=0, fileentry; fileentry=filelist[i]; i++)
+        if(!fileentry.bitmap)
+          sharing.push(fileentry)
 
-            // Update Sharing files list
-            onsuccess(sharing)
-        })
-    }
+      // Update Sharing files list
+      onsuccess(sharing)
+    })
+  }
 
-    // Init cache backup system
-    this.cacheBackup = new CacheBackup(db, this)
+  // Init cache backup system
+  this.cacheBackup = new CacheBackup(db, this)
 
-    // Init sharedpoints manager
-    this.sharedpointsManager = new SharedpointsManager(db, this)
+  // Init sharedpoints manager
+  this.sharedpointsManager = new SharedpointsManager(db, this)
 }
