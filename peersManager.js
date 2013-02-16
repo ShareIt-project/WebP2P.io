@@ -325,11 +325,13 @@ function PeersManager(db, stun_server) {
 
   // Init handshake manager
   var handshakeManager = new HandshakeManager('json/handshake.json', this);
-  handshakeManager.onerror = function(error) {
+  handshakeManager.onerror = function(error)
+  {
     console.error(error);
     alert(error);
   };
-  handshakeManager.onopen = function() {
+  handshakeManager.onopen = function()
+  {
     self.dispatchEvent({
       type: 'uid',
       data: [self.uid]
