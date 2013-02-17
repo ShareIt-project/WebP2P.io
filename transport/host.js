@@ -63,8 +63,10 @@ function Transport_Host_init(transport, db) {
    * Notify to the other peer that we have added a new file
    * @param {Fileentry} fileentry {Fileentry} of the new added file.
    */
-  transport._send_file_added = function(fileentry) {
-    if (send_updates) transport.emit('fileslist.added', generateFileObject(fileentry));
+  transport._send_file_added = function(fileentry)
+  {
+    if(send_updates)
+      transport.emit('fileslist.added', generateFileObject(fileentry));
   };
 
   /**

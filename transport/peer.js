@@ -38,36 +38,40 @@ function Transport_Peer_init(transport, db, peersManager) {
   /**
    * Catch new sended data for the other peer fileslist
    */
-  transport.addEventListener('fileslist.send', function(event) {
+  transport.addEventListener('fileslist.send', function(event)
+  {
     var fileentries = event.data[0];
 
     // Check if we have already any of the files
     // It's stupid to try to download it... and also give errors
-    db.files_getAll(null, function(fileslist) {
-      for (var i = 0, fileentry; fileentry = fileentries[i]; i++)
+    db.files_getAll(null, function(fileslist)
+    {
+      for(var i = 0, fileentry; fileentry = fileentries[i]; i++)
         check_ifOwned(fileentry, fileslist);
 
       // Update the peer's fileslist with the checked data
       _fileslist = fileentries;
 
       // Notify about fileslist update
-      transport.dispatchEvent({
-        type: 'fileslist._updated',
-        data: [_fileslist]
-      });
+      var event = document.createEvent("Event");
+          event.initEvent('fileslist._updated',true,true);
+          event.data = [_fileslist]
+
+      transport.dispatchEvent(event);
     });
   });
 
   /**
    * Request the other peer fileslist
    */
-  transport.fileslist_query = function(flags) {
+  transport.fileslist_query = function(flags)
+  {
     transport.emit('fileslist.query', flags);
   };
 
   /**
-     * Request to the other peer don't send fileslist updates
-     */
+   * Request to the other peer don't send fileslist updates
+   */
   transport.fileslist_disableUpdates = function() {
     transport.emit('fileslist.disableUpdates');
   };
@@ -75,47 +79,56 @@ function Transport_Peer_init(transport, db, peersManager) {
 
   // fileslist updates
   /**
-     * Catch when the other peer has added a new file
-     */
-  transport.addEventListener('fileslist.added', function(event) {
+   * Catch when the other peer has added a new file
+   */
+  transport.addEventListener('fileslist.added', function(event)
+  {
     var fileentry = event.data[0];
 
     // Check if we have the file previously listed
-    for (var i = 0, listed; listed = _fileslist[i]; i++)
-      if (fileentry.path == listed.path && fileentry.name == listed.name) return;
+    for(var i = 0, listed; listed = _fileslist[i]; i++)
+      if(fileentry.path == listed.path
+      && fileentry.name == listed.name)
+        return;
 
       // Check if we have already the files
-      db.files_getAll(null, function(fileslist) {
+      db.files_getAll(null, function(fileslist)
+      {
         check_ifOwned(fileentry, fileslist);
 
         // Add the fileentry to the fileslist
         _fileslist.push(fileentry);
 
         // Notify about fileslist update
-        transport.dispatchEvent({
-          type: 'fileslist._updated',
-          data: [_fileslist]
-        });
+        var event = document.createEvent("Event");
+            event.initEvent('fileslist._updated',true,true);
+            event.data = [_fileslist]
+
+        transport.dispatchEvent(event);
       });
   });
 
   /**
-     * Catch when the other peer has deleted a file
-     */
-  transport.addEventListener('fileslist.deleted', function(event) {
+   * Catch when the other peer has deleted a file
+   */
+  transport.addEventListener('fileslist.deleted', function(event)
+  {
     var fileentry = event.data[0];
 
     // Search for the fileentry on the fileslist
-    for (var i = 0, listed; listed = _fileslist[i]; i++)
-      if (fileentry.path == listed.path && fileentry.name == listed.name) {
+    for(var i = 0, listed; listed = _fileslist[i]; i++)
+      if(fileentry.path == listed.path
+      && fileentry.name == listed.name)
+      {
         // Remove the fileentry for the fileslist
         _fileslist.splice(i, 1);
 
         // Notify about fileslist update
-        transport.dispatchEvent({
-          type: 'fileslist._updated',
-          data: [_fileslist]
-        });
+        var event = document.createEvent("Event");
+            event.initEvent('fileslist._updated',true,true);
+            event.data = [_fileslist]
+
+        transport.dispatchEvent(event);
 
         return;
       }
@@ -124,9 +137,10 @@ function Transport_Peer_init(transport, db, peersManager) {
 
   // transfer
   /**
-     * Catch new sended data for a file
-     */
-  transport.addEventListener('transfer.send', function(event) {
+   * Catch new sended data for a file
+   */
+  transport.addEventListener('transfer.send', function(event)
+  {
     var hash = event.data[0];
     var chunk = parseInt(event.data[1]);
     var data = event.data[2];

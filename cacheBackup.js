@@ -99,32 +99,40 @@ function CacheBackup(db, peersManager) {
                 }
             }
 
-            function fileentry_add(file) {
-              blob.getBlob(zip.getMimeType(file.name), function(blob) {
-                var fileentry = {
+            function fileentry_add(file)
+            {
+              blob.getBlob(zip.getMimeType(file.name), function(blob)
+              {
+                var fileentry =
+                {
                   hash: file.hash,
                   path: file.path,
                   name: file.name,
                   blob: blob
                 };
-                if (file.bitmap) fileentry.bitmap = file.bitmap;
+                if(file.bitmap)
+                  fileentry.bitmap = file.bitmap;
 
-                db.files_add(fileentry, function() {
+                db.files_add(fileentry, function()
+                {
                   // File was not completed, notify update
-                  if (file.bitmap) {
+                  if(file.bitmap)
+                  {
                     var pending_chunks = fileentry.bitmap.indexes(false).length;
 
                     peersManager.transfer_update(fileentry, pending_chunks);
                   }
 
                 // File was completed, notify finished
-                  else peersManager.transfer_end(fileentry);
+                  else
+                    peersManager.transfer_end(fileentry);
                 });
               });
             }
 
             // Fileentry exists on cache
-            if (fileentry) fileentry_update(file);
+            if(fileentry)
+              fileentry_update(file);
 
           // Fileentry don't exists on cache, add it
             else fileentry_add(file);
