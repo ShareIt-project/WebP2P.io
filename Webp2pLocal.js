@@ -4,13 +4,21 @@ webp2p.Webp2pLocal = function(db)
 
   var peersManager = new PeersManager(db)
 
-  /**
-   * Start the download of a file
-   * @param {Fileentry} Fileentry of the file to be downloaded.
-   */
-  this.transfer_begin = function(fileentry)
+  // Init cache backup system
+  var cacheBackup = new CacheBackup(db, peersManager)
+
+  // Init sharedpoints manager
+  var sharedpointsManager = new SharedpointsManager(db, peersManager)
+
+
+  this.cacheBackup_export = function(onfinish, onprogress, onerror)
   {
-    peersManager.transfer_begin(fileentry)
+    cacheBackup.export(onfinish, onprogress, onerror)
+  }
+
+  this.cacheBackup_import = function(blob, onerror)
+  {
+    cacheBackup.export(blob, onerror)
   }
 
   /**
@@ -37,36 +45,29 @@ webp2p.Webp2pLocal = function(db)
     peersManager.files_sharing(onsuccess)
   }
 
-  // Init cache backup system
-  var cacheBackup = new CacheBackup(db, peersManager)
-
-  this.cacheBackup_export = function(onfinish, onprogress, onerror)
+  this.numPeers = function()
   {
-    cacheBackup.export(onfinish, onprogress, onerror)
+    return Object.keys(peersManager.getChannels()).length;
   }
 
-  this.cacheBackup_import = function(blob, onerror)
+  this.sharedpointsManager_addSharedpoint_Folder = function(files, onsuccess,
+                                                            onerror)
   {
-    cacheBackup.export(blob, onerror)
+    sharedpointsManager.addSharedpoint_Folder(files, onsuccess, onerror)
   }
-
-  // Init sharedpoints manager
-  var sharedpointsManager = new SharedpointsManager(db, peersManager)
 
   this.sharedpointsManager_getSharedpoints = function(onsuccess)
   {
     sharedpointsManager.getSharedpoints(onsuccess)
   }
 
-  this.sharedpointsManager_addSharedpoint_Folder = function(files, onsuccess, onerror)
+  /**
+   * Start the download of a file
+   * @param {Fileentry} Fileentry of the file to be downloaded.
+   */
+  this.transfer_begin = function(fileentry)
   {
-    sharedpointsManager.addSharedpoint_Folder(files, onsuccess, onerror)
-  }
-
-
-  this.numPeers = function()
-  {
-    return Object.keys(peersManager.getChannels()).length;
+    peersManager.transfer_begin(fileentry)
   }
 
 
@@ -83,8 +84,8 @@ webp2p.Webp2pLocal = function(db)
   peersManager.addEventListener('sharedpoints.update', forwardEvent);
 
   peersManager.addEventListener('transfer.begin', forwardEvent);
-  peersManager.addEventListener('transfer.update', forwardEvent);
   peersManager.addEventListener('transfer.end', forwardEvent);
+  peersManager.addEventListener('transfer.update', forwardEvent);
 
   peersManager.addEventListener('uid', forwardEvent);
 }
