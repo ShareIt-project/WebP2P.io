@@ -28,11 +28,9 @@ function Transport_init(transport)
   {
     message = JSON.parse(message.data);
 
-    var event =
-    {
-      type: message[0],
-      data: message.slice(1)
-    };
+    var event = document.createEvent("Event");
+        event.initEvent(message[0],true,true);
+        event.data = message.slice(1)
 
     transport.dispatchEvent(event);
   };
