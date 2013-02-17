@@ -193,12 +193,15 @@ function PeersManager(db, stun_server) {
     });
 
     // Update fileentry sharedpoint size
-    db.sharepoints_get(fileentry.sharedpoint, function(sharedpoint) {
+    db.sharepoints_get(fileentry.sharedpoint, function(sharedpoint)
+    {
       // Increase sharedpoint shared size
       sharedpoint.size += fileentry.file.size;
 
-      db.sharepoints_put(sharedpoint, function() {
-        self.dispatchEvent({
+      db.sharepoints_put(sharedpoint, function()
+      {
+        self.dispatchEvent(
+        {
           type: 'sharedpoints.update'
         });
       });
@@ -218,12 +221,15 @@ function PeersManager(db, stun_server) {
     });
 
     // Update fileentry sharedpoint size
-    db.sharepoints_get(fileentry.sharedpoint, function(sharedpoint) {
+    db.sharepoints_get(fileentry.sharedpoint, function(sharedpoint)
+    {
       // Increase sharedpoint shared size
       sharedpoint.size -= fileentry.file.size;
 
-      db.sharepoints_put(sharedpoint, function() {
-        self.dispatchEvent({
+      db.sharepoints_put(sharedpoint, function()
+      {
+        self.dispatchEvent(
+        {
           type: 'sharedpoints.update'
         });
       });

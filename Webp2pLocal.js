@@ -1,5 +1,7 @@
 webp2p.Webp2pLocal = function(db)
 {
+  EventTarget.call(this);
+
   var peersManager = new PeersManager(db)
 
   /**
@@ -60,4 +62,29 @@ webp2p.Webp2pLocal = function(db)
   {
     sharedpointsManager.addSharedpoint_Folder(files, onsuccess, onerror)
   }
+
+
+  this.numPeers = function()
+  {
+    return Object.keys(peersManager.getChannels()).length;
+  }
+
+
+  function forwardEvent(event)
+  {
+    self.dispatchEvent(event);
+  }
+
+  peersManager.addEventListener('error.noPeers', forwardEvent);
+
+  peersManager.addEventListener('file.added',   forwardEvent);
+  peersManager.addEventListener('file.deleted', forwardEvent);
+
+  peersManager.addEventListener('sharedpoints.update', forwardEvent);
+
+  peersManager.addEventListener('transfer.begin', forwardEvent);
+  peersManager.addEventListener('transfer.update', forwardEvent);
+  peersManager.addEventListener('transfer.end', forwardEvent);
+
+  peersManager.addEventListener('uid', forwardEvent);
 }
