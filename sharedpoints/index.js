@@ -18,22 +18,22 @@ function SharedpointsManager(db, peersManager)
     db.sharepoints_getAll(null, onsuccess);
   };
 
-//    var sharedpoints = []
+//  var sharedpoints = []
 //
-//    this.getSharedpoints(function(sharedpoints)
+//  this.getSharedpoints(function(sharedpoints)
+//  {
+//    for(var i=0, sharedpoint; sharedpoint= sharedpoints[i]; i++)
 //    {
-//      for(var i=0, sharedpoint; sharedpoint= sharedpoints[i]; i++)
+//      switch(sharedpoint.type)
 //      {
-//        switch(sharedpoint.type)
-//        {
-//          case 'dropbox':
-//            break
+//        case 'dropbox':
+//          break
 //
-//          case 'folder':
-//            break
-//        }
+//        case 'folder':
+//          break
 //      }
-//    })
+//    }
+//  })
   this.addSharedpoint_Folder = function(files, onsuccess, onerror)
   {
     var sharedpoint_name = files[0].webkitRelativePath.split('/')[0];

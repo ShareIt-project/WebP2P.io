@@ -59,20 +59,25 @@ function PeersManager(db, stun_server) {
    * Start the download of a file
    * @param {Fileentry} Fileentry of the file to be downloaded.
    */
-  this._transferbegin = function(fileentry) {
-    function onerror(errorCode) {
+  this.transfer_begin = function(fileentry)
+  {
+    function onerror(errorCode)
+    {
       console.error("Transfer begin: '" + fileentry.name + "' is already in database.");
     }
 
     // Add a blob container to our file stub
-    fileentry.blob = new Blob([''], {
+    fileentry.blob = new Blob([''],
+    {
       'type': fileentry.type
     });
 
     // File size is zero, generate the file instead of request it
-    if (!fileentry.size) {
+    if(!fileentry.size)
+    {
       // Insert new empty "file" inside IndexedDB
-      db.files_add(fileentry, function() {
+      db.files_add(fileentry, function()
+      {
         self.transfer_end(fileentry);
       }, onerror);
 
@@ -82,13 +87,16 @@ function PeersManager(db, stun_server) {
     // Calc number of necesary chunks to download
     // and add a bitmap to our file stub
     var chunks = fileentry.size / chunksize;
-    if (chunks % 1 != 0) chunks = Math.floor(chunks) + 1;
+    if(chunks % 1 != 0)
+       chunks = Math.floor(chunks) + 1;
 
     fileentry.bitmap = new Bitmap(chunks);
 
     // Insert new "file" inside IndexedDB
-    db.files_add(fileentry, function() {
-      self.dispatchEvent({
+    db.files_add(fileentry, function()
+    {
+      self.dispatchEvent(
+      {
         type: 'transfer.begin',
         data: [fileentry]
       });
@@ -98,18 +106,22 @@ function PeersManager(db, stun_server) {
     }, onerror);
   };
 
-  this.transfer_update = function(fileentry, pending_chunks) {
+  this.transfer_update = function(fileentry, pending_chunks)
+  {
     var chunks = fileentry.size / chunksize;
-    if (chunks % 1 != 0) chunks = Math.floor(chunks) + 1;
+    if(chunks % 1 != 0)
+       chunks = Math.floor(chunks) + 1;
 
     // Notify about transfer update
-    this.dispatchEvent({
+    this.dispatchEvent(
+    {
       type: 'transfer.update',
       data: [fileentry, 1 - pending_chunks / chunks]
     });
   };
 
-  this.transfer_end = function(fileentry) {
+  this.transfer_end = function(fileentry)
+  {
     // Auto-save downloaded file
     savetodisk(fileentry.blob, fileentry.name);
 
@@ -160,7 +172,8 @@ function PeersManager(db, stun_server) {
       // There are no more chunks, set file as fully downloaded
       delete fileentry.bitmap;
 
-      db.files_put(fileentry, function() {
+      db.files_put(fileentry, function()
+      {
         self.transfer_end(fileentry);
       });
     }
@@ -465,21 +478,11 @@ function PeersManager(db, stun_server) {
 
   this.handshakeDisconnected = function()
   {
-    if(!this.numPeers())
+    if(!Object.keys(peers).length)
       this.dispatchEvent(
       {
         type: 'error.noPeers'
       });
-  };
-
-
-  /**
-   * Get the number of peers currently connected with this node
-   * @return {Number} The number of peers connected.
-   */
-  this.numPeers = function()
-  {
-    return Object.keys(peers).length;
   };
 
 
@@ -512,10 +515,4 @@ function PeersManager(db, stun_server) {
       onsuccess(sharing)
     })
   }
-
-  // Init cache backup system
-  this.cacheBackup = new CacheBackup(db, this)
-
-  // Init sharedpoints manager
-  this.sharedpointsManager = new SharedpointsManager(db, this)
 }
