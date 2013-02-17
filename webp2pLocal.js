@@ -21,7 +21,7 @@ webp2p.Webp2pLocal = function(db)
 
   this.cacheBackup_import = function(blob, onerror)
   {
-    cacheBackup.export(blob, onerror)
+    cacheBackup.import(blob, onerror)
   }
 
   /**
