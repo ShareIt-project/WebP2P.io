@@ -48,9 +48,9 @@ webp2p.Webp2pLocal = function(db)
     peersManager.files_sharing(onsuccess)
   }
 
-  this.numPeers = function()
+  this.numPeers = function(onsuccess)
   {
-    return Object.keys(peersManager.getChannels()).length;
+    onsuccess(Object.keys(peersManager.getChannels()).length);
   }
 
   this.sharedpointsManager_addSharedpoint_Folder = function(files, onsuccess,
