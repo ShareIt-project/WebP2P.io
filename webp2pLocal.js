@@ -2,6 +2,9 @@ webp2p.Webp2pLocal = function(db)
 {
   EventTarget.call(this);
 
+  var self = this
+
+
   var peersManager = new PeersManager(db)
 
   // Init cache backup system

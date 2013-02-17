@@ -43,7 +43,7 @@ webp2p.load(
  'db',
  'peersManager',
  'utils',
- 'Webp2pLocal',
+ 'webp2pLocal',
 
  'hasher/index',
 
