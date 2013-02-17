@@ -44,6 +44,7 @@ webp2p.load(
  'peersManager',
  'utils',
  'webp2pLocal',
+ 'webp2pWorker',
 
  'hasher/index',
 
