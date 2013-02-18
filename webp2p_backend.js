@@ -1,4 +1,28 @@
-var webp2p = new webp2p.Webp2pLocal()
+// Based on code from https://github.com/jaredhanson/jsonrpc-postmessage
+
+var methods = {}
+
+function expose(name, service)
+{
+  if(!service && typeof name == 'object')
+  {
+    service = name;
+    name = null;
+  }
+
+  if(typeof service == 'function')
+    methods[name] = service;
+
+  else if(typeof service == 'object')
+  {
+    var module = name ? name + '.' : '';
+    for(var method in service)
+      if(typeof service[method] === 'function')
+        methods[module + method] = service[method];
+  }
+}
+
+expose(new webp2p.Webp2pLocal())
 
 
 self.onmessage = function(event)
@@ -21,47 +45,7 @@ self.onmessage = function(event)
     }
   }
 
-  var method
-
-  switch(event.method)
-  {
-    case 'cacheBackup.export':
-      method = webp2p.cacheBackup_export
-      break;
-
-    case 'cacheBackup.import':
-      method = webp2p.cacheBackup_import
-      break;
-
-    case 'connectTo':
-      method = webp2p.connectTo
-      break;
-
-    case 'files.downloading':
-      method = webp2p.files_downloading
-      break;
-
-    case 'files.sharing':
-      method = webp2p.files_sharing
-      break;
-
-    case 'numPeers':
-      method = webp2p.numPeers
-      break;
-
-    case 'sharedpointsManager.addSharedpoint_Folder':
-      method = webp2p.sharedpointsManager_addSharedpoint_Folder
-      break;
-
-    case 'sharedpointsManager.getSharedpoints':
-      method = webp2p.sharedpointsManager_getSharedpoints
-      break;
-
-    case 'transfer.begin':
-      method = webp2p.transfer_begin
-      break;
-  }
-
+  var method = methods[event.method];
   if(typeof method == 'function')
   {
     var params = event.args || [];

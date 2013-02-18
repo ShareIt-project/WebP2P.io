@@ -34,7 +34,7 @@ function SharedpointsManager(db, peersManager)
 //      }
 //    }
 //  })
-  this.addSharedpoint_Folder = function(files, onsuccess, onerror)
+  this.addSharedpoint_Folder = function(files, cb)
   {
     var sharedpoint_name = files[0].webkitRelativePath.split('/')[0];
 
@@ -43,8 +43,8 @@ function SharedpointsManager(db, peersManager)
       for(var i = 0, sharedpoint; sharedpoint = sharedpoints[i]; i++)
         if(sharedpoint.name == name)
         {
-          if(onerror)
-            onerror();
+          if(cb)
+            cb(new Error('Sharedpoint already defined'));
 
           return;
         }
@@ -60,8 +60,8 @@ function SharedpointsManager(db, peersManager)
 
       hasher.hash(files, sharedpoint_name);
 
-      if(onsuccess)
-        onsuccess();
+      if(cb)
+        cb();
     });
   };
 

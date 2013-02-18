@@ -85,8 +85,7 @@ webp2p.Webp2pWorker = function(channel)
   {
   }
 
-  this.sharedpointsManager_addSharedpoint_Folder = function(files, onsuccess,
-                                                            onerror)
+  this.sharedpointsManager_addSharedpoint_Folder = function(files, cb)
   {
   }
 
