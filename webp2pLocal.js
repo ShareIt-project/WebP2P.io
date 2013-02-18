@@ -42,9 +42,9 @@ webp2p.Webp2pLocal = function()
      * @param {MessageChannel} incomingChannel Optional channel where to
      * send the offer. If not defined send it to all connected peers.
      */
-    self.connectTo = function(uid, onsuccess, onerror, incomingChannel)
+    self.connectTo = function(uid, incomingChannel, cb)
     {
-      peersManager.connectTo(uid, onsuccess, onerror, incomingChannel)
+      peersManager.connectTo(uid, incomingChannel, cb)
     }
 
     self.files_downloading = function(onsuccess)

@@ -1,14 +1,17 @@
-function Transport_Presence_init(transport, peersManager, max_connections) {
+function Transport_Presence_init(transport, peersManager, max_connections)
+{
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
   transport.connections = 0;
   transport.max_connections = max_connections;
 
-  transport.presence = function() {
+  transport.presence = function()
+  {
     transport.emit('presence', peersManager.uid);
   };
 
-  transport.addEventListener('presence', function(event) {
+  transport.addEventListener('presence', function(event)
+  {
     var uid = event.data[0];
 
     // Don't try to connect to ourselves
@@ -16,17 +19,21 @@ function Transport_Presence_init(transport, peersManager, max_connections) {
       // Check if we should ignore this new peer to increase
       // entropy in the network mesh
       // Do the connection with the new peer
-      peersManager.connectTo(uid, function() {
-        // Increase the number of connections reached throught
-        // this handshake server
-        transport.connections++;
+      peersManager.connectTo(uid, transport, function(error, channel)
+      {
+        if(error)
+          console.error(uid, peer, channel);
 
-        // Close connection with handshake server if we got its
-        // quota of peers
-        if (transport.connections == transport.max_connections) transport.close();
-      }, function(uid, peer, channel) {
-        console.error(uid, peer, channel);
-      }, transport);
+        else
+          // Increase the number of connections reached throught
+          // this handshake server
+          transport.connections++;
+
+          // Close connection with handshake server if we got its
+          // quota of peers
+          if(transport.connections == transport.max_connections)
+             transport.close();
+      });
     }
   });
 }

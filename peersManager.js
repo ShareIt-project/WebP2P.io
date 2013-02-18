@@ -378,12 +378,11 @@ function PeersManager(db, stun_server) {
    * Connects to another peer based on its UID. If we are already connected,
    * it does nothing.
    * @param {UUID} uid Identifier of the other peer to be connected.
-   * @param {Function} onsuccess Callback called when the connection was done.
-   * @param {Function} onerror Callback called when connection was not possible.
    * @param {MessageChannel} incomingChannel Optional channel where to
+   * @param {Function(error, channel)} cb Callback
    * send the offer. If not defined send it to all connected peers.
    */
-  this.connectTo = function(uid, onsuccess, onerror, incomingChannel)
+  this.connectTo = function(uid, incomingChannel, cb)
   {
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
@@ -399,21 +398,25 @@ function PeersManager(db, stun_server) {
         channel.addEventListener('open', function(event)
         {
           initDataChannel(peer, channel, uid);
-
-          if(onsuccess)
-             onsuccess(channel);
         });
-        channel.onerror = function(event)
+        if(cb)
         {
-          if(onerror)
-             onerror(uid, peer, channel);
+          channel.addEventListener('open', function(event)
+          {
+            cb(null, channel);
+          });
+          channel.onerror = function(event)
+          {
+            cb({uid: uid, peer:peer, channel:channel});
+          };
+        }
+      };
+
+      if(cb)
+        peer.onerror = function(event)
+        {
+          cb({uid: uid, peer:peer});
         };
-      };
-      peer.onerror = function(event)
-      {
-        if(onerror)
-           onerror(uid, peer);
-      };
 
       // Send offer to new PeerConnection
       peer.createOffer(function(offer)
@@ -447,17 +450,17 @@ function PeersManager(db, stun_server) {
             'some more seconds')
 
     // Channel is created and we have defined an 'onsucess' callback
-    else if(onsuccess)
+    else if(cb)
     {
       // Channel is open
       if(peer._channel.readyState == 'open')
-        onsuccess(peer._channel);
+        cb(null, peer._channel);
 
       // Channel is not yet open
       else
         peer._channel.addEventListener('open', function(event)
         {
-          onsuccess(event.target);
+          cb(null, event.target);
         })
     }
   };
