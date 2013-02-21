@@ -50,58 +50,30 @@ function PeersManager(db, stun_server)
    * @param {Fileentry} Fileentry of the file to be requested.
    */
 
-  function transfer_query(fileentry) {
+  function transfer_query(fileentry)
+  {
     var channel = getChannel(fileentry);
     var chunk = fileentry.bitmap.getRandom(false);
 
     channel.transfer_query(fileentry, chunk);
   }
 
-  this.transfer_update = function(fileentry, pending_chunks)
-  {
-    var chunks = fileentry.size / chunksize;
-    if(chunks % 1 != 0)
-       chunks = Math.floor(chunks) + 1;
-
-    // Notify about transfer update
-    var event = document.createEvent("Event");
-        event.initEvent('transfer.update',true,true);
-        event.data = [fileentry, 1 - pending_chunks / chunks]
-
-    this.dispatchEvent(event);
-  };
-
-  this.transfer_end = function(fileentry)
-  {
-    // Auto-save downloaded file
-    savetodisk(fileentry.blob, fileentry.name);
-
-    // Notify about transfer end
-    var event = document.createEvent("Event");
-        event.initEvent('transfer.end',true,true);
-        event.data = [fileentry]
-
-    self.dispatchEvent(event);
-
-    console.log('Transfer of ' + fileentry.name + ' finished!');
-  };
-
-
   /**
    * Create a new RTCPeerConnection
    * @param {UUID} id Identifier of the other peer so later can be accessed.
    * @return {RTCPeerConnection}
    */
-
-  function createPeerConnection(uid) {
-    var pc = peers[uid] = new RTCPeerConnection({
-      'iceServers': [{
-        'url': 'stun:' + stun_server
-      }]
+  function createPeerConnection(uid)
+  {
+    var pc = peers[uid] = new RTCPeerConnection(
+    {
+      iceServers: [{url: 'stun:'+stun_server}]
     });
-    pc.onstatechange = function(event) {
+    pc.onstatechange = function(event)
+    {
       // Remove the peer from the list of peers when gets closed
-      if (event.target.readyState == 'closed') delete peers[uid];
+      if(event.target.readyState == 'closed')
+        delete peers[uid];
     };
 
     return pc;
