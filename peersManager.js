@@ -31,31 +31,6 @@ function PeersManager(stun_server)
 
   this.uid = UUIDv4();
 
-  /**
-   * Get the channel of one of the peers that have the file from its hash.
-   * Since the hash and the tracker system are currently not implemented we'll
-   * get just the channel of the peer where we got the file that we added
-   * ad-hoc before
-   * @param {Fileentry} Fileentry of the file to be downloaded.
-   * @return {RTCDataChannel} Channel where we can ask for data of the file.
-   */
-
-  function getChannel(fileentry) {
-    return fileentry.channel;
-  }
-
-  /**
-   * Request (more) data for a file
-   * @param {Fileentry} Fileentry of the file to be requested.
-   */
-
-  function transfer_query(fileentry)
-  {
-    var channel = getChannel(fileentry);
-    var chunk = fileentry.bitmap.getRandom(false);
-
-    channel.transfer_query(fileentry, chunk);
-  }
 
   /**
    * Create a new RTCPeerConnection
