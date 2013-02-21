@@ -5,12 +5,11 @@ var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnecti
 /**
  * @classdesc Manager of the communications with the other peers
  * @constructor
- * @param {IDBDatabase} db ShareIt! database.
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
 
-function PeersManager(db, stun_server)
+function PeersManager(stun_server)
 {
   // Set a default STUN server if none is specified
   if(stun_server == undefined)
@@ -92,11 +91,7 @@ function PeersManager(db, stun_server)
     pc._channel = channel;
 
     Transport_init(channel);
-
-    Transport_Host_init(channel, db);
-    Transport_Peer_init(channel, db, self);
     Transport_Routing_init(channel, self);
-    Transport_Search_init(channel, db, self);
 
     channel.onclose = function()
     {
@@ -105,18 +100,13 @@ function PeersManager(db, stun_server)
       pc.close();
     };
 
-    self.addEventListener('file.added', function(event)
-    {
-      var fileentry = event.data[0];
+    var event = document.createEvent("Event");
+        event.initEvent('channel',true,true);
+        event.channel = channel
 
-      channel._send_file_added(fileentry);
-    });
-    self.addEventListener('file.deleted', function(event)
-    {
-      var fileentry = event.data[0];
+    self.dispatchEvent(event);
 
-      channel._send_file_deleted(fileentry);
-    });
+//    Transport_Search_init(channel, db, self);
   }
 
 
@@ -132,7 +122,7 @@ function PeersManager(db, stun_server)
     var peer = peers[uid];
 
     // Peer is not connected, create a new channel
-    if(!peer)ç
+    if(!peer)
     {
       peer = createPeerConnection(uid);
       peer.ondatachannel = function(event)
