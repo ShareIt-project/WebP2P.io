@@ -85,7 +85,8 @@ function PeersManager(db, stun_server)
    * @param {RTCDataChannel} channel Communication channel with the other peer.
    */
 
-  function initDataChannel(pc, channel, uid) {
+  function initDataChannel(pc, channel, uid)
+  {
     channel.uid = uid;
 
     pc._channel = channel;
@@ -97,7 +98,8 @@ function PeersManager(db, stun_server)
     Transport_Routing_init(channel, self);
     Transport_Search_init(channel, db, self);
 
-    channel.onclose = function() {
+    channel.onclose = function()
+    {
       delete pc._channel;
 
       pc.close();
@@ -124,24 +126,30 @@ function PeersManager(db, stun_server)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp) {
+  this.onoffer = function(uid, sdp)
+  {
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
 
     // Peer is not connected, create a new channel
-    if (!peer) {
+    if(!peer)ç
+    {
       peer = createPeerConnection(uid);
-      peer.ondatachannel = function(event) {
+      peer.ondatachannel = function(event)
+      {
         console.log('Created datachannel with peer ' + uid);
         initDataChannel(peer, event.channel, uid);
       };
-      peer.onerror = function(event) {
-        if (onerror) onerror(uid, event);
+      peer.onerror = function(event)
+      {
+        if(onerror)
+           onerror(uid, event);
       };
     }
 
     // Process offer
-    peer.setRemoteDescription(new RTCSessionDescription({
+    peer.setRemoteDescription(new RTCSessionDescription(
+    {
       sdp: sdp,
       type: 'offer'
     }));
@@ -156,14 +164,18 @@ function PeersManager(db, stun_server)
    * @param {Function} onerror Callback called if we don't have previously
    * wanted to connect to the other peer.
    */
-  this.onanswer = function(uid, sdp, onerror) {
+  this.onanswer = function(uid, sdp, onerror)
+  {
     // Search the peer on the list of currently connected peers
     var peer = peers[uid];
-    if (peer) peer.setRemoteDescription(new RTCSessionDescription({
-      sdp: sdp,
-      type: 'answer'
-    }));
-    else if (onerror) onerror(uid);
+    if(peer)
+      peer.setRemoteDescription(new RTCSessionDescription(
+      {
+        sdp: sdp,
+        type: 'answer'
+      }));
+    else if(onerror)
+      onerror(uid);
   };
 
   // Init handshake manager
