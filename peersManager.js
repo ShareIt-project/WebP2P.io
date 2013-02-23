@@ -1,5 +1,5 @@
 // Fallbacks for vendor-specific variables until the spec is finalized.
-var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
 
 
 /**
