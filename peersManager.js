@@ -159,9 +159,12 @@ function PeersManager(stun_server)
     self.dispatchEvent(event);
 
 //    // Restart downloads
-//    db.files_getAll(null, function(filelist)
+//    db.files_getAll(null, function(error, filelist)
 //    {
-//      if(filelist.length)
+//      if(error)
+//        console.error(error)
+
+//      else if(filelist.length)
 //        policy(function()
 //        {
 //          for(var i=0, fileentry; fileentry=filelist[i]; i++)
