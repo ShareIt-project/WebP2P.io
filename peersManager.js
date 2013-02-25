@@ -1,3 +1,6 @@
+var webp2p = (function(module){
+var _priv = module._priv = module._priv || {}
+
 // Fallbacks for vendor-specific variables until the spec is finalized.
 var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
 
@@ -8,8 +11,7 @@ var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPe
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-
-function PeersManager(stun_server)
+module.PeersManager = function(stun_server)
 {
   // Set a default STUN server if none is specified
   if(stun_server == undefined)
@@ -58,7 +60,6 @@ function PeersManager(stun_server)
    * @param {RTCPeerConnection} pc PeerConnection owner of the DataChannel.
    * @param {RTCDataChannel} channel Communication channel with the other peer.
    */
-
   function initDataChannel(pc, channel, uid)
   {
     channel.uid = uid;
@@ -301,3 +302,6 @@ function PeersManager(stun_server)
     }
   };
 }
+
+return module
+})(webp2p || {})

@@ -1,8 +1,11 @@
+var webp2p = (function(module){
+var _priv = module._priv = module._priv || {}
+
 /**
  * Init a channel as an event-based transport layer
  * @param transport
  */
-function Transport_init(transport)
+module.Transport_init = function(transport)
 {
   EventTarget.call(transport);
 
@@ -35,3 +38,6 @@ function Transport_init(transport)
     transport.dispatchEvent(event);
   };
 }
+
+return module
+})(webp2p || {})
