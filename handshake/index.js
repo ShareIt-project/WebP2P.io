@@ -1,8 +1,8 @@
 var webp2p = (function(module){
 var _priv = module._priv = module._priv || {}
 
-module.Transport_Presence_init = function(transport, peersManager,
-                                          max_connections)
+_priv.Transport_Presence_init = function(transport, peersManager,
+                                         max_connections)
 {
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
@@ -49,8 +49,7 @@ module.Transport_Presence_init = function(transport, peersManager,
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-
-function HandshakeManager(json_uri, peersManager)
+_priv.HandshakeManager = function(json_uri, peersManager)
 {
   var self = this;
 
@@ -116,9 +115,9 @@ function HandshakeManager(json_uri, peersManager)
     channel.uid = type;
     channels[channel.uid] = channel;
 
-    Transport_init(channel);
-    Transport_Presence_init(channel, peersManager, conf.max_connections);
-    Transport_Routing_init(channel, peersManager);
+    _priv.Transport_init(channel);
+    _priv.Transport_Presence_init(channel, peersManager, conf.max_connections);
+    _priv.Transport_Routing_init(channel, peersManager);
 
     channel.onopen = function()
     {

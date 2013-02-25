@@ -1,7 +1,7 @@
 var webp2p = (function(module){
 var _priv = module._priv = module._priv || {}
 
-module.Transport_Routing_init = function(transport, peersManager)
+_priv.Transport_Routing_init = function(transport, peersManager)
 {
   /**
    * Send a RTCPeerConnection offer through the active handshake channel

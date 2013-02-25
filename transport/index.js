@@ -5,7 +5,7 @@ var _priv = module._priv = module._priv || {}
  * Init a channel as an event-based transport layer
  * @param transport
  */
-module.Transport_init = function(transport)
+_priv.Transport_init = function(transport)
 {
   EventTarget.call(transport);
 

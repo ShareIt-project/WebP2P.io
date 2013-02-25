@@ -66,8 +66,8 @@ module.PeersManager = function(stun_server)
 
     pc._channel = channel;
 
-    Transport_init(channel);
-    Transport_Routing_init(channel, self);
+    _priv.Transport_init(channel);
+    _priv.Transport_Routing_init(channel, self);
 
     channel.onclose = function()
     {
@@ -145,7 +145,7 @@ module.PeersManager = function(stun_server)
   };
 
   // Init handshake manager
-  var handshakeManager = new HandshakeManager('json/handshake.json', this);
+  var handshakeManager = new _priv.HandshakeManager('json/handshake.json', this);
   handshakeManager.onerror = function(error)
   {
     console.error(error);
