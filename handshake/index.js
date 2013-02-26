@@ -4,6 +4,8 @@ var _priv = module._priv = module._priv || {}
 _priv.Transport_Presence_init = function(transport, peersManager,
                                          max_connections)
 {
+  _priv.Transport_Routing_init(channel, peersManager);
+
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
   transport.connections = 0;
@@ -115,9 +117,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     channel.uid = type;
     channels[channel.uid] = channel;
 
-    _priv.Transport_init(channel);
     _priv.Transport_Presence_init(channel, peersManager, conf.max_connections);
-    _priv.Transport_Routing_init(channel, peersManager);
 
     channel.onopen = function()
     {

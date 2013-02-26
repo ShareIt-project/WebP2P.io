@@ -3,6 +3,8 @@ var _priv = module._priv = module._priv || {}
 
 _priv.Transport_Routing_init = function(transport, peersManager)
 {
+  _priv.Transport_init(transport);
+
   /**
    * Send a RTCPeerConnection offer through the active handshake channel
    * @param {UUID} uid Identifier of the other peer.
