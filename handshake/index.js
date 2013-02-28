@@ -16,7 +16,7 @@ _priv.Transport_Presence_init = function(transport, peersManager,
 
   transport.addEventListener('presence', function(event)
   {
-    var uid = event.data[0];
+    var uid = event.uid;
 
     // Don't try to connect to ourselves
     if(uid != peersManager.uid)
