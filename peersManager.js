@@ -155,7 +155,7 @@ module.PeersManager = function(stun_server)
   {
     var event = document.createEvent("Event");
         event.initEvent('uid',true,true);
-        event.data = [self.uid]
+        event.uid = self.uid
 
     self.dispatchEvent(event);
 

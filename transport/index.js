@@ -35,7 +35,7 @@ _priv.Transport_init = function(transport)
         event.initEvent(message[0],true,true);
         event.data = message.slice(1)
 
-    transport.dispatchEvent(event);
+    this.dispatchEvent(event);
   };
 }
 
