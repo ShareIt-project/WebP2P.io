@@ -3,6 +3,8 @@ var _priv = module._priv = module._priv || {}
 
 _priv.Transport_Routing_init = function(transport, peersManager)
 {
+  _priv.Transport_init(transport);
+
   /**
    * Send a RTCPeerConnection offer through the active handshake channel
    * @param {UUID} uid Identifier of the other peer.
@@ -56,60 +58,60 @@ _priv.Transport_Routing_init = function(transport, peersManager)
       if(uid == peersManager.uid)
         return;
 
-      // Offer is for us
-      if(dest == peersManager.uid)
+    // Offer is for us
+    if(dest == peersManager.uid)
+    {
+      // Create PeerConnection
+      var pc = peersManager.onoffer(route[0], sdp, function(uid, event)
       {
-        // Create PeerConnection
-        var pc = peersManager.onoffer(route[0], sdp, function(uid, event)
-        {
-          console.error('Error creating DataChannel with peer ' + uid);
-          console.error(event);
-        });
+        console.error('Error creating DataChannel with peer ' + uid);
+        console.error(event);
+      });
 
-        // Send answer
-        pc.createAnswer(function(answer)
-        {
-          transport.sendAnswer(dest, answer.sdp, route);
-
-          pc.setLocalDescription(new RTCSessionDescription(
-          {
-            sdp: answer.sdp,
-            type: 'answer'
-          }));
-        });
-      }
-
-      // Offer is not for us, route it over the other connected peers
-      else
+      // Send answer
+      pc.createAnswer(function(answer)
       {
-        // Add the transport where it was received to the route path
-        route.push(transport.uid);
+        transport.sendAnswer(peersManager.uid, answer.sdp, route);
 
-        // Search the peer between the list of currently connected peers
-        var channels = peersManager.getChannels();
-        var channel = channels[dest];
+        pc.setLocalDescription(new RTCSessionDescription(
+        {
+          sdp: answer.sdp,
+          type: 'answer'
+        }));
+      });
+    }
 
-        // Requested peer is one of the connected, notify directly to it
-        if(channel)
-           channel.sendOffer(dest, sdp, route);
+    // Offer is not for us, route it over the other connected peers
+    else
+    {
+      // Add the transport where it was received to the route path
+      route.push(transport.uid);
+
+      // Search the peer between the list of currently connected peers
+      var channels = peersManager.getChannels();
+      var channel = channels[dest];
+
+      // Requested peer is one of the connected, notify directly to it
+      if(channel)
+         channel.sendOffer(dest, sdp, route);
 
       // Requested peer is not one of the directly connected, broadcast it
-        else for(var uid in channels)
-        {
-          // Ignore peers already on the route path
-          var routed = false;
-          for(var i = 0, peer; peer = route[i]; i++)
-            if(peer == uid)
-            {
-              routed = true;
-              break;
-            }
+      else for(var uid in channels)
+      {
+        // Ignore peers already on the route path
+        var routed = false;
+        for(var i = 0, peer; peer = route[i]; i++)
+          if(peer == uid)
+          {
+            routed = true;
+            break;
+          }
 
-            // Notify the offer request to the other connected peers
-            if(!routed)
-              channels[uid].sendOffer(dest, sdp, route);
-        }
+          // Notify the offer request to the other connected peers
+          if(!routed)
+            channels[uid].sendOffer(dest, sdp, route);
       }
+    }
   });
 
   /**
