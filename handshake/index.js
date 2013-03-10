@@ -4,7 +4,7 @@ var _priv = module._priv = module._priv || {}
 _priv.Transport_Presence_init = function(transport, peersManager,
                                          max_connections)
 {
-  _priv.Transport_Routing_init(channel, peersManager);
+  _priv.Transport_Routing_init(transport, peersManager);
 
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
