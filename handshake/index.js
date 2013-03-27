@@ -1,32 +1,46 @@
-function Transport_Presence_init(transport, peersManager, max_connections) {
+var webp2p = (function(module){
+var _priv = module._priv = module._priv || {}
+
+_priv.Transport_Presence_init = function(transport, peersManager,
+                                         max_connections)
+{
+  _priv.Transport_Routing_init(transport, peersManager);
+
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
   transport.connections = 0;
   transport.max_connections = max_connections;
 
-  transport.presence = function() {
+  transport.presence = function()
+  {
     transport.emit('presence', peersManager.uid);
   };
 
-  transport.addEventListener('presence', function(event) {
+  transport.addEventListener('presence', function(event)
+  {
     var uid = event.data[0];
 
     // Don't try to connect to ourselves
-    if (uid != peersManager.uid) {
+    if(uid != peersManager.uid)
+    {
       // Check if we should ignore this new peer to increase
       // entropy in the network mesh
       // Do the connection with the new peer
-      peersManager.connectTo(uid, function() {
-        // Increase the number of connections reached throught
-        // this handshake server
-        transport.connections++;
+      peersManager.connectTo(uid, transport, function(error, channel)
+      {
+        if(error)
+          console.error(uid, peer, channel);
 
-        // Close connection with handshake server if we got its
-        // quota of peers
-        if (transport.connections == transport.max_connections) transport.close();
-      }, function(uid, peer, channel) {
-        console.error(uid, peer, channel);
-      }, transport);
+        else
+          // Increase the number of connections reached throught
+          // this handshake server
+          transport.connections++;
+
+          // Close connection with handshake server if we got its
+          // quota of peers
+          if(transport.connections == transport.max_connections)
+             transport.close();
+      });
     }
   });
 }
@@ -37,8 +51,7 @@ function Transport_Presence_init(transport, peersManager, max_connections) {
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-
-function HandshakeManager(json_uri, peersManager)
+_priv.HandshakeManager = function(json_uri, peersManager)
 {
   var self = this;
 
@@ -46,16 +59,19 @@ function HandshakeManager(json_uri, peersManager)
   var status = 'disconnected';
 
 
-  function nextHandshake(configuration) {
+  function nextHandshake(configuration)
+  {
     // Remove the configuration from the poll
     configuration.splice(index, 1);
 
     // If there are more pending configurations, go to the next one
-    if (configuration.length) getRandomHandshake(configuration);
+    if(configuration.length)
+      getRandomHandshake(configuration);
 
     // There are no more pending configurations and all channels have been
     // closed, set as disconnected and notify to the PeersManager
-    else if (!Object.keys(channels).length) {
+    else if(!Object.keys(channels).length)
+    {
       status = 'disconnected';
 
       peersManager.handshakeDisconnected();
@@ -79,12 +95,12 @@ function HandshakeManager(json_uri, peersManager)
     {
       case 'PubNub':
         conf.uuid = peersManager.uid;
-        channelConstructor = Handshake_PubNub;
+        channelConstructor = _priv.Handshake_PubNub;
         break;
 
       case 'SimpleSignaling':
         conf.uid = peersManager.uid;
-        channelConstructor = Handshake_SimpleSignaling;
+        channelConstructor = _priv.Handshake_SimpleSignaling;
         break;
 
       case 'xRTML':
@@ -100,13 +116,12 @@ function HandshakeManager(json_uri, peersManager)
     }
 
     var channel = new channelConstructor(conf);
-        channel.isPubsub = true;
-        channel.uid = type;
-        channels[channel.uid] = channel;
 
-    Transport_init(channel);
-    Transport_Presence_init(channel, peersManager, conf.max_connections);
-    Transport_Routing_init(channel, peersManager);
+    channel.isPubsub = true;
+    channel.uid = type;
+    channels[channel.uid] = channel;
+
+    _priv.Transport_Presence_init(channel, peersManager, conf.max_connections);
 
     channel.onopen = function()
     {
@@ -120,9 +135,6 @@ function HandshakeManager(json_uri, peersManager)
     };
     channel.onclose = function()
     {
-      max_connections = undefined
-      connections = undefined
-
       // Delete the channel from the current ones
       delete channels[channel.uid];
 
@@ -150,23 +162,35 @@ function HandshakeManager(json_uri, peersManager)
 
   var http_request = new XMLHttpRequest();
   http_request.open('GET', json_uri);
-  http_request.onload = function() {
-    if (this.status == 200) {
+  http_request.onload = function()
+  {
+    if(this.status == 200)
+    {
       status = 'connecting';
 
       var configuration = JSON.parse(http_request.response);
 
-      if (configuration.length) getRandomHandshake(configuration);
+      if(configuration.length)
+        getRandomHandshake(configuration);
 
-      else if (self.onerror) {
+      else if(self.onerror)
+      {
         status = 'disconnected';
 
         self.onerror('Handshake servers configuration is empty');
       }
-    } else if (self.onerror) self.onerror('Unable to fetch handshake servers configuration');
+    }
+    else if(self.onerror)
+      self.onerror('Unable to fetch handshake servers configuration');
   };
-  http_request.onerror = function() {
-    if (self.onerror) self.onerror('Unable to fetch handshake servers configuration');
+  http_request.onerror = function()
+  {
+    if(self.onerror)
+       self.onerror('Unable to fetch handshake servers configuration');
   };
+
   http_request.send();
 }
+
+return module
+})(webp2p || {})

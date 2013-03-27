@@ -1,17 +1,18 @@
-webp2p.require("https://raw.github.com/pubnub/pubnub-api/master/javascript/3.3.1/pubnub-3.3.1.js")
+var webp2p = (function(module){
+var _priv = module._priv = module._priv || {}
 
 /**
  * Handshake channel connector for PubNub (adapter to Message Channel interface)
  * @param {Object} configuration Configuration object.
  */
-
-function Handshake_PubNub(configuration)
+_priv.Handshake_PubNub = function(configuration)
 {
   var self = this;
 
   // Connect a handshake channel to the PubNub server
-  var pubnub = PUBNUB.init(configuration);
-  pubnub.subscribe({
+  var pubnub = PUBNUB(configuration);
+  pubnub.subscribe(
+  {
     channel: configuration.channel,
 
     // Receive messages
@@ -29,7 +30,8 @@ function Handshake_PubNub(configuration)
       // Compose and send message
       self.send = function(message)
       {
-        pubnub.publish({
+        pubnub.publish(
+        {
           channel: configuration.channel,
           message: message
         });
@@ -55,3 +57,6 @@ function Handshake_PubNub(configuration)
     });
   }
 }
+
+return module
+})(webp2p || {})

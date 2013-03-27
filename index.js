@@ -42,42 +42,16 @@ var webp2p =
 };
 
 webp2p.load(
-['bitmap',
- 'cacheBackup',
- 'db',
- 'peersManager',
- 'utils',
- 'webp2pLocal',
- 'webp2pWorker',
-
- 'hasher/index',
+['peersManager',
 
  'handshake/index',
  'handshake/PubNub',
  'handshake/simpleSignaling',
 
- 'lib/BoolArray',
  'lib/datachannel',
  'lib/EventTarget',
- 'lib/dropbox.min',
- 'lib/pubnub-3.3.1',
+ 'lib/pubnub-3.3.min',
  'lib/simpleSignaling',
 
- 'lib/zip.js/deflate',
- 'lib/zip.js/inflate',
- 'lib/zip.js/zip',
- 'lib/zip.js/zip-fs',
- 'lib/zip.js/mime-types',
-
- 'polyfills/FileWriter',
- 'polyfills/IndexedDB-javascript',
-
- 'sharedpoints/index',
- 'sharedpoints/dropbox',
- 'sharedpoints/mega',
-
  'transport/index',
- 'transport/host',
- 'transport/peer',
- 'transport/routing',
- 'transport/search']);
+ 'transport/routing']);
