@@ -11,6 +11,7 @@ _priv.Handshake_PubNub = function(configuration)
 
   // Connect a handshake channel to the PubNub server
   var pubnub = PUBNUB(configuration);
+
   pubnub.subscribe(
   {
     channel: configuration.channel,

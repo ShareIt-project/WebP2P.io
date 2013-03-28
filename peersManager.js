@@ -145,7 +145,7 @@ module.PeersManager = function(stun_server)
   };
 
   // Init handshake manager
-  var handshakeManager = new _priv.HandshakeManager('json/handshake.json', this);
+  var handshakeManager = new _priv.HandshakeManager('json/handshake_XMPP.json', this);
   handshakeManager.onerror = function(error)
   {
     console.error(error);

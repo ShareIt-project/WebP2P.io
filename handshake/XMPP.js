@@ -1,44 +1,57 @@
+var webp2p = (function(module){
+var _priv = module._priv = module._priv || {}
+
 /**
  * Signaling channel connector for XMPP
  * @param {Object} configuration Configuration object
  */
-function Signaling_XMPP(configuration)
+_priv.Handshake_XMPP = function(configuration)
 {
-    var self = this
+  var self = this
 
-    // Connect a signaling channel to the XMPP server
-    var signaling = new JSJaCHttpBindingConnection(configuration);
-        signaling.connect(configuration);   // Ugly hack to have only one config object
-        signaling.registerHandler('onconnect', function()
-        {
-            // Compose and send message
-            self.send = function(uid, data)
-            {
-                var oMsg = new JSJaCMessage();
-                    oMsg.setTo(new JSJaCJID(uid));
-                    oMsg.setBody(JSON.stringify(data));
+  configuration.oDbg = new JSJaCConsoleLogger(3)
 
-                signaling.send(oMsg);
-            }
+  // Connect a signaling channel to the XMPP server
+  var signaling = new JSJaCHttpBindingConnection(configuration);
 
-            signaling.registerHandler('message', function(oJSJaCPacket)
-            {
-                var uid  = oJSJaCPacket.getFromJID()
-                var data = JSON.parse(oJSJaCPacket.getBody())
+  // Receive messages
+  signaling.registerHandler('message', function(oJSJaCPacket)
+  {
+    if(self.onmessage)
+       self.onmessage(
+       {
+         data: oJSJaCPacket.getBody()
+       })
+  })
 
-                if(self.onmessage)
-                    self.onmessage(uid, data)
-            })
+  signaling.connect(configuration);   // Ugly hack to have only one config object
+  signaling.registerHandler('onconnect', function()
+  {
+    // Compose and send message
+    self.send = function(message)
+    {
+      var oMsg = new JSJaCMessage();
+          oMsg.setBody(message);
 
-            signaling.send(new JSJaCPresence());
+      signaling.send(oMsg);
+    }
 
-            // Set signaling as open
-            if(self.onopen)
-                self.onopen(configuration.username)
-        });
-        signaling.registerHandler('onerror', function(error)
-        {
-            if(self.onerror)
-               self.onerror(error)
-        });
+    // Set handshake as open
+    if(self.onopen)
+       self.onopen()
+  });
+
+  signaling.registerHandler('onerror', function(error)
+  {
+    if(self.onerror)
+       self.onerror(error)
+  });
+
+  this.close = function()
+  {
+    signaling.disconnect()
+  }
 }
+
+return module
+})(webp2p || {})

@@ -47,6 +47,7 @@ webp2p.load(
  'handshake/index',
  'handshake/PubNub',
  'handshake/simpleSignaling',
+ 'handshake/XMPP',
 
  'lib/datachannel',
  'lib/EventTarget',

@@ -103,9 +103,14 @@ _priv.HandshakeManager = function(json_uri, peersManager)
         channelConstructor = _priv.Handshake_SimpleSignaling;
         break;
 
+      case 'XMPP':
+//        conf.id = conf.id || UUIDv4()
+        channelConstructor = _priv.Handshake_XMPP;
+        break;
+
       case 'xRTML':
         conf.id = conf.id || UUIDv4()
-        handshake = new Handshake_PubNub(conf)
+        channelConstructor = _priv.Handshake_xRTML;
         break;
 
       default:
