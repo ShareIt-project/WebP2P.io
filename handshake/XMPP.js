@@ -27,6 +27,10 @@ _priv.Handshake_XMPP = function(configuration)
   signaling.connect(configuration);   // Ugly hack to have only one config object
   signaling.registerHandler('onconnect', function()
   {
+    var joinPacket = new JSJaCPresence();
+    joinPacket.setTo("webp2p@muc.jappix.com/"+configuration.uid);
+    signaling.send(joinPacket, function(data){console.log(data.getDoc());});
+
     // Compose and send message
     self.send = function(message)
     {

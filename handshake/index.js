@@ -104,12 +104,12 @@ _priv.HandshakeManager = function(json_uri, peersManager)
         break;
 
       case 'XMPP':
-//        conf.id = conf.id || UUIDv4()
+        conf.uid = peersManager.uid
         channelConstructor = _priv.Handshake_XMPP;
         break;
 
       case 'xRTML':
-        conf.id = conf.id || UUIDv4()
+        conf.uid = peersManager.uid
         channelConstructor = _priv.Handshake_xRTML;
         break;
 
