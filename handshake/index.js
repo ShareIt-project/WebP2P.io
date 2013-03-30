@@ -1,50 +1,6 @@
 var webp2p = (function(module){
 var _priv = module._priv = module._priv || {}
 
-_priv.Transport_Presence_init = function(transport, peersManager,
-                                         max_connections)
-{
-  _priv.Transport_Routing_init(transport, peersManager);
-
-  // Count the maximum number of pending connections allowed to be
-  // done with this handshake server (undefined == unlimited)
-  transport.connections = 0;
-  transport.max_connections = max_connections;
-
-  transport.presence = function()
-  {
-    transport.emit('presence', peersManager.uid);
-  };
-
-  transport.addEventListener('presence', function(event)
-  {
-    var uid = event.data[0];
-
-    // Don't try to connect to ourselves
-    if(uid != peersManager.uid)
-    {
-      // Check if we should ignore this new peer to increase
-      // entropy in the network mesh
-      // Do the connection with the new peer
-      peersManager.connectTo(uid, transport, function(error, channel)
-      {
-        if(error)
-          console.error(uid, peer, channel);
-
-        else
-          // Increase the number of connections reached throught
-          // this handshake server
-          transport.connections++;
-
-          // Close connection with handshake server if we got its
-          // quota of peers
-          if(transport.connections == transport.max_connections)
-             transport.close();
-      });
-    }
-  });
-}
-
 
 /**
  * Manage the handshake channel using several servers
@@ -126,14 +82,36 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     channel.uid = type;
     channels[channel.uid] = channel;
 
-    _priv.Transport_Presence_init(channel, peersManager, conf.max_connections);
+    channel.addEventListener('presence', function(event)
+    {
+      var uid = event.uid;
+
+      // Check if we should ignore this new peer to increase
+      // entropy in the network mesh
+      // Do the connection with the new peer
+      peersManager.connectTo(uid, channel, function(error, channel)
+      {
+        if(error)
+          console.error(uid, peer, channel);
+
+        else
+          // Increase the number of connections reached throught
+          // this handshake server
+          channel.connections++;
+
+          // Close connection with handshake server if we got its
+          // quota of peers
+          if(channel.connections == channel.max_connections)
+             channel.close();
+      });
+    });
 
     channel.onopen = function()
     {
       status = 'connected';
 
-      // Notify our presence to the other peers on the handshake server
-      channel.presence();
+//      // Notify our presence to the other peers on the handshake server
+//      channel.presence();
 
       if(self.onopen)
          self.onopen();
