@@ -13,10 +13,13 @@ _priv.Handshake_XMPP = function(configuration)
 
 //  configuration.oDbg = new JSJaCConsoleLogger(1)
 
-  // Connect a signaling channel to the XMPP server
+  // Connect a handshake channel to the XMPP server
   var connection = new JSJaCHttpBindingConnection(configuration);
+      connection.connect(configuration);  // Ugly hack to have only one config object
 
-  // Receive messages
+  /**
+   * Receive messages
+   */
   connection.registerHandler('message', function(message)
   {
     console.log(message.getBody())
@@ -28,16 +31,20 @@ _priv.Handshake_XMPP = function(configuration)
        })
   })
 
-  connection.connect(configuration);   // Ugly hack to have only one config object
+  /**
+   * Handle the connection to the handshake server
+   */
   connection.registerHandler('onconnect', function()
   {
     // Notify our presence
     var presence = new JSJaCPresence();
-        presence.setTo("webp2p@muc.jappix.com"+"/"+configuration.uid);
+        presence.setTo(configuration.room+"/"+configuration.uid);
 
     connection.send(presence, function(data){console.log(data.getDoc());});
 
-    // Handle presence of other new peers
+    /**
+     * Handle the presence of other new peers
+     */
     connection.registerHandler('presence', function(presence)
     {
       console.log(presence.getFrom())
@@ -59,35 +66,44 @@ _priv.Handshake_XMPP = function(configuration)
       }
     });
 
-    // Compose and send message
+    /**
+     * Send a message to a peer
+     */
     self.send = function(message, uid)
     {
       var oMsg = new JSJaCMessage();
-          oMsg.setTo("webp2p@muc.jappix.com"+"/"+uid);
+          oMsg.setTo(configuration.room+"/"+uid);
           oMsg.setBody(message);
 
       connection.send(oMsg);
     }
 
-    // Set handshake as open
+    // Notify that the connection to this handshake server is open
     if(self.onopen)
        self.onopen()
-
-//    self.send("hola", "piranna")
   });
 
+  /**
+   * Handle errors on the connection
+   */
   connection.registerHandler('onerror', function(error)
   {
     if(self.onerror)
        self.onerror(error)
   });
 
+  /**
+   * Close the connection with this handshake server
+   */
   this.close = function()
   {
     connection.disconnect()
   }
 
 
+  /**
+   * Send an offer to another peer
+   */
   this.sendOffer = function(uid, sdp)
   {
     console.log(uid)

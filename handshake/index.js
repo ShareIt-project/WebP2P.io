@@ -82,6 +82,11 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     channel.uid = type;
     channels[channel.uid] = channel;
 
+    // Count the maximum number of pending connections allowed to be
+    // done with this handshake server (undefined == unlimited)
+    channel.connections = 0;
+    channel.max_connections = max_connections;
+
     channel.addEventListener('presence', function(event)
     {
       var uid = event.uid;
@@ -99,10 +104,10 @@ _priv.HandshakeManager = function(json_uri, peersManager)
           // this handshake server
           channel.connections++;
 
-          // Close connection with handshake server if we got its
-          // quota of peers
-          if(channel.connections == channel.max_connections)
-             channel.close();
+        // Close connection with handshake server if we got its
+        // quota of peers
+        if(channel.connections == channel.max_connections)
+           channel.close();
       });
     });
 

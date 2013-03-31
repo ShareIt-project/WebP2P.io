@@ -9,11 +9,6 @@ _priv.Handshake_SimpleSignaling = function(configuration)
 {
   _priv.Transport_Routing_init(this, peersManager);
 
-  // Count the maximum number of pending connections allowed to be
-  // done with this handshake server (undefined == unlimited)
-  this.connections = 0;
-  this.max_connections = max_connections;
-
   var self = this;
 
   this.addEventListener('presence', function(event)
@@ -23,24 +18,11 @@ _priv.Handshake_SimpleSignaling = function(configuration)
     // Don't try to connect to ourselves
     if(uid != peersManager.uid)
     {
-      // Check if we should ignore this new peer to increase
-      // entropy in the network mesh
-      // Do the connection with the new peer
-      peersManager.connectTo(uid, self, function(error, channel)
-      {
-        if(error)
-          console.error(uid, peer, channel);
+      var event = document.createEvent("Event");
+          event.initEvent('presence',true,true);
+          event.uid = uid
 
-        else
-          // Increase the number of connections reached throught
-          // this handshake server
-          transport.connections++;
-
-          // Close connection with handshake server if we got its
-          // quota of peers
-          if(transport.connections == transport.max_connections)
-             transport.close();
-      });
+      self.dispatchEvent(event);
     }
   });
 

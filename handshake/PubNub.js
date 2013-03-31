@@ -9,49 +9,36 @@ _priv.Handshake_PubNub = function(configuration)
 {
   _priv.Transport_Routing_init(this, peersManager);
 
-  // Count the maximum number of pending connections allowed to be
-  // done with this handshake server (undefined == unlimited)
-  this.connections = 0;
-  this.max_connections = max_connections;
-
   var self = this;
 
+  // Connect a handshake channel to the PubNub server
+  var pubnub = PUBNUB(configuration);
+
+  /**
+   * Handle the presence of other new peers
+   */
   this.addEventListener('presence', function(event)
   {
     var uid = event.data[0];
   
     // Don't try to connect to ourselves
-    if(uid != peersManager.uid)
+    if(uid != configuration.uid)
     {
-      // Check if we should ignore this new peer to increase
-      // entropy in the network mesh
-      // Do the connection with the new peer
-      peersManager.connectTo(uid, self, function(error, channel)
-      {
-        if(error)
-          console.error(uid, peer, channel);
+      var event = document.createEvent("Event");
+          event.initEvent('presence',true,true);
+          event.uid = uid
 
-        else
-          // Increase the number of connections reached throught
-          // this handshake server
-          transport.connections++;
-
-          // Close connection with handshake server if we got its
-          // quota of peers
-          if(transport.connections == transport.max_connections)
-             transport.close();
-      });
+      self.dispatchEvent(event);
     }
   });
-
-  // Connect a handshake channel to the PubNub server
-  var pubnub = PUBNUB(configuration);
 
   pubnub.subscribe(
   {
     channel: configuration.channel,
 
-    // Receive messages
+    /**
+     * Receive messages
+     */
     callback: function(message)
     {
       if(self.onmessage)
@@ -61,12 +48,17 @@ _priv.Handshake_PubNub = function(configuration)
          });
     },
 
+    /**
+     * Handle the connection to the handshake server
+     */
     connect: function()
     {
       // Notify our presence
       self.emit('presence', peersManager.uid);
 
-      // Compose and send message
+      /**
+       * Send a message to a peer
+       */
       self.send = function(message)
       {
         pubnub.publish(
@@ -76,11 +68,14 @@ _priv.Handshake_PubNub = function(configuration)
         });
       };
 
-      // Set handshake as open
+      // Notify that the connection to this handshake server is open
       if(self.onopen)
          self.onopen();
     },
 
+    /**
+     * Handle errors on the connection
+     */
     error: function(error)
     {
       if(self.onerror)
@@ -88,6 +83,9 @@ _priv.Handshake_PubNub = function(configuration)
     }
   });
 
+  /**
+   * Close the connection with this handshake server
+   */
   this.close = function()
   {
     pubnub.unsubscribe(
