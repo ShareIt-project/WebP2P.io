@@ -85,7 +85,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     // Count the maximum number of pending connections allowed to be
     // done with this handshake server (undefined == unlimited)
     channel.connections = 0;
-    channel.max_connections = max_connections;
+    channel.max_connections = conf.max_connections;
 
     channel.addEventListener('presence', function(event)
     {
