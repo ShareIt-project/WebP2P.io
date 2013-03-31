@@ -17,6 +17,7 @@ _priv.Handshake_XMPP = function(configuration)
   var connection = new JSJaCHttpBindingConnection(configuration);
       connection.connect(configuration);  // Ugly hack to have only one config object
 
+
   /**
    * Receive messages
    */
@@ -31,6 +32,7 @@ _priv.Handshake_XMPP = function(configuration)
        })
   })
 
+
   /**
    * Handle the connection to the handshake server
    */
@@ -41,6 +43,7 @@ _priv.Handshake_XMPP = function(configuration)
         presence.setTo(configuration.room+"/"+configuration.uid);
 
     connection.send(presence, function(data){console.log(data.getDoc());});
+
 
     /**
      * Handle the presence of other new peers
@@ -66,6 +69,7 @@ _priv.Handshake_XMPP = function(configuration)
       }
     });
 
+
     /**
      * Send a message to a peer
      */
@@ -83,6 +87,7 @@ _priv.Handshake_XMPP = function(configuration)
        self.onopen()
   });
 
+
   /**
    * Handle errors on the connection
    */
@@ -92,12 +97,25 @@ _priv.Handshake_XMPP = function(configuration)
        self.onerror(error)
   });
 
+
   /**
    * Close the connection with this handshake server
    */
   this.close = function()
   {
     connection.disconnect()
+  }
+
+
+  /**
+   * Send an answer to another peer
+   */
+  this.sendAnswer = function(uid, sdp)
+  {
+    console.log(uid)
+    console.log(sdp)
+
+    this.send(['answer', sdp], uid)
   }
 
 

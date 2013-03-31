@@ -36,6 +36,7 @@ _priv.Handshake_PubNub = function(configuration)
   {
     channel: configuration.channel,
 
+
     /**
      * Receive messages
      */
@@ -56,10 +57,11 @@ _priv.Handshake_PubNub = function(configuration)
       // Notify our presence
       self.emit('presence', peersManager.uid);
 
+
       /**
        * Send a message to a peer
        */
-      self.send = function(message)
+      self.send = function(message, uid)
       {
         pubnub.publish(
         {
@@ -72,6 +74,7 @@ _priv.Handshake_PubNub = function(configuration)
       if(self.onopen)
          self.onopen();
     },
+
 
     /**
      * Handle errors on the connection

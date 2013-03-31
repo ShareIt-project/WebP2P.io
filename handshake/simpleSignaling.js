@@ -11,12 +11,29 @@ _priv.Handshake_SimpleSignaling = function(configuration)
 
   var self = this;
 
+  // Connect a handshake channel to the SimpleSignaling server
+  var handshake = new SimpleSignaling(configuration);
+
+
+  /**
+   * Receive messages
+   */
+  handshake.onmessage = function(uid, data)
+  {
+    if(self.onmessage)
+       self.onmessage(uid, data);
+  };
+
+
+  /**
+   * Handle the presence of other new peers
+   */
   this.addEventListener('presence', function(event)
   {
     var uid = event.data[0];
   
     // Don't try to connect to ourselves
-    if(uid != peersManager.uid)
+    if(uid != configuration.uid)
     {
       var event = document.createEvent("Event");
           event.initEvent('presence',true,true);
@@ -26,30 +43,30 @@ _priv.Handshake_SimpleSignaling = function(configuration)
     }
   });
 
-  // Connect a handshake channel to the XMPP server
-  var handshake = new SimpleSignaling(configuration);
 
   handshake.onopen = function(uid)
   {
     // Notify our presence
     self.emit('presence', peersManager.uid);
 
-    // Compose and send message
-    self.send = function(uid, data)
+
+    /**
+     * Send a message to a peer
+     */
+    self.send = function(message, uid)
     {
-      handshake.send(uid, data);
+      handshake.send(uid, message);
     };
 
-    handshake.onmessage = function(uid, data)
-    {
-      if(self.onmessage)
-         self.onmessage(uid, data);
-    };
-
-    // Set handshake channel as open
+    // Notify that the connection to this handshake server is open
     if(self.onopen)
        self.onopen(uid);
   };
+
+
+  /**
+   * Handle errors on the connection
+   */
   handshake.onerror = function(error)
   {
     if(self.onerror)
