@@ -7,7 +7,7 @@ var _priv = module._priv = module._priv || {}
  */
 _priv.Handshake_SimpleSignaling = function(configuration)
 {
-  _priv.Transport_Routing_init(this, peersManager);
+  _priv.Transport_init(this);
 
   var self = this;
 
@@ -71,6 +71,45 @@ _priv.Handshake_SimpleSignaling = function(configuration)
   {
     if(self.onerror)
        self.onerror(error);
+  };
+
+
+  /**
+   * Send a RTCPeerConnection offer through the active handshake channel
+   * @param {UUID} uid Identifier of the other peer.
+   * @param {String} sdp Content of the SDP object.
+   * @param {Array} [route] Route path where this offer have circulated.
+   */
+  this.sendOffer = function(dest, sdp, route)
+  {
+    if(route == undefined)
+       route = [];
+
+    if(transport.isPubsub)
+      route.push(configuration.uid);
+
+    this.emit('offer', dest, sdp, route);
+  };
+
+
+  /**
+   * Send a RTCPeerConnection answer through the active handshake channel
+   * @param {UUID} uid Identifier of the other peer.
+   * @param {String} sdp Content of the SDP object.
+   * @param {Array} [route] Route path where this answer have circulated.
+   */
+  this.sendAnswer = function(orig, sdp, route)
+  {
+    if(transport.isPubsub)
+      // Run over all the route peers looking for possible "shortcuts"
+      for(var i = 0, uid; uid = route[i]; i++)
+        if(uid == transport.uid)
+        {
+          route.length = i;
+          break;
+        }
+
+      this.emit('answer', orig, sdp, route);
   };
 }
 

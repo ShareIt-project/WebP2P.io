@@ -23,13 +23,18 @@ _priv.Handshake_XMPP = function(configuration)
    */
   connection.registerHandler('message', function(message)
   {
-    console.log(message.getBody())
+    var uid = message.getFromJID().getResource()
 
-    if(self.onmessage)
-       self.onmessage(
-       {
-         data: message.getBody()
-       })
+    message = JSON.parse(message.getBody())
+
+    var event = document.createEvent("Event");
+        event.initEvent(message[0],true,true);
+        event.uid = uid
+        event.sdp = message[1]
+        event.route = message[2]
+
+    console.log(event)
+    self.dispatchEvent(event);
   })
 
 
@@ -41,8 +46,7 @@ _priv.Handshake_XMPP = function(configuration)
     // Notify our presence
     var presence = new JSJaCPresence();
         presence.setTo(configuration.room+"/"+configuration.uid);
-
-    connection.send(presence, function(data){console.log(data.getDoc());});
+    connection.send(presence);
 
 
     /**
@@ -53,7 +57,7 @@ _priv.Handshake_XMPP = function(configuration)
       console.log(presence.getFrom())
       console.log(presence.getType())
 
-      var uid = presence.getFrom().split('/')[1]
+      var uid = presence.getFromJID().getResource()
 
       // Only notify new connections
 //      if(presence.getType() != "unavailable")
@@ -68,19 +72,6 @@ _priv.Handshake_XMPP = function(configuration)
         self.dispatchEvent(event);
       }
     });
-
-
-    /**
-     * Send a message to a peer
-     */
-    self.send = function(message, uid)
-    {
-      var oMsg = new JSJaCMessage();
-          oMsg.setTo(configuration.room+"/"+uid);
-          oMsg.setBody(message);
-
-      connection.send(oMsg);
-    }
 
     // Notify that the connection to this handshake server is open
     if(self.onopen)
@@ -99,6 +90,19 @@ _priv.Handshake_XMPP = function(configuration)
 
 
   /**
+   * Send a message to a peer
+   */
+  function send(message, uid)
+  {
+    var oMsg = new JSJaCMessage();
+        oMsg.setTo(configuration.room+"/"+uid);
+        oMsg.setBody(JSON.stringify(message));
+
+    connection.send(oMsg);
+  }
+
+
+  /**
    * Close the connection with this handshake server
    */
   this.close = function()
@@ -108,26 +112,34 @@ _priv.Handshake_XMPP = function(configuration)
 
 
   /**
-   * Send an answer to another peer
+   * Send a RTCPeerConnection answer through the active handshake channel
+   * @param {UUID} uid Identifier of the other peer.
+   * @param {String} sdp Content of the SDP object.
+   * @param {Array} [route] Route path where this answer have circulated.
    */
-  this.sendAnswer = function(uid, sdp)
+  this.sendAnswer = function(uid, sdp, route)
   {
-    console.log(uid)
-    console.log(sdp)
+    var data = ['answer', sdp]
+    if(route)
+      data.push(route)
 
-    this.send(['answer', sdp], uid)
+    send(data, uid)
   }
 
 
   /**
-   * Send an offer to another peer
+   * Send a RTCPeerConnection offer through the active handshake channel
+   * @param {UUID} uid Identifier of the other peer.
+   * @param {String} sdp Content of the SDP object.
+   * @param {Array} [route] Route path where this offer have circulated.
    */
-  this.sendOffer = function(uid, sdp)
+  this.sendOffer = function(uid, sdp, route)
   {
-    console.log(uid)
-    console.log(sdp)
+    var data = ['offer', sdp]
+    if(route)
+      data.push(route)
 
-    this.send(['offer', sdp], uid)
+    send(data, uid)
   }
 }
 

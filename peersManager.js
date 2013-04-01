@@ -67,6 +67,7 @@ module.PeersManager = function(stun_server)
 
     pc._channel = channel;
 
+    _priv.Transport_init(channel);
     _priv.Transport_Routing_init(channel, self);
 
     channel.onclose = function()

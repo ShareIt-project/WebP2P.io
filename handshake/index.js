@@ -111,6 +111,8 @@ _priv.HandshakeManager = function(json_uri, peersManager)
       });
     });
 
+    _priv.Transport_Routing_init(channel, peersManager);
+
     channel.onopen = function()
     {
       status = 'connected';
