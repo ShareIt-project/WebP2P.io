@@ -78,7 +78,6 @@ _priv.HandshakeManager = function(json_uri, peersManager)
 
     var channel = new channelConstructor(conf);
 
-    channel.isPubsub = true;
     channel.uid = type;
     channels[channel.uid] = channel;
 

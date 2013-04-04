@@ -9,6 +9,8 @@ _priv.Handshake_PubNub = function(configuration)
 {
   _priv.Transport_init(this);
 
+  this.isPubsub = true;
+
   var self = this;
 
   // Connect a handshake channel to the PubNub server
@@ -109,8 +111,7 @@ _priv.Handshake_PubNub = function(configuration)
     if(route == undefined)
        route = [];
 
-    if(transport.isPubsub)
-      route.push(configuration.uid);
+    route.push(configuration.uid);
 
     this.emit('offer', dest, sdp, route);
   };
@@ -124,16 +125,15 @@ _priv.Handshake_PubNub = function(configuration)
    */
   this.sendAnswer = function(orig, sdp, route)
   {
-    if(transport.isPubsub)
-      // Run over all the route peers looking for possible "shortcuts"
-      for(var i = 0, uid; uid = route[i]; i++)
-        if(uid == transport.uid)
-        {
-          route.length = i;
-          break;
-        }
+    // Run over all the route peers looking for possible "shortcuts"
+    for(var i = 0, uid; uid = route[i]; i++)
+      if(uid == transport.uid)
+      {
+        route.length = i;
+        break;
+      }
 
-      this.emit('answer', orig, sdp, route);
+    this.emit('answer', orig, sdp, route);
   };
 }
 

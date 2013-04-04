@@ -23,18 +23,51 @@ _priv.Handshake_XMPP = function(configuration)
    */
   connection.registerHandler('message', function(message)
   {
-    var uid = message.getFromJID().getResource()
-
-    message = JSON.parse(message.getBody())
+    var body = JSON.parse(message.getBody())
 
     var event = document.createEvent("Event");
-        event.initEvent(message[0],true,true);
-        event.uid = uid
-        event.sdp = message[1]
-        event.route = message[2]
+        event.initEvent(body[0],true,true);
 
-    console.log(event)
-    self.dispatchEvent(event);
+        event.from  = message.getFromJID().getResource()
+        event.sdp   = body[1]
+        event.route = body[2]
+
+//    console.log(event)
+//    self.dispatchEvent(event);
+
+    switch(event.type)
+    {
+      case 'offer':
+      {
+        var from = event.from;
+        var sdp = event.sdp;
+
+        // Create PeerConnection
+        var pc = self.onoffer(from, sdp);
+
+        // Send answer
+        pc.createAnswer(function(answer)
+        {
+          self.sendAnswer(from, answer.sdp);
+
+          pc.setLocalDescription(new RTCSessionDescription(
+          {
+            sdp: answer.sdp,
+            type: 'answer'
+          }));
+        });
+      }
+      break;
+
+      case 'answer':
+      {
+        var from = event.from;
+        var sdp = event.sdp;
+
+        self.onanswer(from, sdp);
+      }
+      break;
+    }
   })
 
 
@@ -46,32 +79,36 @@ _priv.Handshake_XMPP = function(configuration)
     // Notify our presence
     var presence = new JSJaCPresence();
         presence.setTo(configuration.room+"/"+configuration.uid);
+
     connection.send(presence);
 
 
     /**
      * Handle the presence of other new peers
      */
-    connection.registerHandler('presence', function(presence)
+    setTimeout(function()
     {
-      console.log(presence.getFrom())
-      console.log(presence.getType())
-
-      var uid = presence.getFromJID().getResource()
-
-      // Only notify new connections
-//      if(presence.getType() != "unavailable")
-      if(uid != configuration.uid
-      && !presence.getType()
-      && !presence.getShow())
+      connection.registerHandler('presence', function(presence)
       {
-        var event = document.createEvent("Event");
-            event.initEvent('presence',true,true);
-            event.uid = uid
+        console.log(presence.getDoc())
+        var uid = presence.getFromJID().getResource()
 
-        self.dispatchEvent(event);
-      }
-    });
+        // Only notify new connections
+//        if(presence.getType() != "unavailable")
+        if(uid != configuration.uid
+        && !presence.getType()
+        && !presence.getShow())
+        {
+          var event = document.createEvent("Event");
+              event.initEvent('presence',true,true);
+
+              event.uid = uid
+
+          self.dispatchEvent(event);
+        }
+      });
+    }, 1000)
+
 
     // Notify that the connection to this handshake server is open
     if(self.onopen)
