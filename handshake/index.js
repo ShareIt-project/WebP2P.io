@@ -50,7 +50,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     switch(type)
     {
       case 'PubNub':
-        conf.uuid = peersManager.uid;
+        conf.uid = peersManager.uid;
         channelConstructor = _priv.Handshake_PubNub;
         break;
 

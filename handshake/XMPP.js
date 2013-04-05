@@ -83,18 +83,18 @@ _priv.Handshake_XMPP = function(configuration)
     connection.send(presence);
 
 
-    /**
-     * Handle the presence of other new peers
-     */
+    // Ugly hack so we can ignore presence messages from previous peers
     setTimeout(function()
     {
+      /**
+       * Handle the presence of other new peers
+       */
       connection.registerHandler('presence', function(presence)
       {
         console.log(presence.getDoc())
         var uid = presence.getFromJID().getResource()
 
         // Only notify new connections
-//        if(presence.getType() != "unavailable")
         if(uid != configuration.uid
         && !presence.getType()
         && !presence.getShow())

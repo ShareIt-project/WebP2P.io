@@ -21,11 +21,7 @@ _priv.Transport_Routing_init = function(transport, peersManager)
 //    if(dest == peersManager.uid)
     {
       // Create PeerConnection
-      var pc = peersManager.onoffer(route[0], sdp, function(uid, event)
-      {
-        console.error('Error creating DataChannel with peer ' + uid);
-        console.error(event);
-      });
+      var pc = transport.onoffer(route[0], sdp);
 
       // Send answer
       pc.createAnswer(function(answer)
@@ -90,10 +86,7 @@ _priv.Transport_Routing_init = function(transport, peersManager)
 
     // Answer is for us
     if(route[0] == peersManager.uid)
-      peersManager.onanswer(from, sdp, function(uid)
-      {
-        console.error("[routing.answer] PeerConnection '" + uid + "' not found");
-      });
+      transport.onanswer(from, sdp);
 
     // Answer is not for us but we know where it goes, search peers on route
     // where we could send it

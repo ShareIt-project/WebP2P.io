@@ -17,11 +17,6 @@ _priv.Transport_init = function(transport)
     var args = Array.prototype.slice.call(arguments, 0);
 
     transport.send(JSON.stringify(args))
-//    transport.send(JSON.stringify(args), function(error)
-//    {
-//      if(error)
-//        console.warn(error);
-//    });
   };
 
   /**
