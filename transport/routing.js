@@ -8,26 +8,26 @@ _priv.Transport_Routing_init = function(transport, peersManager)
    */
   transport.addEventListener('offer', function(event)
   {
-    var from = event.from;
-    var sdp = event.sdp;
-    var route = event.route || [];
+    var from  = event.from;
+    var sdp   = event.sdp;
+    var route = event.route;
 
-    // If a message have been already routed by this peer, ignore it
-    for(var i = 0, uid; uid = route[i]; i++)
-      if(uid == peersManager.uid)
-        return;
+//    // If a message have been already routed by this peer, ignore it
+//    for(var i = 0, uid; uid = route[i]; i++)
+//      if(uid == peersManager.uid)
+//        return;
 
 //    // Offer is for us
 //    if(dest == peersManager.uid)
-    {
+//    {
+
       // Create PeerConnection
-      var pc = transport.onoffer(route[0], sdp);
+      var pc = transport.onoffer(from, sdp);
 
       // Send answer
       pc.createAnswer(function(answer)
       {
         transport.sendAnswer(from, answer.sdp, route);
-//        transport.sendAnswer(peersManager.uid, answer.sdp, route);
 
         pc.setLocalDescription(new RTCSessionDescription(
         {
@@ -35,8 +35,9 @@ _priv.Transport_Routing_init = function(transport, peersManager)
           type: 'answer'
         }));
       });
-    }
 
+//    }
+//
 //    // Offer is not for us, route it over the other connected peers
 //    else
 //    {

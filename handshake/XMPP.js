@@ -35,37 +35,21 @@ _priv.Handshake_XMPP = function(configuration)
 //    console.log(event)
 //    self.dispatchEvent(event);
 
+    var from = event.from;
+    var sdp  = event.sdp;
+
+    // Don't try to connect to ourselves
+    if(from == configuration.uid)
+      return
+
     switch(event.type)
     {
       case 'offer':
-      {
-        var from = event.from;
-        var sdp = event.sdp;
-
-        // Create PeerConnection
-        var pc = self.onoffer(from, sdp);
-
-        // Send answer
-        pc.createAnswer(function(answer)
-        {
-          self.sendAnswer(from, answer.sdp);
-
-          pc.setLocalDescription(new RTCSessionDescription(
-          {
-            sdp: answer.sdp,
-            type: 'answer'
-          }));
-        });
-      }
+        self.dispatchEvent(event);
       break;
 
       case 'answer':
-      {
-        var from = event.from;
-        var sdp = event.sdp;
-
         self.onanswer(from, sdp);
-      }
       break;
     }
   })
@@ -91,18 +75,17 @@ _priv.Handshake_XMPP = function(configuration)
        */
       connection.registerHandler('presence', function(presence)
       {
-        console.log(presence.getDoc())
-        var uid = presence.getFromJID().getResource()
+        var from = presence.getFromJID().getResource()
 
         // Only notify new connections
-        if(uid != configuration.uid
+        if(from != configuration.uid
         && !presence.getType()
         && !presence.getShow())
         {
           var event = document.createEvent("Event");
               event.initEvent('presence',true,true);
 
-              event.uid = uid
+              event.uid = from
 
           self.dispatchEvent(event);
         }

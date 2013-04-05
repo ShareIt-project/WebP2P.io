@@ -30,6 +30,7 @@ _priv.Handshake_PubNub = function(configuration)
       var event = JSON.parse(message)
 
       var from = event.from;
+      var sdp  = event.sdp;
 
       // Don't try to connect to ourselves
       if(from == configuration.uid)
@@ -41,33 +42,11 @@ _priv.Handshake_PubNub = function(configuration)
       switch(event.type)
       {
         case 'offer':
-        {
-          var from = event.from;
-          var sdp = event.sdp;
-
-          // Create PeerConnection
-          var pc = self.onoffer(from, sdp);
-
-          // Send answer
-          pc.createAnswer(function(answer)
-          {
-            self.sendAnswer(from, answer.sdp);
-
-            pc.setLocalDescription(new RTCSessionDescription(
-            {
-              sdp: answer.sdp,
-              type: 'answer'
-            }));
-          });
-        }
+          self.dispatchEvent(event);
         break;
 
         case 'answer':
-        {
-          var sdp = event.sdp;
-
           self.onanswer(from, sdp);
-        }
         break;
 
         /**
@@ -92,7 +71,6 @@ _priv.Handshake_PubNub = function(configuration)
     {
       // Notify our presence
       send({type: 'presence', from: configuration.uid});
-
 
       // Notify that the connection to this handshake server is open
       if(self.onopen)
