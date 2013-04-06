@@ -78,47 +78,47 @@ _priv.Transport_Routing_init = function(transport, peersManager)
   {
     var from = event.from;
     var sdp = event.sdp;
-    var route = event.route || [];
+    var route = event.route;
 
 //    // Answer is from ourselves or we don't know where it goes, ignore it
 //    if(orig == peersManager.uid
 //    || !route.length)
 //      return;
-
-    // Answer is for us
-    if(route[0] == peersManager.uid)
+//
+//    // Answer is for us
+//    if(route[0] == peersManager.uid)
       transport.onanswer(from, sdp);
 
-    // Answer is not for us but we know where it goes, search peers on route
-    // where we could send it
-    else if(route.length > 1)
-    {
-      var routed = false;
-
-      var channels = peersManager.getChannels();
-
-      // Run over all the route peers looking for possible "shortcuts"
-      for(var i = 0, uid; uid = route[i]; i++)
-      {
-        var channel = channels[uid];
-        if(channel)
-        {
-          channel.sendAnswer(from, sdp, route.slice(0, i - 1));
-
-          // Currently is sending the message to all the shortcuts, but maybe it
-          // would be necessary only the first one so some band-width could be
-          // saved?
-          routed = true;
-        }
-      }
-
-      // Answer couldn't be routed (maybe a peer was disconnected?), try to find
-      // the connection request initiator peer by broadcast
-      if(!routed)
-        for(var uid in channels)
-          if(uid != transport.uid)
-            channels[uid].sendAnswer(orig, sdp, route);
-    }
+//    // Answer is not for us but we know where it goes, search peers on route
+//    // where we could send it
+//    else if(route.length > 1)
+//    {
+//      var routed = false;
+//
+//      var channels = peersManager.getChannels();
+//
+//      // Run over all the route peers looking for possible "shortcuts"
+//      for(var i = 0, uid; uid = route[i]; i++)
+//      {
+//        var channel = channels[uid];
+//        if(channel)
+//        {
+//          channel.sendAnswer(from, sdp, route.slice(0, i - 1));
+//
+//          // Currently is sending the message to all the shortcuts, but maybe it
+//          // would be necessary only the first one so some band-width could be
+//          // saved?
+//          routed = true;
+//        }
+//      }
+//
+//      // Answer couldn't be routed (maybe a peer was disconnected?), try to find
+//      // the connection request initiator peer by broadcast
+//      if(!routed)
+//        for(var uid in channels)
+//          if(uid != transport.uid)
+//            channels[uid].sendAnswer(orig, sdp, route);
+//    }
   });
 
 

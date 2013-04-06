@@ -88,15 +88,15 @@ _priv.HandshakeManager = function(json_uri, peersManager)
 
     channel.addEventListener('presence', function(event)
     {
-      var uid = event.uid;
+      var from = event.from;
 
       // Check if we should ignore this new peer to increase
       // entropy in the network mesh
       // Do the connection with the new peer
-      peersManager.connectTo(uid, channel, function(error, channel)
+      peersManager.connectTo(from, channel, function(error, channel)
       {
         if(error)
-          console.error(uid, peer, channel);
+          console.error(from, peer, channel);
 
         else
           // Increase the number of connections reached throught

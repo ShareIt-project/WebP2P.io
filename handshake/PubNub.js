@@ -29,39 +29,11 @@ _priv.Handshake_PubNub = function(configuration)
     {
       var event = JSON.parse(message)
 
-      var from = event.from;
-      var sdp  = event.sdp;
-
       // Don't try to connect to ourselves
-      if(from == configuration.uid)
+      if(event.from == configuration.uid)
         return
 
-//      console.log(event)
-//      self.dispatchEvent(event);
-
-      switch(event.type)
-      {
-        case 'offer':
-          self.dispatchEvent(event);
-        break;
-
-        case 'answer':
-          self.onanswer(from, sdp);
-        break;
-
-        /**
-         * Handle the presence of other new peers
-         */
-        case 'presence':
-        {
-          var event = document.createEvent("Event");
-              event.initEvent('presence',true,true);
-
-              event.uid = from
-
-          self.dispatchEvent(event);
-        };
-      }
+      self.dispatchEvent(event);
     },
 
     /**

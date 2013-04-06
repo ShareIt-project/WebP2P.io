@@ -23,35 +23,21 @@ _priv.Handshake_XMPP = function(configuration)
    */
   connection.registerHandler('message', function(message)
   {
+    var from = message.getFromJID().getResource()
     var body = JSON.parse(message.getBody())
-
-    var event = document.createEvent("Event");
-        event.initEvent(body[0],true,true);
-
-        event.from  = message.getFromJID().getResource()
-        event.sdp   = body[1]
-        event.route = body[2]
-
-//    console.log(event)
-//    self.dispatchEvent(event);
-
-    var from = event.from;
-    var sdp  = event.sdp;
 
     // Don't try to connect to ourselves
     if(from == configuration.uid)
       return
 
-    switch(event.type)
-    {
-      case 'offer':
-        self.dispatchEvent(event);
-      break;
+    var event = document.createEvent("Event");
+        event.initEvent(body[0],true,true);
 
-      case 'answer':
-        self.onanswer(from, sdp);
-      break;
-    }
+        event.from  = from
+        event.sdp   = body[1]
+        event.route = body[2]
+
+    self.dispatchEvent(event);
   })
 
 
@@ -85,7 +71,7 @@ _priv.Handshake_XMPP = function(configuration)
           var event = document.createEvent("Event");
               event.initEvent('presence',true,true);
 
-              event.uid = from
+              event.from = from
 
           self.dispatchEvent(event);
         }
