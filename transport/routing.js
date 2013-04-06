@@ -22,7 +22,11 @@ _priv.Transport_Routing_init = function(transport, peersManager)
 //    {
 
       // Create PeerConnection
-      var pc = transport.onoffer(from, sdp);
+      var pc = peersManager.onoffer(from, sdp, function(uid, event)
+      {
+        console.error('Error creating DataChannel with peer ' + uid);
+        console.error(event);
+      });
 
       // Send answer
       pc.createAnswer(function(answer)
@@ -87,7 +91,10 @@ _priv.Transport_Routing_init = function(transport, peersManager)
 //
 //    // Answer is for us
 //    if(route[0] == peersManager.uid)
-      transport.onanswer(from, sdp);
+      peersManager.onanswer(from, sdp, function(uid)
+      {
+        console.error("[routing.answer] PeerConnection '" + uid + "' not found");
+      });
 
 //    // Answer is not for us but we know where it goes, search peers on route
 //    // where we could send it
@@ -120,23 +127,6 @@ _priv.Transport_Routing_init = function(transport, peersManager)
 //            channels[uid].sendAnswer(orig, sdp, route);
 //    }
   });
-
-
-  transport.onoffer = function(from, sdp)
-  {
-    return peersManager.onoffer(from, sdp, function(uid, event)
-    {
-      console.error('Error creating DataChannel with peer ' + uid);
-      console.error(event);
-    });
-  };
-  transport.onanswer = function(from, sdp)
-  {
-    peersManager.onanswer(from, sdp, function(uid)
-    {
-      console.error("[routing.answer] PeerConnection '" + uid + "' not found");
-    });
-  };
 }
 
 return module
