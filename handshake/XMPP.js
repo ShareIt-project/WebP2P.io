@@ -23,8 +23,12 @@ _priv.Handshake_XMPP = function(configuration)
    */
   connection.registerHandler('message', function(message)
   {
+    var body = message.getBody()
+    if(body == "")
+      return
+
     var from = message.getFromJID().getResource()
-    var body = JSON.parse(message.getBody())
+    var body = JSON.parse(body)
 
     // Don't try to connect to ourselves
     if(from == configuration.uid)
