@@ -5,7 +5,8 @@ var _priv = module._priv = module._priv || {}
  * Handshake channel connector for PubNub (adapter to Message Channel interface)
  * @param {Object} configuration Configuration object.
  */
-_priv.Handshake_PubNub = function(configuration)
+_priv.HandshakeManager.registerConstructor('PubNub',
+function(configuration)
 {
   EventTarget.call(this);
 
@@ -130,7 +131,7 @@ _priv.Handshake_PubNub = function(configuration)
 
     send(data);
   };
-}
+})
 
 return module
 })(webp2p || {})

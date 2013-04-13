@@ -5,7 +5,8 @@ var _priv = module._priv = module._priv || {}
  * Handshake channel connector for SimpleSignaling
  * @param {Object} configuration Configuration object.
  */
-_priv.Handshake_SimpleSignaling = function(configuration)
+_priv.HandshakeManager.registerConstructor('SimpleSignaling',
+function(configuration)
 {
   _priv.Transport_init(this);
 
@@ -111,7 +112,7 @@ _priv.Handshake_SimpleSignaling = function(configuration)
 
     this.emit('answer', orig, sdp, route);
   };
-}
+})
 
 return module
 })(webp2p || {})

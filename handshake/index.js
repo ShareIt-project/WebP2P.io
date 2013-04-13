@@ -14,14 +14,6 @@ _priv.HandshakeManager = function(json_uri, peersManager)
   var channels = {};
   var status = 'disconnected';
 
-  var handshakeServers =
-  {
-    'PubNub'         : _priv.Handshake_PubNub,
-    'SimpleSignaling': _priv.Handshake_SimpleSignaling,
-    'XMPP'           : _priv.Handshake_XMPP,
-    'xRTML'          : _priv.Handshake_xRTML,
-  }
-
 
   function nextHandshake(configuration)
   {
@@ -56,7 +48,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
 
     conf.uid = peersManager.uid;
 
-    var channelConstructor = handshakeServers[type];
+    var channelConstructor = HandshakeManager.handshakeServers[type];
 
     // Check if channel constructor is from a valid handshake server
     if(!channelConstructor)
@@ -173,6 +165,12 @@ _priv.HandshakeManager = function(json_uri, peersManager)
   };
 
   http_request.send();
+}
+
+_priv.HandshakeManager.handshakeServers = {}
+_priv.HandshakeManager.registerConstructor = function(type, constructor)
+{
+  HandshakeManager.handshakeServers[type] = constructor
 }
 
 return module

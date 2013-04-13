@@ -1,8 +1,12 @@
+var webp2p = (function(module){
+var _priv = module._priv = module._priv || {}
+
 /**
  * Handshake channel connector for xRTML
  * @param {Object} configuration Configuration object
  */
-function Handshake_xRTML(configuration)
+_priv.HandshakeManager.registerConstructor('xRTML',
+function(configuration)
 {
     var self = this
 
@@ -64,4 +68,7 @@ function Handshake_xRTML(configuration)
             channel: configuration.channel
         });
     }
-}
+})
+
+return module
+})(webp2p || {})

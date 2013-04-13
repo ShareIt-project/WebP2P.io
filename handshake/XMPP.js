@@ -5,7 +5,8 @@ var _priv = module._priv = module._priv || {}
  * Signaling channel connector for XMPP
  * @param {Object} configuration Configuration object
  */
-_priv.Handshake_XMPP = function(configuration)
+_priv.HandshakeManager.registerConstructor('XMPP',
+function(configuration)
 {
   EventTarget.call(this);
 
@@ -151,7 +152,7 @@ _priv.Handshake_XMPP = function(configuration)
 
     send(data, uid)
   }
-}
+})
 
 return module
 })(webp2p || {})

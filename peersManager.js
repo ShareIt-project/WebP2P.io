@@ -48,6 +48,9 @@ module.PeersManager = function(stun_server)
     });
     pc.onstatechange = function(event)
     {
+      console.warn("PeerConnection "+event.target.readyState)
+      console.warn("PeerConnection "+event.target.iceConnectionState)
+
       // Remove the peer from the list of peers when gets closed
       if(event.target.readyState == 'closed')
         delete peers[uid];
