@@ -24,23 +24,19 @@ function(configuration)
    */
   connection.registerHandler('message', function(message)
   {
-    var body = message.getBody()
-    if(body == "")
-      return
-
     var from = message.getFromJID().getResource()
-    var body = JSON.parse(body)
 
     // Don't try to connect to ourselves
     if(from == configuration.uid)
       return
 
-    var event = document.createEvent("Event");
-        event.initEvent(body[0],true,true);
+    var body = message.getBody()
+    if(body == "")
+      return
 
-        event.from  = from
-        event.sdp   = body[1]
-        event.route = body[2]
+    var event = JSON.parse(body)
+
+    event.from = from
 
     self.dispatchEvent(event);
   })
@@ -130,9 +126,10 @@ function(configuration)
    */
   this.sendAnswer = function(uid, sdp, route)
   {
-    var data = ['answer', sdp]
+    var data = {type: 'answer',
+                sdp:  sdp}
     if(route)
-      data.push(route)
+      data.route = route;
 
     send(data, uid)
   }
@@ -146,9 +143,10 @@ function(configuration)
    */
   this.sendOffer = function(uid, sdp, route)
   {
-    var data = ['offer', sdp]
+    var data = {type: 'offer',
+                sdp:  sdp}
     if(route)
-      data.push(route)
+      data.route = route;
 
     send(data, uid)
   }
