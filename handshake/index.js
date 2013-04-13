@@ -48,7 +48,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
 
     conf.uid = peersManager.uid;
 
-    var channelConstructor = HandshakeManager.handshakeServers[type];
+    var channelConstructor = _priv.HandshakeManager.handshakeServers[type];
 
     // Check if channel constructor is from a valid handshake server
     if(!channelConstructor)
@@ -173,7 +173,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
 _priv.HandshakeManager.handshakeServers = {}
 _priv.HandshakeManager.registerConstructor = function(type, constructor)
 {
-  HandshakeManager.handshakeServers[type] = constructor
+  _priv.HandshakeManager.handshakeServers[type] = constructor
 }
 
 return module
