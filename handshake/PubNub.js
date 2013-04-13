@@ -68,8 +68,7 @@ function(configuration)
   function send(data, uid)
   {
     data.from = configuration.uid
-    if(uid)
-      data.to = uid
+    data.to = uid
 
     pubnub.publish(
     {

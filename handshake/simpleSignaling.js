@@ -36,14 +36,14 @@ function(configuration)
   /**
    * Handle the connection to the handshake server
    */
-  connection.onopen = function(uid)
+  connection.onopen = function()
   {
     // Notify our presence
     send({type: 'presence', from: configuration.uid});
 
     // Notify that the connection to this handshake server is open
     if(self.onopen)
-       self.onopen(uid);
+       self.onopen();
   };
 
 
@@ -63,8 +63,7 @@ function(configuration)
   function send(data, uid)
   {
     data.from = configuration.uid
-    if(uid)
-      data.to = uid
+    data.to = uid
 
     connection.send(JSON.stringify(data));
   }
