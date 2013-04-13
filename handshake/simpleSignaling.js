@@ -8,7 +8,7 @@ var _priv = module._priv = module._priv || {}
 _priv.HandshakeManager.registerConstructor('SimpleSignaling',
 function(configuration)
 {
-  _priv.Transport_init(this);
+  EventTarget.call(this);
 
   this.isPubsub = true;
 
@@ -21,10 +21,15 @@ function(configuration)
   /**
    * Receive messages
    */
-  connection.onmessage = function(uid, data)
+  connection.onmessage = function(message)
   {
-    if(self.onmessage)
-       self.onmessage(uid, data);
+    var event = JSON.parse(message.data);
+
+    // Don't try to connect to ourselves
+    if(event.from == configuration.uid)
+      return
+
+    this.dispatchEvent(event);
   };
 
 
@@ -50,7 +55,7 @@ function(configuration)
   connection.onopen = function(uid)
   {
     // Notify our presence
-    self.emit('presence', peersManager.uid);
+    send({type: 'presence', from: configuration.uid});
 
     // Notify that the connection to this handshake server is open
     if(self.onopen)
