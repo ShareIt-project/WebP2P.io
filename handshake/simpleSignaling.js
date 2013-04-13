@@ -15,13 +15,13 @@ function(configuration)
   var self = this;
 
   // Connect a handshake channel to the SimpleSignaling server
-  var handshake = new SimpleSignaling(configuration);
+  var connection = new SimpleSignaling(configuration);
 
 
   /**
    * Receive messages
    */
-  handshake.onmessage = function(uid, data)
+  connection.onmessage = function(uid, data)
   {
     if(self.onmessage)
        self.onmessage(uid, data);
@@ -47,19 +47,10 @@ function(configuration)
   });
 
 
-  handshake.onopen = function(uid)
+  connection.onopen = function(uid)
   {
     // Notify our presence
     self.emit('presence', peersManager.uid);
-
-
-    /**
-     * Send a message to a peer
-     */
-    self.send = function(message, uid)
-    {
-      handshake.send(uid, message);
-    };
 
     // Notify that the connection to this handshake server is open
     if(self.onopen)
@@ -70,10 +61,56 @@ function(configuration)
   /**
    * Handle errors on the connection
    */
-  handshake.onerror = function(error)
+  connection.onerror = function(error)
   {
     if(self.onerror)
        self.onerror(error);
+  };
+
+
+  /**
+   * Send a message to a peer
+   */
+  function send(data, uid)
+  {
+    data.from = configuration.uid
+    if(uid)
+      data.to = uid
+
+    connection.send(JSON.stringify(data));
+  }
+
+
+  /**
+   * Close the connection with this handshake server
+   */
+  this.close = function()
+  {
+    connection.close()
+  }
+
+
+  /**
+   * Send a RTCPeerConnection answer through the active handshake channel
+   * @param {UUID} uid Identifier of the other peer.
+   * @param {String} sdp Content of the SDP object.
+   * @param {Array} [route] Route path where this answer have circulated.
+   */
+  this.sendAnswer = function(orig, sdp, route)
+  {
+    var data = {type: 'answer',
+                sdp:  sdp,
+                route: route}
+
+//    // Run over all the route peers looking for possible "shortcuts"
+//    for(var i = 0, uid; uid = route[i]; i++)
+//      if(uid == transport.uid)
+//      {
+//        route.length = i;
+//        break;
+//      }
+
+    send(data, orig);
   };
 
 
@@ -85,32 +122,12 @@ function(configuration)
    */
   this.sendOffer = function(dest, sdp, route)
   {
-    if(route == undefined)
-       route = [];
+    var data = {type: 'offer',
+                sdp:  sdp}
+    if(route)
+      data.route = route;
 
-    route.push(configuration.uid);
-
-    this.emit('offer', dest, sdp, route);
-  };
-
-
-  /**
-   * Send a RTCPeerConnection answer through the active handshake channel
-   * @param {UUID} uid Identifier of the other peer.
-   * @param {String} sdp Content of the SDP object.
-   * @param {Array} [route] Route path where this answer have circulated.
-   */
-  this.sendAnswer = function(orig, sdp, route)
-  {
-    // Run over all the route peers looking for possible "shortcuts"
-    for(var i = 0, uid; uid = route[i]; i++)
-      if(uid == transport.uid)
-      {
-        route.length = i;
-        break;
-      }
-
-    this.emit('answer', orig, sdp, route);
+    send(data, dest);
   };
 })
 

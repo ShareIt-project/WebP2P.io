@@ -65,12 +65,16 @@ function(configuration)
   /**
    * Send a message to a peer
    */
-  function send(message)
+  function send(data, uid)
   {
+    data.from = configuration.uid
+    if(uid)
+      data.to = uid
+
     pubnub.publish(
     {
       channel: configuration.channel,
-      message: JSON.stringify(message)
+      message: JSON.stringify(data)
     });
   };
 
@@ -96,8 +100,6 @@ function(configuration)
   this.sendAnswer = function(orig, sdp, route)
   {
     var data = {type: 'answer',
-                from: configuration.uid,
-                to:   orig,
                 sdp:  sdp,
                 route: route}
 
@@ -109,7 +111,7 @@ function(configuration)
 //        break;
 //      }
 
-    send(data);
+    send(data, orig);
   };
 
 
@@ -122,14 +124,11 @@ function(configuration)
   this.sendOffer = function(dest, sdp, route)
   {
     var data = {type: 'offer',
-                from: configuration.uid,
-                to:   dest,
                 sdp:  sdp}
-
     if(route)
        data.route = route;
 
-    send(data);
+    send(data, dest);
   };
 })
 

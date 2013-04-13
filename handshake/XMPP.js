@@ -103,11 +103,11 @@ function(configuration)
   /**
    * Send a message to a peer
    */
-  function send(message, uid)
+  function send(data, uid)
   {
     var oMsg = new JSJaCMessage();
         oMsg.setTo(configuration.room+"/"+uid);
-        oMsg.setBody(JSON.stringify(message));
+        oMsg.setBody(JSON.stringify(data));
 
     connection.send(oMsg);
   }
