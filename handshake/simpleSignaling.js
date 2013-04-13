@@ -34,24 +34,8 @@ function(configuration)
 
 
   /**
-   * Handle the presence of other new peers
+   * Handle the connection to the handshake server
    */
-  this.addEventListener('presence', function(event)
-  {
-    var uid = event.data[0];
-  
-    // Don't try to connect to ourselves
-    if(uid != configuration.uid)
-    {
-      var event = document.createEvent("Event");
-          event.initEvent('presence',true,true);
-          event.uid = uid
-
-      self.dispatchEvent(event);
-    }
-  });
-
-
   connection.onopen = function(uid)
   {
     // Notify our presence

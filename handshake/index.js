@@ -69,6 +69,9 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     channel.connections = 0;
     channel.max_connections = conf.max_connections;
 
+    /**
+     * Handle the presence of other new peers
+     */
     channel.addEventListener('presence', function(event)
     {
       var from = event.from;
