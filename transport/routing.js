@@ -127,6 +127,48 @@ _priv.Transport_Routing_init = function(transport, peersManager)
 //            channels[uid].sendAnswer(orig, sdp, route);
 //    }
   });
+
+
+  /**
+   * Send a RTCPeerConnection answer through the active handshake channel
+   * @param {UUID} uid Identifier of the other peer.
+   * @param {String} sdp Content of the SDP object.
+   * @param {Array} [route] Route path where this answer have circulated.
+   */
+  transport.sendAnswer = function(orig, sdp, route)
+  {
+    var data = {type: 'answer',
+                sdp:  sdp}
+    if(route)
+      data.route = route;
+
+//    // Run over all the route peers looking for possible "shortcuts"
+//    for(var i = 0, uid; uid = route[i]; i++)
+//      if(uid == transport.uid)
+//      {
+//        route.length = i;
+//        break;
+//      }
+
+    transport.send(data, orig);
+  };
+
+
+  /**
+   * Send a RTCPeerConnection offer through the active handshake channel
+   * @param {UUID} uid Identifier of the other peer.
+   * @param {String} sdp Content of the SDP object.
+   * @param {Array} [route] Route path where this offer have circulated.
+   */
+  transport.sendOffer = function(dest, sdp, route)
+  {
+    var data = {type: 'offer',
+                sdp:  sdp}
+    if(route)
+      data.route = route;
+
+    transport.send(data, dest);
+  };
 }
 
 return module

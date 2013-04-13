@@ -99,7 +99,7 @@ function(configuration)
   /**
    * Send a message to a peer
    */
-  function send(data, uid)
+  this.send = function(data, uid)
   {
     var oMsg = new JSJaCMessage();
         oMsg.setTo(configuration.room+"/"+uid);
@@ -115,40 +115,6 @@ function(configuration)
   this.close = function()
   {
     connection.disconnect()
-  }
-
-
-  /**
-   * Send a RTCPeerConnection answer through the active handshake channel
-   * @param {UUID} uid Identifier of the other peer.
-   * @param {String} sdp Content of the SDP object.
-   * @param {Array} [route] Route path where this answer have circulated.
-   */
-  this.sendAnswer = function(uid, sdp, route)
-  {
-    var data = {type: 'answer',
-                sdp:  sdp}
-    if(route)
-      data.route = route;
-
-    send(data, uid)
-  }
-
-
-  /**
-   * Send a RTCPeerConnection offer through the active handshake channel
-   * @param {UUID} uid Identifier of the other peer.
-   * @param {String} sdp Content of the SDP object.
-   * @param {Array} [route] Route path where this offer have circulated.
-   */
-  this.sendOffer = function(uid, sdp, route)
-  {
-    var data = {type: 'offer',
-                sdp:  sdp}
-    if(route)
-      data.route = route;
-
-    send(data, uid)
   }
 })
 
