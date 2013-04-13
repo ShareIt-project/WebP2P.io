@@ -14,6 +14,14 @@ _priv.HandshakeManager = function(json_uri, peersManager)
   var channels = {};
   var status = 'disconnected';
 
+  var handshakeServers =
+  {
+    'PubNub'         : _priv.Handshake_PubNub,
+    'SimpleSignaling': _priv.Handshake_SimpleSignaling,
+    'XMPP'           : _priv.Handshake_XMPP,
+    'xRTML'          : _priv.Handshake_xRTML,
+  }
+
 
   function nextHandshake(configuration)
   {
@@ -41,35 +49,18 @@ _priv.HandshakeManager = function(json_uri, peersManager)
   function getRandomHandshake(configuration)
   {
     var index = Math.floor(Math.random() * configuration.length);
-    var index = 0; // Forced until redirection works
+    var index = 0;  // Forced until servers interoperation works
 
     var type = configuration[index][0];
     var conf = configuration[index][1];
 
-    var channelConstructor;
-    switch(type)
+    conf.uid = peersManager.uid;
+
+    var channelConstructor = handshakeServers[type];
+
+    // Check if channel constructor is from a valid handshake server
+    if(!channelConstructor)
     {
-      case 'PubNub':
-        conf.uid = peersManager.uid;
-        channelConstructor = _priv.Handshake_PubNub;
-        break;
-
-      case 'SimpleSignaling':
-        conf.uid = peersManager.uid;
-        channelConstructor = _priv.Handshake_SimpleSignaling;
-        break;
-
-      case 'XMPP':
-        conf.uid = peersManager.uid
-        channelConstructor = _priv.Handshake_XMPP;
-        break;
-
-      case 'xRTML':
-        conf.uid = peersManager.uid
-        channelConstructor = _priv.Handshake_xRTML;
-        break;
-
-      default:
         console.error("Invalidad handshake server type '" + type + "'");
 
         // Try to get an alternative handshake channel
@@ -79,7 +70,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     var channel = new channelConstructor(conf);
 
     channel.uid = type;
-    channels[channel.uid] = channel;
+    channels[type] = channel;
 
     // Count the maximum number of pending connections allowed to be
     // done with this handshake server (undefined == unlimited)
@@ -90,8 +81,9 @@ _priv.HandshakeManager = function(json_uri, peersManager)
     {
       var from = event.from;
 
-      // Check if we should ignore this new peer to increase
-      // entropy in the network mesh
+      // Check if we should ignore this new peer to increase entropy in
+      // the network mesh
+
       // Do the connection with the new peer
       peersManager.connectTo(from, channel, function(error, channel)
       {
@@ -149,6 +141,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
   };
 
 
+  // Request the handshake servers configuration file
   var http_request = new XMLHttpRequest();
   http_request.open('GET', json_uri);
   http_request.onload = function()
@@ -162,11 +155,12 @@ _priv.HandshakeManager = function(json_uri, peersManager)
       if(configuration.length)
         getRandomHandshake(configuration);
 
-      else if(self.onerror)
+      else
       {
         status = 'disconnected';
 
-        self.onerror('Handshake servers configuration is empty');
+        if(self.onerror)
+           self.onerror('Handshake servers configuration is empty');
       }
     }
     else if(self.onerror)
