@@ -2,6 +2,53 @@ var webp2p = (function(module){
 var _priv = module._priv = module._priv || {}
 
 
+function Transport_Presence_init(transport, peersManager, max_connections)
+{
+  _priv.Transport_Routing_init(transport, peersManager);
+
+  // Count the maximum number of pending connections allowed to be
+  // done with this handshake server (undefined == unlimited)
+  transport.connections = 0
+  transport.max_connections = max_connections
+
+  /**
+   * Handle the presence of other new peers
+   */
+  transport.addEventListener('presence', function(event)
+  {
+    var from = event.from;
+
+    // Check if we should ignore this new peer to increase entropy in
+    // the network mesh
+
+    // Do the connection with the new peer
+    peersManager.connectTo(from, transport, function(error, channel)
+    {
+      if(error)
+        console.error(from, peer, channel);
+
+      else
+        // Increase the number of connections reached throught
+        // this handshake server
+        channel.connections++;
+
+      // Close connection with handshake server if we got its
+      // quota of peers
+      if(channel.connections == channel.max_connections)
+         channel.close();
+    });
+  })
+
+  channel.onerror = function(error)
+  {
+    console.error(error);
+
+    // Close the channel (and try with the next one)
+    channel.close();
+  };
+}
+
+
 /**
  * Manage the handshake channel using several servers
  * @constructor
@@ -61,68 +108,27 @@ _priv.HandshakeManager = function(json_uri, peersManager)
 
     var channel = new channelConstructor(conf);
 
+    Transport_Presence_init(channel, peersManager, conf.max_connections)
+
     channel.uid = type;
     channels[type] = channel;
-
-    // Count the maximum number of pending connections allowed to be
-    // done with this handshake server (undefined == unlimited)
-    channel.connections = 0;
-    channel.max_connections = conf.max_connections;
-
-    /**
-     * Handle the presence of other new peers
-     */
-    channel.addEventListener('presence', function(event)
-    {
-      var from = event.from;
-
-      // Check if we should ignore this new peer to increase entropy in
-      // the network mesh
-
-      // Do the connection with the new peer
-      peersManager.connectTo(from, channel, function(error, channel)
-      {
-        if(error)
-          console.error(from, peer, channel);
-
-        else
-          // Increase the number of connections reached throught
-          // this handshake server
-          channel.connections++;
-
-        // Close connection with handshake server if we got its
-        // quota of peers
-        if(channel.connections == channel.max_connections)
-           channel.close();
-      });
-    });
-
-    _priv.Transport_Routing_init(channel, peersManager);
 
     channel.onopen = function()
     {
       status = 'connected';
-
-//      // Notify our presence to the other peers on the handshake server
-//      channel.presence();
 
       if(self.onopen)
          self.onopen();
     };
     channel.onclose = function()
     {
+      status = 'connecting';
+
       // Delete the channel from the current ones
       delete channels[channel.uid];
 
       // Try to get an alternative handshake channel
       nextHandshake(configuration);
-    };
-    channel.onerror = function(error)
-    {
-      console.error(error);
-
-      // Close the channel (and try with the next one)
-      channel.close();
     };
   }
 
