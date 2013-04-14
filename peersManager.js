@@ -70,7 +70,6 @@ module.PeersManager = function(stun_server)
 
     pc._channel = channel;
 
-    _priv.Transport_init(channel);
     _priv.Transport_Routing_init(channel, self);
 
     channel.onclose = function()
@@ -85,8 +84,6 @@ module.PeersManager = function(stun_server)
         event.channel = channel
 
     self.dispatchEvent(event);
-
-//    Transport_Search_init(channel, db, self);
   }
 
 

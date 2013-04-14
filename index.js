@@ -54,5 +54,4 @@ webp2p.load(
  'lib/pubnub-3.3.min',
  'lib/simpleSignaling',
 
- 'transport/index',
  'transport/routing']);
