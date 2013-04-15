@@ -39,12 +39,12 @@ function Transport_Presence_init(transport, peersManager, max_connections)
     });
   })
 
-  channel.onerror = function(error)
+  transport.onerror = function(error)
   {
     console.error(error);
 
     // Close the channel (and try with the next one)
-    channel.close();
+    transport.close();
   };
 }
 
