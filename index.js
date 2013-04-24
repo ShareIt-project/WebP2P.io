@@ -51,6 +51,7 @@ webp2p.load(
 
  'lib/datachannel',
  'lib/EventTarget',
+ 'lib/jsjac',
  'lib/pubnub-3.3.min',
  'lib/simpleSignaling',
 
