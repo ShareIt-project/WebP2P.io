@@ -22,20 +22,20 @@ function Transport_Presence_init(transport, peersManager, max_connections)
     // the network mesh
 
     // Do the connection with the new peer
-    peersManager.connectTo(from, transport, function(error, channel)
+    peersManager.connectTo(from, transport, function(error, uid)
     {
       if(error)
-        console.error(from, peer, channel);
+        console.error(from, peer, transport);
 
       else
         // Increase the number of connections reached throught
         // this handshake server
-        channel.connections++;
+        transport.connections++;
 
       // Close connection with handshake server if we got its
       // quota of peers
-      if(channel.connections == channel.max_connections)
-         channel.close();
+      if(transport.connections == transport.max_connections)
+        transport.close();
     });
   })
 

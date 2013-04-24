@@ -205,7 +205,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
         {
           channel.addEventListener('open', function(event)
           {
-            cb(null, channel);
+            cb(null, uid);
           });
           channel.onerror = function(event)
           {
@@ -256,13 +256,13 @@ module.PeersManager = function(handshake_servers_file, stun_server)
     {
       // Channel is open
       if(peer._channel.readyState == 'open')
-        cb(null, peer._channel);
+        cb(null, uid);
 
       // Channel is not yet open
       else
         peer._channel.addEventListener('open', function(event)
         {
-          cb(null, event.target);
+          cb(null, uid);
         })
     }
   };
