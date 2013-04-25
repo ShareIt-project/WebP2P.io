@@ -104,7 +104,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
       peer = createPeerConnection(uid);
       peer.ondatachannel = function(event)
       {
-        console.log('Created datachannel with peer ' + uid);
+        console.log('Created datachannel (ondatachannel) with peer ' + uid);
         initDataChannel(peer, event.channel, uid);
       };
       peer.onerror = function(event)
@@ -199,6 +199,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
         var channel = peer.createDataChannel('webp2p');
         channel.addEventListener('open', function(event)
         {
+          console.log('Created datachannel (open) with peer ' + uid);
           initDataChannel(peer, channel, uid);
         });
         if(cb)
