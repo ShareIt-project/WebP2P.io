@@ -40,7 +40,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
    * @param {UUID} id Identifier of the other peer so later can be accessed.
    * @return {RTCPeerConnection}
    */
-  function createPeerConnection(uid, incomingChannel)
+  function createPeerConnection(uid, incomingChannel, cb)
   {
     var pc = peers[uid] = new RTCPeerConnection(
     {
@@ -73,6 +73,12 @@ module.PeersManager = function(handshake_servers_file, stun_server)
       self.dispatchEvent(event);
     }
 
+    if(cb)
+      peer.onerror = function(event)
+      {
+        cb({uid: uid, peer:peer});
+      };
+
     return pc;
   }
 
@@ -81,7 +87,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
    * @param {RTCPeerConnection} pc PeerConnection owner of the DataChannel.
    * @param {RTCDataChannel} channel Communication channel with the other peer.
    */
-  function initDataChannel(pc, channel, uid)
+  function initDataChannel(pc, channel, uid, cb)
   {
     channel.uid = uid;
 
@@ -97,12 +103,26 @@ module.PeersManager = function(handshake_servers_file, stun_server)
     };
     channel.onopen = function()
     {
+      console.log('Created datachannel with peer ' + uid);
+
       var event = document.createEvent("Event");
           event.initEvent('channel',true,true);
           event.channel = channel
 
       self.dispatchEvent(event);
     };
+
+    if(cb)
+    {
+      channel.addEventListener('open', function(event)
+      {
+        cb(null, uid);
+      });
+      channel.onerror = function(event)
+      {
+        cb({uid: uid, peer:pc, channel:channel});
+      };
+    }
   }
 
 
@@ -112,7 +132,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp, incomingChannel)
+  this.onoffer = function(uid, sdp, incomingChannel, cb)
   {
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
@@ -120,17 +140,12 @@ module.PeersManager = function(handshake_servers_file, stun_server)
     // Peer is not connected, create a new channel
     if(!peer)
     {
-      peer = createPeerConnection(uid, incomingChannel);
-      peer.ondatachannel = function(event)
+      peer = createPeerConnection(uid, incomingChannel, cb);
+      peer.addEventListener('datachannel', function(event)
       {
-        console.log('Created datachannel (ondatachannel) with peer ' + uid);
-        initDataChannel(peer, event.channel, uid);
-      };
-      peer.onerror = function(event)
-      {
-        if(onerror)
-           onerror(uid, event);
-      };
+        if(event.channel.label == 'webp2p')
+          initDataChannel(peer, event.channel, uid);
+      });
     }
 
     // Process offer
@@ -197,28 +212,10 @@ module.PeersManager = function(handshake_servers_file, stun_server)
     if(!peer)
     {
       // Create PeerConnection
-      peer = createPeerConnection(uid, incomingChannel);
-
-      if(cb)
-        peer.onerror = function(event)
-        {
-          cb({uid: uid, peer:peer});
-        };
+      peer = createPeerConnection(uid, incomingChannel, cb);
 
       var channel = peer.createDataChannel('webp2p');
-      initDataChannel(peer, channel, uid);
-
-      if(cb)
-      {
-        channel.addEventListener('open', function(event)
-        {
-          cb(null, uid);
-        });
-        channel.onerror = function(event)
-        {
-          cb({uid: uid, peer:peer, channel:channel});
-        };
-      }
+      initDataChannel(peer, channel, uid, cb);
 
       // Send offer to new PeerConnection
       peer.createOffer(function(offer)
