@@ -40,12 +40,20 @@ module.PeersManager = function(handshake_servers_file, stun_server)
    * @param {UUID} id Identifier of the other peer so later can be accessed.
    * @return {RTCPeerConnection}
    */
-  function createPeerConnection(uid)
+  function createPeerConnection(uid, incomingChannel)
   {
     var pc = peers[uid] = new RTCPeerConnection(
     {
       iceServers: [{url: 'stun:'+stun_server}]
+    },
+    {
+      optional: [{RtpDataChannels: true}]
     });
+    pc.onicecandidate = function(event)
+    {
+      if(event.candidate)
+        incomingChannel.sendCandidate(uid, event.candidate);
+    }
     pc.onstatechange = function(event)
     {
       console.warn("PeerConnection "+event.target.readyState)
@@ -55,6 +63,15 @@ module.PeersManager = function(handshake_servers_file, stun_server)
       if(event.target.readyState == 'closed')
         delete peers[uid];
     };
+
+    pc.onopen = function(event)
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('peerconnection',true,true);
+          event.peerconnection = pc
+
+      self.dispatchEvent(event);
+    }
 
     return pc;
   }
@@ -78,12 +95,14 @@ module.PeersManager = function(handshake_servers_file, stun_server)
 
       pc.close();
     };
+    channel.onopen = function()
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('channel',true,true);
+          event.channel = channel
 
-    var event = document.createEvent("Event");
-        event.initEvent('channel',true,true);
-        event.channel = channel
-
-    self.dispatchEvent(event);
+      self.dispatchEvent(event);
+    };
   }
 
 
@@ -93,7 +112,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp)
+  this.onoffer = function(uid, sdp, incomingChannel)
   {
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
@@ -101,7 +120,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
     // Peer is not connected, create a new channel
     if(!peer)
     {
-      peer = createPeerConnection(uid);
+      peer = createPeerConnection(uid, incomingChannel);
       peer.ondatachannel = function(event)
       {
         console.log('Created datachannel (ondatachannel) with peer ' + uid);
@@ -155,25 +174,10 @@ module.PeersManager = function(handshake_servers_file, stun_server)
   handshakeManager.onopen = function()
   {
     var event = document.createEvent("Event");
-        event.initEvent('uid',true,true);
+        event.initEvent('handshake.open',true,true);
         event.uid = self.uid
 
     self.dispatchEvent(event);
-
-//    // Restart downloads
-//    db.files_getAll(null, function(error, filelist)
-//    {
-//      if(error)
-//        console.error(error)
-
-//      else if(filelist.length)
-//        policy(function()
-//        {
-//          for(var i=0, fileentry; fileentry=filelist[i]; i++)
-//            if(fileentry.bitmap)
-//              self.transfer_query(fileentry)
-//        })
-//    })
   };
 
   /**
@@ -193,27 +197,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
     if(!peer)
     {
       // Create PeerConnection
-      peer = createPeerConnection(uid);
-      peer.onopen = function(event)
-      {
-        var channel = peer.createDataChannel('webp2p');
-        channel.addEventListener('open', function(event)
-        {
-          console.log('Created datachannel (open) with peer ' + uid);
-          initDataChannel(peer, channel, uid);
-        });
-        if(cb)
-        {
-          channel.addEventListener('open', function(event)
-          {
-            cb(null, uid);
-          });
-          channel.onerror = function(event)
-          {
-            cb({uid: uid, peer:peer, channel:channel});
-          };
-        }
-      };
+      peer = createPeerConnection(uid, incomingChannel);
 
       if(cb)
         peer.onerror = function(event)
@@ -221,9 +205,26 @@ module.PeersManager = function(handshake_servers_file, stun_server)
           cb({uid: uid, peer:peer});
         };
 
+      var channel = peer.createDataChannel('webp2p');
+      initDataChannel(peer, channel, uid);
+
+      if(cb)
+      {
+        channel.addEventListener('open', function(event)
+        {
+          cb(null, uid);
+        });
+        channel.onerror = function(event)
+        {
+          cb({uid: uid, peer:peer, channel:channel});
+        };
+      }
+
       // Send offer to new PeerConnection
       peer.createOffer(function(offer)
       {
+        console.log("[createOffer]: "+uid+"\n"+offer.sdp);
+
         // Send the offer only for the incoming channel
         if(incomingChannel)
            incomingChannel.sendOffer(uid, offer.sdp);
@@ -239,11 +240,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
         }
 
         // Set the peer local description
-        peer.setLocalDescription(new RTCSessionDescription(
-        {
-          sdp: offer.sdp,
-          type: 'offer'
-        }));
+        peer.setLocalDescription(offer);
       });
     }
 
