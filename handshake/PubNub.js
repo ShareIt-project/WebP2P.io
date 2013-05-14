@@ -43,7 +43,7 @@ function(configuration)
     connect: function()
     {
       // Notify our presence
-      send({type: 'presence', from: configuration.uid});
+      self.send({type: 'presence', from: configuration.uid});
 
       // Notify that the connection to this handshake server is open
       var event = document.createEvent("Event");
