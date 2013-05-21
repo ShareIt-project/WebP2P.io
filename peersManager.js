@@ -101,16 +101,12 @@ module.PeersManager = function(handshake_servers_file, stun_server)
 
       pc.close();
     };
-    channel.onopen = function()
-    {
-      console.log('Created datachannel with peer ' + uid);
 
-      var event = document.createEvent("Event");
-          event.initEvent('channel',true,true);
-          event.channel = channel
+    var event = document.createEvent("Event");
+        event.initEvent('datachannel',true,true);
+        event.channel = channel
 
-      self.dispatchEvent(event);
-    };
+    self.dispatchEvent(event);
 
     if(cb)
     {
@@ -179,6 +175,17 @@ module.PeersManager = function(handshake_servers_file, stun_server)
       onerror(uid);
   };
 
+  this.oncandidate = function(uid, candidate, onerror)
+  {
+    // Search the peer on the list of currently connected peers
+    var peer = peers[uid];
+    if(peer)
+      peer.addIceCandidate(new RTCIceCandidate(candidate));
+    else if(onerror)
+      onerror(uid);
+  }
+
+
   // Init handshake manager
   var handshakeManager = new _priv.HandshakeManager(handshake_servers_file, this);
   handshakeManager.onerror = function(error)
@@ -193,6 +200,21 @@ module.PeersManager = function(handshake_servers_file, stun_server)
         event.uid = self.uid
 
     self.dispatchEvent(event);
+
+//    // Restart downloads
+//    db.files_getAll(null, function(error, filelist)
+//    {
+//      if(error)
+//        console.error(error)
+//
+//      else if(filelist.length)
+//        policy(function()
+//        {
+//          for(var i=0, fileentry; fileentry=filelist[i]; i++)
+//            if(fileentry.bitmap)
+//              self.transfer_query(fileentry)
+//        })
+//    })
   };
 
   /**
