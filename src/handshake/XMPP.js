@@ -1,11 +1,8 @@
-var webp2p = (function(module){
-var _priv = module._priv = module._priv || {}
-
 /**
  * Signaling channel connector for XMPP
  * @param {Object} configuration Configuration object
  */
-_priv.HandshakeManager.registerConstructor('XMPP',
+HandshakeManager.registerConstructor('XMPP',
 function(configuration)
 {
   EventTarget.call(this);
@@ -118,7 +115,4 @@ function(configuration)
   {
     connection.disconnect()
   }
-})
-
-return module
-})(webp2p || {})
+});

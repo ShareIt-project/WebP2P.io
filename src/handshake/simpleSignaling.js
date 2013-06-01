@@ -1,11 +1,8 @@
-var webp2p = (function(module){
-var _priv = module._priv = module._priv || {}
-
 /**
  * Handshake channel connector for SimpleSignaling
  * @param {Object} configuration Configuration object.
  */
-_priv.HandshakeManager.registerConstructor('SimpleSignaling',
+HandshakeManager.registerConstructor('SimpleSignaling',
 function(configuration)
 {
   EventTarget.call(this);
@@ -79,6 +76,3 @@ function(configuration)
     connection.close()
   }
 })
-
-return module
-})(webp2p || {})

@@ -1,8 +1,3 @@
-var webp2p = (function(module){
-var _priv = module._priv = module._priv || {}
-
-webp2p.require("https://d3dy5gmtp8yhk7.cloudfront.net/1.12/pusher.min.js")
-
 /**
  * Handshake channel connector for Pusher
  * @param {Object} configuration Configuration object
@@ -67,6 +62,3 @@ function Handshake_Pusher(configuration)
         pusher.disconnect();
     }
 }
-
-return module
-})(webp2p || {})

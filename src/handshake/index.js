@@ -1,10 +1,6 @@
-var webp2p = (function(module){
-var _priv = module._priv = module._priv || {}
-
-
 function Transport_Presence_init(transport, peersManager, max_connections)
 {
-  _priv.Transport_Routing_init(transport, peersManager);
+  Transport_Routing_init(transport, peersManager);
 
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
@@ -54,7 +50,7 @@ function Transport_Presence_init(transport, peersManager, max_connections)
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-_priv.HandshakeManager = function(json_uri, peersManager)
+function HandshakeManager(json_uri, peersManager)
 {
   EventTarget.call(this);
 
@@ -98,7 +94,7 @@ _priv.HandshakeManager = function(json_uri, peersManager)
 
     conf.uid = peersManager.uid;
 
-    var channelConstructor = _priv.HandshakeManager.handshakeServers[type];
+    var channelConstructor = HandshakeManager.handshakeServers[type];
 
     // Check if channel constructor is from a valid handshake server
     if(!channelConstructor)
@@ -183,11 +179,8 @@ _priv.HandshakeManager = function(json_uri, peersManager)
   http_request.send();
 }
 
-_priv.HandshakeManager.handshakeServers = {}
-_priv.HandshakeManager.registerConstructor = function(type, constructor)
+HandshakeManager.handshakeServers = {}
+HandshakeManager.registerConstructor = function(type, constructor)
 {
-  _priv.HandshakeManager.handshakeServers[type] = constructor
+  HandshakeManager.handshakeServers[type] = constructor
 }
-
-return module
-})(webp2p || {})

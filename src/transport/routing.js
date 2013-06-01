@@ -1,7 +1,4 @@
-var webp2p = (function(module){
-var _priv = module._priv = module._priv || {}
-
-_priv.Transport_Routing_init = function(transport, peersManager)
+function Transport_Routing_init(transport, peersManager)
 {
   /**
    * Receive and process an 'offer' message
@@ -205,6 +202,3 @@ _priv.Transport_Routing_init = function(transport, peersManager)
     transport.send(data, dest);
   };
 }
-
-return module
-})(webp2p || {})

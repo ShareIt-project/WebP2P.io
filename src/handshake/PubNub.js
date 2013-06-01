@@ -1,11 +1,8 @@
-var webp2p = (function(module){
-var _priv = module._priv = module._priv || {}
-
 /**
  * Handshake channel connector for PubNub (adapter to Message Channel interface)
  * @param {Object} configuration Configuration object.
  */
-_priv.HandshakeManager.registerConstructor('PubNub',
+HandshakeManager.registerConstructor('PubNub',
 function(configuration)
 {
   EventTarget.call(this);
@@ -91,6 +88,3 @@ function(configuration)
     });
   }
 })
-
-return module
-})(webp2p || {})

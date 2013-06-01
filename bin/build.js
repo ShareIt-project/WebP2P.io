@@ -40,9 +40,9 @@ var starttagIF = '// if node'
 
 var libs =
   [
-   'datachannel.min.js',
    'jsjac.js',
    'pubnub-3.3.min.js',
+   'pusher.min.js',
    'simpleSignaling.js',
   ];
 

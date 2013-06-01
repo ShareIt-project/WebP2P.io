@@ -1,6 +1,3 @@
-var webp2p = (function(module){
-var _priv = module._priv = module._priv || {}
-
 // Fallbacks for vendor-specific variables until the spec is finalized.
 var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
 
@@ -11,7 +8,7 @@ var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPe
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-module.PeersManager = function(handshake_servers_file, stun_server)
+function PeersManager(handshake_servers_file, stun_server)
 {
   // Set a default STUN server if none is specified
   if(stun_server == undefined)
@@ -93,7 +90,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
 
     pc._channel = channel;
 
-    _priv.Transport_Routing_init(channel, self);
+    Transport_Routing_init(channel, self);
 
     channel.addEventListener('close', function(event)
     {
@@ -175,7 +172,7 @@ module.PeersManager = function(handshake_servers_file, stun_server)
 
 
   // Init handshake manager
-  var handshakeManager = new _priv.HandshakeManager(handshake_servers_file, this);
+  var handshakeManager = new HandshakeManager(handshake_servers_file, this);
   handshakeManager.onerror = function(error)
   {
     console.error(error);
@@ -325,5 +322,4 @@ module.PeersManager = function(handshake_servers_file, stun_server)
   };
 }
 
-return module
-})(webp2p || {})
+exports.PeersManager = PeersManager;
