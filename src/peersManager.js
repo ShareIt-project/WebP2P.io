@@ -224,7 +224,7 @@ function PeersManager(handshake_servers_file, stun_server)
       var channel = peer.createDataChannel('webp2p');
           channel.addEventListener('open', function(event)
           {
-            initDataChannel(peer, event.channel, uid);
+            initDataChannel(peer, channel, uid);
           });
 
       if(cb)
