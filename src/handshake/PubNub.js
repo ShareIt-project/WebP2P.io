@@ -12,7 +12,7 @@ function(configuration)
   var self = this;
 
   // Connect a handshake channel to the PubNub server
-  var pubnub = PUBNUB(configuration);
+  var pubnub = PUBNUB.init(configuration);
 
 
   pubnub.subscribe(
