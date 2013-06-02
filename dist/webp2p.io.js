@@ -961,7 +961,7 @@ function PeersManager(handshake_servers_file, stun_server)
         });
         channel.onerror = function(event)
         {
-          cb({uid: uid, peer:pc, channel:channel});
+          cb({uid: uid, peer:peer, channel:channel});
         };
       }
 
