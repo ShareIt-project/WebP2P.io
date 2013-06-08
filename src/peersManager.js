@@ -1,7 +1,3 @@
-// Fallbacks for vendor-specific variables until the spec is finalized.
-var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
-
-
 /**
  * @classdesc Manager of the communications with the other peers
  * @constructor
@@ -10,11 +6,12 @@ var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPe
  */
 function PeersManager(handshake_servers_file, stun_server)
 {
+  //Fallbacks for vendor-specific variables until the spec is finalized.
+  var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
+
   // Set a default STUN server if none is specified
   if(stun_server == undefined)
      stun_server = 'stun.l.google.com:19302';
-
-  EventTarget.call(this);
 
   var peers = {};
 
@@ -73,7 +70,7 @@ function PeersManager(handshake_servers_file, stun_server)
     if(cb)
       pc.onerror = function(event)
       {
-        cb({uid: uid, peer:peer});
+        cb({uid: uid, peer:pc});
       };
 
     return pc;
@@ -86,11 +83,7 @@ function PeersManager(handshake_servers_file, stun_server)
    */
   function initDataChannel(pc, channel, uid)
   {
-    channel.uid = uid;
-
     pc._channel = channel;
-
-    Transport_Routing_init(channel, self);
 
     channel.addEventListener('close', function(event)
     {
@@ -99,11 +92,20 @@ function PeersManager(handshake_servers_file, stun_server)
       pc.close();
     });
 
-    var event = document.createEvent("Event");
-        event.initEvent('datachannel',true,true);
-        event.channel = channel
+//    if(channel.label == 'webp2p')
+    {
+      channel.uid = uid;
+      Transport_Routing_init(channel, self);
+    }
 
-    self.dispatchEvent(event);
+//    else
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('datachannel',true,true);
+          event.channel = channel
+
+      self.dispatchEvent(event);
+    }
   }
 
 
@@ -124,8 +126,7 @@ function PeersManager(handshake_servers_file, stun_server)
       peer = createPeerConnection(uid, incomingChannel, cb);
       peer.addEventListener('datachannel', function(event)
       {
-        if(event.channel.label == 'webp2p')
-          initDataChannel(peer, event.channel, uid);
+        initDataChannel(peer, event.channel, uid);
       });
     }
 
@@ -222,10 +223,7 @@ function PeersManager(handshake_servers_file, stun_server)
       peer = createPeerConnection(uid, incomingChannel, cb);
 
       var channel = peer.createDataChannel('webp2p');
-          channel.addEventListener('open', function(event)
-          {
-            initDataChannel(peer, channel, uid);
-          });
+      initDataChannel(peer, channel, uid);
 
       if(cb)
       {
@@ -321,5 +319,6 @@ function PeersManager(handshake_servers_file, stun_server)
     }
   };
 }
+PeersManager.prototype = new EventTarget();
 
 exports.PeersManager = PeersManager;
