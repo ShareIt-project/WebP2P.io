@@ -43,6 +43,7 @@ function PeersManager(handshake_servers_file, stun_server)
     {
       optional: [{RtpDataChannels: true}]
     });
+
     pc.onicecandidate = function(event)
     {
       if(event.candidate)
@@ -58,7 +59,19 @@ function PeersManager(handshake_servers_file, stun_server)
         delete peers[uid];
     };
 
-    pc.onopen = function(event)
+    var dispatchEvent = pc.dispatchEvent;
+    pc.dispatchEvent = function(event)
+    {
+      var channel = event.channel
+
+      if(event.type == 'datachannel' && channel.label == 'webp2p')
+        initDataChannel(pc, channel, uid)
+
+      else
+        dispatchEvent.call(this, event)
+    };
+
+//    pc.onopen = function(event)
     {
       var event = document.createEvent("Event");
           event.initEvent('peerconnection',true,true);
@@ -92,20 +105,8 @@ function PeersManager(handshake_servers_file, stun_server)
       pc.close();
     });
 
-//    if(channel.label == 'webp2p')
-    {
-      channel.uid = uid;
-      Transport_Routing_init(channel, self);
-    }
-
-//    else
-    {
-      var event = document.createEvent("Event");
-          event.initEvent('datachannel',true,true);
-          event.channel = channel
-
-      self.dispatchEvent(event);
-    }
+    channel.uid = uid;
+    Transport_Routing_init(channel, self);
   }
 
 
@@ -122,13 +123,7 @@ function PeersManager(handshake_servers_file, stun_server)
 
     // Peer is not connected, create a new channel
     if(!peer)
-    {
       peer = createPeerConnection(uid, incomingChannel, cb);
-      peer.addEventListener('datachannel', function(event)
-      {
-        initDataChannel(peer, event.channel, uid);
-      });
-    }
 
     // Process offer
     peer.setRemoteDescription(new RTCSessionDescription(
@@ -224,6 +219,12 @@ function PeersManager(handshake_servers_file, stun_server)
 
       var channel = peer.createDataChannel('webp2p');
       initDataChannel(peer, channel, uid);
+
+      var channel = peer.createDataChannel('prueba');
+      var event = document.createEvent("Event");
+          event.initEvent('datachannel',true,true);
+          event.channel = channel
+      peer.dispatchEvent(event);
 
       if(cb)
       {
