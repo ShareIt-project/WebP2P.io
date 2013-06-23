@@ -62,3 +62,6 @@ function Handshake_Pusher(configuration)
         pusher.disconnect();
     }
 }
+Handshake_Pusher.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('Pusher', Handshake_Pusher)

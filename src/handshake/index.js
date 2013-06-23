@@ -5,8 +5,6 @@
  */
 function HandshakeManager(json_uri, peersManager)
 {
-  EventTarget.call(this);
-
   var self = this;
 
   var channels = {};
@@ -131,6 +129,8 @@ function HandshakeManager(json_uri, peersManager)
 
   http_request.send();
 }
+HandshakeManager.prototype = new EventTarget()
+
 
 HandshakeManager.handshakeServers = {}
 HandshakeManager.registerConstructor = function(type, constructor)

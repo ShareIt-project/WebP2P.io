@@ -2,11 +2,8 @@
  * Handshake channel connector for SimpleSignaling
  * @param {Object} configuration Configuration object.
  */
-HandshakeManager.registerConstructor('SimpleSignaling',
-function(configuration)
+function Handshake_SimpleSignaling(configuration)
 {
-  EventTarget.call(this);
-
   this.isPubsub = true;
 
   var self = this;
@@ -75,4 +72,7 @@ function(configuration)
   {
     connection.close()
   }
-})
+}
+Handshake_SimpleSignaling.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling)

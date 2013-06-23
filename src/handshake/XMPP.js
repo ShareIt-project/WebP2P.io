@@ -2,11 +2,8 @@
  * Signaling channel connector for XMPP
  * @param {Object} configuration Configuration object
  */
-HandshakeManager.registerConstructor('XMPP',
-function(configuration)
+function Handshake_XMPP(configuration)
 {
-  EventTarget.call(this);
-
   var self = this
 
 //  configuration.oDbg = new JSJaCConsoleLogger(1)
@@ -115,4 +112,7 @@ function(configuration)
   {
     connection.disconnect()
   }
-});
+}
+Handshake_XMPP.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('XMPP', Handshake_XMPP)

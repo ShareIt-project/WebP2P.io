@@ -2,8 +2,7 @@
  * Handshake channel connector for xRTML
  * @param {Object} configuration Configuration object
  */
-HandshakeManager.registerConstructor('xRTML',
-function(configuration)
+function Handshake_xRTML(configuration)
 {
     var self = this
 
@@ -67,4 +66,7 @@ function(configuration)
             channel: configuration.channel
         });
     }
-})
+}
+Handshake_xRTML.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('xRTML', Handshake_xRTML)

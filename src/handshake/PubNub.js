@@ -2,11 +2,8 @@
  * Handshake channel connector for PubNub (adapter to Message Channel interface)
  * @param {Object} configuration Configuration object.
  */
-HandshakeManager.registerConstructor('PubNub',
-function(configuration)
+function Handshake_PubNub(configuration)
 {
-  EventTarget.call(this);
-
   this.isPubsub = true;
 
   var self = this;
@@ -87,4 +84,7 @@ function(configuration)
       channel: configuration.channel
     });
   }
-})
+}
+Handshake_PubNub.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('PubNub', Handshake_PubNub)
