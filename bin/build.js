@@ -55,6 +55,7 @@ var base =
    'handshake/simpleSignaling.js',
    'handshake/XMPP.js',
 
+   'transport/presence.js',
    'transport/routing.js'
   ];
 
