@@ -785,6 +785,8 @@ function PeersManager(handshake_servers_file, stun_server)
         delete peers[uid];
     };
 
+    pc._channels2 = {}
+
     var dispatchEvent = pc.dispatchEvent;
     pc.dispatchEvent = function(event)
     {
@@ -794,14 +796,23 @@ function PeersManager(handshake_servers_file, stun_server)
         initDataChannel(pc, channel, uid)
 
       else
+      {
+        pc._channels2[channel.label] = channel
         dispatchEvent.call(this, event)
+      }
     };
+
+    pc.channels = function()
+    {
+      return pc._channels2
+    }
 
 //    pc.onopen = function(event)
     {
       var event = document.createEvent("Event");
           event.initEvent('peerconnection',true,true);
           event.peerconnection = pc
+          event.uid = uid
 
       self.dispatchEvent(event);
     }
@@ -822,11 +833,11 @@ function PeersManager(handshake_servers_file, stun_server)
    */
   function initDataChannel(pc, channel, uid)
   {
-    pc._channel = channel;
+    pc._routing = channel;
 
     channel.addEventListener('close', function(event)
     {
-      delete pc._channel;
+      delete pc._routing;
 
       pc.close();
     });
@@ -946,7 +957,9 @@ function PeersManager(handshake_servers_file, stun_server)
       var channel = peer.createDataChannel('webp2p');
       initDataChannel(peer, channel, uid);
 
-      var channel = peer.createDataChannel('prueba');
+      var channel = peer.createDataChannel('shareit');
+      peer._channels2[channel.label] = channel
+
       var event = document.createEvent("Event");
           event.initEvent('datachannel',true,true);
           event.channel = channel
@@ -988,26 +1001,33 @@ function PeersManager(handshake_servers_file, stun_server)
       });
     }
 
-    // PeerConnection is connected but channel not created
-    else if(!peer._channel)
-      cb('PeerConnection is connected but channel not created, please wait'+
-         'some more seconds')
+//    // PeerConnection is connected but channel not created
+//    else if(!peer._channel)
+//      cb('PeerConnection is connected but channel not created, please wait '+
+//         'some more seconds')
 
     // Channel is created and we have defined an 'onsucess' callback
     else if(cb)
     {
+      var channel = peer._channels2['shareit']
+
       // Channel is open
-      if(peer._channel.readyState == 'open')
+      if(channel.readyState == 'open')
         cb(null, uid);
 
       // Channel is not ready, call the callback when it's opened
       else
-        peer._channel.addEventListener('open', function(event)
+        channel.addEventListener('open', function(event)
         {
           cb(null, uid);
         })
     }
   };
+
+  this.getPeers = function()
+  {
+    return peers
+  }
 
   /**
    * Get the channels of all the connected peers and handshake servers
