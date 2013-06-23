@@ -18,7 +18,7 @@ function Transport_Presence_init(transport, peersManager, max_connections)
     // the network mesh
 
     // Do the connection with the new peer
-    peersManager.connectTo(from, ['shareit'], transport, function(error, uid)
+    peersManager.connectTo(from, ['shareit'], transport, function(error)
     {
       if(error)
         console.error(from, peer, transport);

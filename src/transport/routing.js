@@ -19,10 +19,10 @@ function Transport_Routing_init(transport, peersManager, peer_uid)
 //    {
 
       // Create PeerConnection
-      var pc = peersManager.onoffer(from, sdp, function(uid, event)
+      var pc = peersManager.onoffer(from, sdp, function(error)
       {
-        console.error('Error creating DataChannel with peer ' + uid);
-        console.error(event);
+        if(error)
+          console.error(error);
       });
 
       // Send answer

@@ -919,6 +919,7 @@ function PeersManager(handshake_servers_file, stun_server)
     self.dispatchEvent(event);
   };
 
+
   /**
    * Connects to another peer based on its UID. If we are already connected,
    * it does nothing.
@@ -946,43 +947,13 @@ function PeersManager(handshake_servers_file, stun_server)
       initDataChannel(peer, peer._routing, uid);
     }
 
-    function setChannelCallback(channel)
-    {
-      if(cb)
-      {
-        channel.addEventListener('open', function(event)
-        {
-          cb(null, uid);
-        });
-        channel.onerror = function(event)
-        {
-          cb({uid: uid, peer:peer, channel:channel});
-        };
-      }
-    }
-
     // Add requested channels
     for(var i=0, label; label=labels[i]; i++)
     {
       var channel = peer._channels2[label]
 
-      // Channel exist, add callback if it was defined
-      if(channel)
-      {
-        // Channel is open, exec directly the callback
-        if(channel.readyState == 'open')
-        {
-          if(cb)
-            cb(null, uid);
-        }
-
-        // Channel is not ready, call the callback when channel gets opened
-        else
-          setChannelCallback(channel)
-      }
-
       // Channel doesn't exists, create and initialize it
-      else
+      if(!channel)
       {
         createOffer = true
 
@@ -995,13 +966,10 @@ function PeersManager(handshake_servers_file, stun_server)
             event.initEvent('datachannel',true,true);
             event.channel = channel
         peer.dispatchEvent(event);
-
-        // Call the callback when channel gets opened
-        setChannelCallback(channel)
       }
     }
 
-    // Send offer to new PeerConnection
+    // Send offer to new PeerConnection if connection characteristics changed
     if(createOffer)
       peer.createOffer(function(offer)
       {
@@ -1026,6 +994,9 @@ function PeersManager(handshake_servers_file, stun_server)
         // Set the peer local description
         peer.setLocalDescription(offer);
       });
+
+    if(cb)
+      cb();
   };
 
   this.getPeers = function()
@@ -1092,7 +1063,7 @@ exports.PeersManager = PeersManager;function Transport_Presence_init(transport, 
     // the network mesh
 
     // Do the connection with the new peer
-    peersManager.connectTo(from, ['shareit'], transport, function(error, uid)
+    peersManager.connectTo(from, ['shareit'], transport, function(error)
     {
       if(error)
         console.error(from, peer, transport);
@@ -1561,10 +1532,10 @@ function(configuration)
 //    {
 
       // Create PeerConnection
-      var pc = peersManager.onoffer(from, sdp, function(uid, event)
+      var pc = peersManager.onoffer(from, sdp, function(error)
       {
-        console.error('Error creating DataChannel with peer ' + uid);
-        console.error(event);
+        if(error)
+          console.error(error);
       });
 
       // Send answer
