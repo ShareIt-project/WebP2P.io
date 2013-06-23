@@ -107,17 +107,16 @@ function PeersManager(handshake_servers_file, stun_server)
    */
   function initDataChannel(pc, channel, uid)
   {
-    pc._routing = channel;
+//    pc._routing = channel;
 
     channel.addEventListener('close', function(event)
     {
-      delete pc._routing;
+//      delete pc._routing;
 
       pc.close();
     });
 
-    channel.uid = uid;
-    Transport_Routing_init(channel, self);
+    Transport_Routing_init(channel, self, uid);
   }
 
 
@@ -192,21 +191,6 @@ function PeersManager(handshake_servers_file, stun_server)
         event.uid = self.uid
 
     self.dispatchEvent(event);
-
-//    // Restart downloads
-//    db.files_getAll(null, function(error, filelist)
-//    {
-//      if(error)
-//        console.error(error)
-//
-//      else if(filelist.length)
-//        policy(function()
-//        {
-//          for(var i=0, fileentry; fileentry=filelist[i]; i++)
-//            if(fileentry.bitmap)
-//              self.transfer_query(fileentry)
-//        })
-//    })
   };
 
   /**
@@ -217,28 +201,27 @@ function PeersManager(handshake_servers_file, stun_server)
    * @param {Function(error, channel)} cb Callback
    * send the offer. If not defined send it to all connected peers.
    */
-  this.connectTo = function(uid, incomingChannel, cb)
+  this.connectTo = function(uid, labels, incomingChannel, cb)
   {
+    var createOffer = false
+
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
 
-    // Peer is not connected, create a new channel
+    // Peer is not connected, create a new one with a routing channel
     if(!peer)
     {
+      createOffer = true
+
       // Create PeerConnection
       peer = createPeerConnection(uid, incomingChannel, cb);
 
-      var channel = peer.createDataChannel('webp2p');
-      initDataChannel(peer, channel, uid);
+      peer._routing = peer.createDataChannel('webp2p');
+      initDataChannel(peer, peer._routing, uid);
+    }
 
-      var channel = peer.createDataChannel('shareit');
-      peer._channels2[channel.label] = channel
-
-      var event = document.createEvent("Event");
-          event.initEvent('datachannel',true,true);
-          event.channel = channel
-      peer.dispatchEvent(event);
-
+    function setChannelCallback(channel)
+    {
       if(cb)
       {
         channel.addEventListener('open', function(event)
@@ -250,13 +233,56 @@ function PeersManager(handshake_servers_file, stun_server)
           cb({uid: uid, peer:peer, channel:channel});
         };
       }
+    }
 
-      // Send offer to new PeerConnection
+    // Add requested channels
+    for(var i=0, label; label=labels[i]; i++)
+    {
+      var channel = peer._channels2[label]
+
+      // Channel exist, add callback if it was defined
+      if(channel)
+      {
+        // Channel is open, exec directly the callback
+        if(channel.readyState == 'open')
+        {
+          if(cb)
+            cb(null, uid);
+        }
+
+        // Channel is not ready, call the callback when channel gets opened
+        else
+          setChannelCallback(channel)
+      }
+
+      // Channel doesn't exists, create and initialize it
+      else
+      {
+        createOffer = true
+
+        // Create new DataChannel
+        channel = peer.createDataChannel(label);
+        peer._channels2[label] = channel
+
+        // Dispatch new DataChannel to the application
+        var event = document.createEvent("Event");
+            event.initEvent('datachannel',true,true);
+            event.channel = channel
+        peer.dispatchEvent(event);
+
+        // Call the callback when channel gets opened
+        setChannelCallback(channel)
+      }
+    }
+
+    // Send offer to new PeerConnection
+    if(createOffer)
       peer.createOffer(function(offer)
       {
         console.log("[createOffer]: "+uid+"\n"+offer.sdp);
 
         // Send the offer only for the incoming channel
+//        if(peer._routing)
         if(incomingChannel)
            incomingChannel.sendOffer(uid, offer.sdp);
 
@@ -264,6 +290,7 @@ function PeersManager(handshake_servers_file, stun_server)
         else
         {
           var channels = self.getChannels();
+  //        var channels = self.getPeers();
 
           // Send the connection offer to the other connected peers
           for(var channel_id in channels)
@@ -273,29 +300,6 @@ function PeersManager(handshake_servers_file, stun_server)
         // Set the peer local description
         peer.setLocalDescription(offer);
       });
-    }
-
-//    // PeerConnection is connected but channel not created
-//    else if(!peer._channel)
-//      cb('PeerConnection is connected but channel not created, please wait '+
-//         'some more seconds')
-
-    // Channel is created and we have defined an 'onsucess' callback
-    else if(cb)
-    {
-      var channel = peer._channels2['shareit']
-
-      // Channel is open
-      if(channel.readyState == 'open')
-        cb(null, uid);
-
-      // Channel is not ready, call the callback when it's opened
-      else
-        channel.addEventListener('open', function(event)
-        {
-          cb(null, uid);
-        })
-    }
   };
 
   this.getPeers = function()

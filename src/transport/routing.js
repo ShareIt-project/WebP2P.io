@@ -1,4 +1,4 @@
-function Transport_Routing_init(transport, peersManager)
+function Transport_Routing_init(transport, peersManager, peer_uid)
 {
   /**
    * Receive and process an 'offer' message
@@ -45,7 +45,7 @@ function Transport_Routing_init(transport, peersManager)
 //    else
 //    {
 //      // Add the transport where it was received to the route path
-//      route.push(transport.uid);
+//      route.push(peer_uid);
 //
 //      // Search the peer between the list of currently connected peers
 //      var channels = peersManager.getChannels();
@@ -122,7 +122,7 @@ function Transport_Routing_init(transport, peersManager)
 //      // the connection request initiator peer by broadcast
 //      if(!routed)
 //        for(var uid in channels)
-//          if(uid != transport.uid)
+//          if(uid != peer_uid)
 //            channels[uid].sendAnswer(orig, sdp, route);
 //    }
   });
@@ -159,7 +159,7 @@ function Transport_Routing_init(transport, peersManager)
 
 //    // Run over all the route peers looking for possible "shortcuts"
 //    for(var i = 0, uid; uid = route[i]; i++)
-//      if(uid == transport.uid)
+//      if(uid == peer_uid)
 //      {
 //        route.length = i;
 //        break;
