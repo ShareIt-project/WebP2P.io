@@ -64,4 +64,4 @@ function Handshake_Pusher(configuration)
 }
 Handshake_Pusher.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('Pusher', Handshake_Pusher)
+HandshakeManager.registerConstructor('Pusher', Handshake_Pusher);

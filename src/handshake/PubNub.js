@@ -87,4 +87,4 @@ function Handshake_PubNub(configuration)
 }
 Handshake_PubNub.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('PubNub', Handshake_PubNub)
+HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);

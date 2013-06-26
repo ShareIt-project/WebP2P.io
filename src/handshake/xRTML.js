@@ -69,4 +69,4 @@ function Handshake_xRTML(configuration)
 }
 Handshake_xRTML.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('xRTML', Handshake_xRTML)
+HandshakeManager.registerConstructor('xRTML', Handshake_xRTML);

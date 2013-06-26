@@ -75,4 +75,4 @@ function Handshake_SimpleSignaling(configuration)
 }
 Handshake_SimpleSignaling.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling)
+HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling);

@@ -115,4 +115,4 @@ function Handshake_XMPP(configuration)
 }
 Handshake_XMPP.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('XMPP', Handshake_XMPP)
+HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);

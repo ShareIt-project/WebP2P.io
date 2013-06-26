@@ -1270,7 +1270,7 @@ function Handshake_PubNub(configuration)
 }
 Handshake_PubNub.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('PubNub', Handshake_PubNub)/**
+HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);/**
  * Handshake channel connector for SimpleSignaling
  * @param {Object} configuration Configuration object.
  */
@@ -1347,7 +1347,7 @@ function Handshake_SimpleSignaling(configuration)
 }
 Handshake_SimpleSignaling.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling)/**
+HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling);/**
  * Signaling channel connector for XMPP
  * @param {Object} configuration Configuration object
  */
@@ -1464,7 +1464,7 @@ function Handshake_XMPP(configuration)
 }
 Handshake_XMPP.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('XMPP', Handshake_XMPP)function Transport_Presence_init(transport, webp2p, max_connections)
+HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_Presence_init(transport, webp2p, max_connections)
 {
   Transport_Routing_init(transport, webp2p);
 
