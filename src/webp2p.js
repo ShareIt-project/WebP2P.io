@@ -179,18 +179,21 @@ function WebP2P(handshake_servers_file, stun_server)
 
   // Init handshake manager
   var handshakeManager = new HandshakeManager(handshake_servers_file, this);
-  handshakeManager.onerror = function(error)
+  handshakeManager.onerror = function(event)
   {
-    console.error(error);
-    alert(error);
-  };
-  handshakeManager.onopen = function()
-  {
-    var event = document.createEvent("Event");
-        event.initEvent('handshake.open',true,true);
-        event.uid = self.uid
+    var event2 = document.createEvent("Event");
+        event2.initEvent('error',true,true);
+        event2.error = event.error
 
-    self.dispatchEvent(event);
+        self.dispatchEvent(event2);
+  };
+  handshakeManager.onopen = function(event)
+  {
+    var event2 = document.createEvent("Event");
+        event2.initEvent('handshake.open',true,true);
+        event2.uid = self.uid
+
+    self.dispatchEvent(event2);
   };
 
 
@@ -309,7 +312,8 @@ function WebP2P(handshake_servers_file, stun_server)
     if(!Object.keys(peers).length)
     {
       var event = document.createEvent("Event");
-          event.initEvent('error.noPeers',true,true);
+          event.initEvent('error',true,true);
+          event.error = ERROR_NO_PEERS
 
       this.dispatchEvent(event);
     }

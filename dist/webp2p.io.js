@@ -905,18 +905,21 @@ function WebP2P(handshake_servers_file, stun_server)
 
   // Init handshake manager
   var handshakeManager = new HandshakeManager(handshake_servers_file, this);
-  handshakeManager.onerror = function(error)
+  handshakeManager.onerror = function(event)
   {
-    console.error(error);
-    alert(error);
-  };
-  handshakeManager.onopen = function()
-  {
-    var event = document.createEvent("Event");
-        event.initEvent('handshake.open',true,true);
-        event.uid = self.uid
+    var event2 = document.createEvent("Event");
+        event2.initEvent('error',true,true);
+        event2.error = event.error
 
-    self.dispatchEvent(event);
+        self.dispatchEvent(event2);
+  };
+  handshakeManager.onopen = function(event)
+  {
+    var event2 = document.createEvent("Event");
+        event2.initEvent('handshake.open',true,true);
+        event2.uid = self.uid
+
+    self.dispatchEvent(event2);
   };
 
 
@@ -1035,7 +1038,8 @@ function WebP2P(handshake_servers_file, stun_server)
     if(!Object.keys(peers).length)
     {
       var event = document.createEvent("Event");
-          event.initEvent('error.noPeers',true,true);
+          event.initEvent('error',true,true);
+          event.error = ERROR_NO_PEERS
 
       this.dispatchEvent(event);
     }
@@ -1043,7 +1047,11 @@ function WebP2P(handshake_servers_file, stun_server)
 }
 WebP2P.prototype = new EventTarget();
 
-exports.WebP2P = WebP2P;/**
+exports.WebP2P = WebP2P;var ERROR_NETWORK_UNKNOWN = {id: 0, msg: 'Unable to fetch handshake servers configuration'}
+var ERROR_NETWORK_OFFLINE = {id: 1, msg: "There's no available network"}
+var ERROR_REQUEST_FAILURE = {id: 2, msg: 'Unable to fetch handshake servers configuration'}
+var ERROR_REQUEST_EMPTY   = {id: 3, msg: 'Handshake servers configuration is empty'}
+var ERROR_NO_PEERS        = {id: 4, msg: 'Not connected to any peer'}/**
  * Manage the handshake channel using several servers
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
@@ -1143,7 +1151,7 @@ function HandshakeManager(json_uri, webp2p)
   var http_request = new XMLHttpRequest();
 
   http_request.open('GET', json_uri);
-  http_request.onload = function()
+  http_request.onload = function(event)
   {
     if(this.status == 200)
     {
@@ -1158,18 +1166,33 @@ function HandshakeManager(json_uri, webp2p)
       {
         status = 'disconnected';
 
-        if(self.onerror)
-           self.onerror('Handshake servers configuration is empty');
+        var event = document.createEvent("Event");
+            event.initEvent('error',true,true);
+            event.error = ERROR_REQUEST_EMPTY
+
+        self.dispatchEvent(event);
       }
     }
+    else
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('error',true,true);
+          event.error = ERROR_REQUEST_FAILURE
 
-    else if(self.onerror)
-      self.onerror('Unable to fetch handshake servers configuration');
+      self.dispatchEvent(event);
+    }
   };
-  http_request.onerror = function()
+  http_request.onerror = function(event)
   {
-    if(self.onerror)
-       self.onerror('Unable to fetch handshake servers configuration');
+    var event = document.createEvent("Event");
+        event.initEvent('error',true,true);
+
+    if(navigator.onLine)
+      event.error = ERROR_NETWORK_UNKNOWN
+    else
+      event.error = ERROR_NETWORK_OFFLINE
+
+    self.dispatchEvent(event);
   };
 
   http_request.send();

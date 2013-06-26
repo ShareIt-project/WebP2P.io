@@ -50,6 +50,8 @@ var base =
   [
    'webp2p.js',
 
+   'errors.js',
+
    'handshake/index.js',
    'handshake/PubNub.js',
    'handshake/simpleSignaling.js',
