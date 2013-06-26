@@ -1,4 +1,4 @@
-function Transport_Routing_init(transport, peersManager, peer_uid)
+function Transport_Routing_init(transport, webp2p, peer_uid)
 {
   /**
    * Receive and process an 'offer' message
@@ -11,15 +11,15 @@ function Transport_Routing_init(transport, peersManager, peer_uid)
 
 //    // If a message have been already routed by this peer, ignore it
 //    for(var i = 0, uid; uid = route[i]; i++)
-//      if(uid == peersManager.uid)
+//      if(uid == webp2p.uid)
 //        return;
 
 //    // Offer is for us
-//    if(dest == peersManager.uid)
+//    if(dest == webp2p.uid)
 //    {
 
       // Create PeerConnection
-      var pc = peersManager.onoffer(from, sdp, function(error)
+      var pc = webp2p.onoffer(from, sdp, function(error)
       {
         if(error)
           console.error(error);
@@ -48,7 +48,7 @@ function Transport_Routing_init(transport, peersManager, peer_uid)
 //      route.push(peer_uid);
 //
 //      // Search the peer between the list of currently connected peers
-//      var channels = peersManager.getChannels();
+//      var channels = webp2p.getChannels();
 //      var channel = channels[dest];
 //
 //      // Requested peer is one of the connected, notify directly to it
@@ -84,13 +84,13 @@ function Transport_Routing_init(transport, peersManager, peer_uid)
     var route = event.route;
 
 //    // Answer is from ourselves or we don't know where it goes, ignore it
-//    if(orig == peersManager.uid
+//    if(orig == webp2p.uid
 //    || !route.length)
 //      return;
 //
 //    // Answer is for us
-//    if(route[0] == peersManager.uid)
-      peersManager.onanswer(from, sdp, function(uid)
+//    if(route[0] == webp2p.uid)
+      webp2p.onanswer(from, sdp, function(uid)
       {
         console.error("[routing.answer] PeerConnection '" + uid + "' not found");
       });
@@ -101,7 +101,7 @@ function Transport_Routing_init(transport, peersManager, peer_uid)
 //    {
 //      var routed = false;
 //
-//      var channels = peersManager.getChannels();
+//      var channels = webp2p.getChannels();
 //
 //      // Run over all the route peers looking for possible "shortcuts"
 //      for(var i = 0, uid; uid = route[i]; i++)
@@ -137,7 +137,7 @@ function Transport_Routing_init(transport, peersManager, peer_uid)
     var candidate = event.candidate;
     var route     = event.route;
 
-    peersManager.oncandidate(from, candidate, function(uid)
+    webp2p.oncandidate(from, candidate, function(uid)
     {
       console.error("[routing.candidate] PeerConnection '" + uid + "' not found");
     });

@@ -1,6 +1,6 @@
-function Transport_Presence_init(transport, peersManager, max_connections)
+function Transport_Presence_init(transport, webp2p, max_connections)
 {
-  Transport_Routing_init(transport, peersManager);
+  Transport_Routing_init(transport, webp2p);
 
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
@@ -18,7 +18,7 @@ function Transport_Presence_init(transport, peersManager, max_connections)
     // the network mesh
 
     // Do the connection with the new peer
-    peersManager.connectTo(from, ['shareit'], transport, function(error)
+    webp2p.connectTo(from, ['shareit'], transport, function(error)
     {
       if(error)
         console.error(from, peer, transport);

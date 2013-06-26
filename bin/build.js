@@ -48,7 +48,7 @@ var libs =
 
 var base =
   [
-   'peersManager.js',
+   'webp2p.js',
 
    'handshake/index.js',
    'handshake/PubNub.js',
@@ -129,7 +129,7 @@ var builder = module.exports = function () {
       // concatinate the file contents in order
       var code = development
         , ignore = 0;
-        
+
       code += prefix;
 
       files.forEach(function (file) {
@@ -166,7 +166,7 @@ var builder = module.exports = function () {
       }
 
       code += suffix;
-      
+
       // check if we need to process it any further
       if (settings.minify) {
         var ast = uglify.parser.parse(code);

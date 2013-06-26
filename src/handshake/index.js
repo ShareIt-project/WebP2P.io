@@ -3,7 +3,7 @@
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-function HandshakeManager(json_uri, peersManager)
+function HandshakeManager(json_uri, webp2p)
 {
   var self = this;
 
@@ -21,12 +21,12 @@ function HandshakeManager(json_uri, peersManager)
       getRandomHandshake(configuration);
 
     // There are no more pending configurations and all channels have been
-    // closed, set as disconnected and notify to the PeersManager
+    // closed, set as disconnected and notify to the webp2p
     else if(!Object.keys(channels).length)
     {
       status = 'disconnected';
 
-      peersManager.handshakeDisconnected();
+      webp2p.handshakeDisconnected();
     }
   }
 
@@ -43,7 +43,7 @@ function HandshakeManager(json_uri, peersManager)
     var type = configuration[index][0];
     var conf = configuration[index][1];
 
-    conf.uid = peersManager.uid;
+    conf.uid = webp2p.uid;
 
     var channelConstructor = HandshakeManager.handshakeServers[type];
 
@@ -58,7 +58,7 @@ function HandshakeManager(json_uri, peersManager)
 
     var channel = new channelConstructor(conf);
 
-    Transport_Presence_init(channel, peersManager, conf.max_connections)
+    Transport_Presence_init(channel, webp2p, conf.max_connections)
 
     channel.uid = type;
     channels[type] = channel;

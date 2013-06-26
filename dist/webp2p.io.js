@@ -730,7 +730,7 @@ function SimpleSignaling(configuration)
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-function PeersManager(handshake_servers_file, stun_server)
+function WebP2P(handshake_servers_file, stun_server)
 {
   //Fallbacks for vendor-specific variables until the spec is finalized.
   var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
@@ -1041,17 +1041,15 @@ function PeersManager(handshake_servers_file, stun_server)
     }
   };
 }
-PeersManager.prototype = new EventTarget();
+WebP2P.prototype = new EventTarget();
 
-exports.PeersManager = PeersManager;/**
+exports.WebP2P = WebP2P;/**
  * Manage the handshake channel using several servers
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-function HandshakeManager(json_uri, peersManager)
+function HandshakeManager(json_uri, webp2p)
 {
-  EventTarget.call(this);
-
   var self = this;
 
   var channels = {};
@@ -1068,12 +1066,12 @@ function HandshakeManager(json_uri, peersManager)
       getRandomHandshake(configuration);
 
     // There are no more pending configurations and all channels have been
-    // closed, set as disconnected and notify to the PeersManager
+    // closed, set as disconnected and notify to the webp2p
     else if(!Object.keys(channels).length)
     {
       status = 'disconnected';
 
-      peersManager.handshakeDisconnected();
+      webp2p.handshakeDisconnected();
     }
   }
 
@@ -1090,7 +1088,7 @@ function HandshakeManager(json_uri, peersManager)
     var type = configuration[index][0];
     var conf = configuration[index][1];
 
-    conf.uid = peersManager.uid;
+    conf.uid = webp2p.uid;
 
     var channelConstructor = HandshakeManager.handshakeServers[type];
 
@@ -1105,7 +1103,7 @@ function HandshakeManager(json_uri, peersManager)
 
     var channel = new channelConstructor(conf);
 
-    Transport_Presence_init(channel, peersManager, conf.max_connections)
+    Transport_Presence_init(channel, webp2p, conf.max_connections)
 
     channel.uid = type;
     channels[type] = channel;
@@ -1176,6 +1174,8 @@ function HandshakeManager(json_uri, peersManager)
 
   http_request.send();
 }
+HandshakeManager.prototype = new EventTarget()
+
 
 HandshakeManager.handshakeServers = {}
 HandshakeManager.registerConstructor = function(type, constructor)
@@ -1185,11 +1185,8 @@ HandshakeManager.registerConstructor = function(type, constructor)
  * Handshake channel connector for PubNub (adapter to Message Channel interface)
  * @param {Object} configuration Configuration object.
  */
-HandshakeManager.registerConstructor('PubNub',
-function(configuration)
+function Handshake_PubNub(configuration)
 {
-  EventTarget.call(this);
-
   this.isPubsub = true;
 
   var self = this;
@@ -1270,15 +1267,15 @@ function(configuration)
       channel: configuration.channel
     });
   }
-})/**
+}
+Handshake_PubNub.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('PubNub', Handshake_PubNub)/**
  * Handshake channel connector for SimpleSignaling
  * @param {Object} configuration Configuration object.
  */
-HandshakeManager.registerConstructor('SimpleSignaling',
-function(configuration)
+function Handshake_SimpleSignaling(configuration)
 {
-  EventTarget.call(this);
-
   this.isPubsub = true;
 
   var self = this;
@@ -1347,15 +1344,15 @@ function(configuration)
   {
     connection.close()
   }
-})/**
+}
+Handshake_SimpleSignaling.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling)/**
  * Signaling channel connector for XMPP
  * @param {Object} configuration Configuration object
  */
-HandshakeManager.registerConstructor('XMPP',
-function(configuration)
+function Handshake_XMPP(configuration)
 {
-  EventTarget.call(this);
-
   var self = this
 
 //  configuration.oDbg = new JSJaCConsoleLogger(1)
@@ -1464,9 +1461,12 @@ function(configuration)
   {
     connection.disconnect()
   }
-});function Transport_Presence_init(transport, peersManager, max_connections)
+}
+Handshake_XMPP.prototype = new EventTarget();
+
+HandshakeManager.registerConstructor('XMPP', Handshake_XMPP)function Transport_Presence_init(transport, webp2p, max_connections)
 {
-  Transport_Routing_init(transport, peersManager);
+  Transport_Routing_init(transport, webp2p);
 
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
@@ -1484,7 +1484,7 @@ function(configuration)
     // the network mesh
 
     // Do the connection with the new peer
-    peersManager.connectTo(from, ['shareit'], transport, function(error)
+    webp2p.connectTo(from, ['shareit'], transport, function(error)
     {
       if(error)
         console.error(from, peer, transport);
@@ -1508,7 +1508,7 @@ function(configuration)
     // Close the channel (and try with the next one)
     transport.close();
   };
-}function Transport_Routing_init(transport, peersManager, peer_uid)
+}function Transport_Routing_init(transport, webp2p, peer_uid)
 {
   /**
    * Receive and process an 'offer' message
@@ -1521,15 +1521,15 @@ function(configuration)
 
 //    // If a message have been already routed by this peer, ignore it
 //    for(var i = 0, uid; uid = route[i]; i++)
-//      if(uid == peersManager.uid)
+//      if(uid == webp2p.uid)
 //        return;
 
 //    // Offer is for us
-//    if(dest == peersManager.uid)
+//    if(dest == webp2p.uid)
 //    {
 
       // Create PeerConnection
-      var pc = peersManager.onoffer(from, sdp, function(error)
+      var pc = webp2p.onoffer(from, sdp, function(error)
       {
         if(error)
           console.error(error);
@@ -1558,7 +1558,7 @@ function(configuration)
 //      route.push(peer_uid);
 //
 //      // Search the peer between the list of currently connected peers
-//      var channels = peersManager.getChannels();
+//      var channels = webp2p.getChannels();
 //      var channel = channels[dest];
 //
 //      // Requested peer is one of the connected, notify directly to it
@@ -1594,13 +1594,13 @@ function(configuration)
     var route = event.route;
 
 //    // Answer is from ourselves or we don't know where it goes, ignore it
-//    if(orig == peersManager.uid
+//    if(orig == webp2p.uid
 //    || !route.length)
 //      return;
 //
 //    // Answer is for us
-//    if(route[0] == peersManager.uid)
-      peersManager.onanswer(from, sdp, function(uid)
+//    if(route[0] == webp2p.uid)
+      webp2p.onanswer(from, sdp, function(uid)
       {
         console.error("[routing.answer] PeerConnection '" + uid + "' not found");
       });
@@ -1611,7 +1611,7 @@ function(configuration)
 //    {
 //      var routed = false;
 //
-//      var channels = peersManager.getChannels();
+//      var channels = webp2p.getChannels();
 //
 //      // Run over all the route peers looking for possible "shortcuts"
 //      for(var i = 0, uid; uid = route[i]; i++)
@@ -1647,7 +1647,7 @@ function(configuration)
     var candidate = event.candidate;
     var route     = event.route;
 
-    peersManager.oncandidate(from, candidate, function(uid)
+    webp2p.oncandidate(from, candidate, function(uid)
     {
       console.error("[routing.candidate] PeerConnection '" + uid + "' not found");
     });

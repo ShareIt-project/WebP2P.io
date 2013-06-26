@@ -4,7 +4,7 @@
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-function PeersManager(handshake_servers_file, stun_server)
+function WebP2P(handshake_servers_file, stun_server)
 {
   //Fallbacks for vendor-specific variables until the spec is finalized.
   var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
@@ -315,6 +315,6 @@ function PeersManager(handshake_servers_file, stun_server)
     }
   };
 }
-PeersManager.prototype = new EventTarget();
+WebP2P.prototype = new EventTarget();
 
-exports.PeersManager = PeersManager;
+exports.WebP2P = WebP2P;
