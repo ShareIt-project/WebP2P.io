@@ -38,6 +38,15 @@ function WebP2P(handshake_servers_file, stun_server)
   })
 
   /**
+   *  Close PeerConnection object if there are no open channels
+   */
+  function closePeer(peer)
+  {
+    if(!Object.keys(peer.channels).length && !peer._routing)
+      peer.close();
+  }
+
+  /**
    * Create a new RTCPeerConnection
    * @param {UUID} id Identifier of the other peer so later can be accessed.
    * @return {RTCPeerConnection}
@@ -68,15 +77,6 @@ function WebP2P(handshake_servers_file, stun_server)
     };
 
     pc._channels2 = {}
-
-    /**
-     *  Close PeerConnection object if there are no open channels
-     */
-    function closePeer(peer)
-    {
-      if(!Object.keys(peer.channels).length && !peer._routing)
-        peer.close();
-    }
 
     var dispatchEvent = pc.dispatchEvent;
     pc.dispatchEvent = function(event)
