@@ -106,10 +106,10 @@ function WebP2P(handshake_servers_file, stun_server)
         dispatchEvent.call(this, event)
     };
 
-    pc.channels = function()
+    pc.__defineGetter__('channels', function()
     {
       return pc._channels2
-    }
+    })
 
 //    pc.onopen = function(event)
     {
