@@ -757,10 +757,10 @@ function WebP2P(handshake_servers_file, stun_server)
 
   this.__defineGetter__("status", function()
   {
-    if(!Object.keys(peers).length && handshakeManager.status == 'disconnected')
-      return 'disconnected'
+    if(Object.keys(peers).length)
+      return 'connected'
 
-    return 'connected'
+    return handshakeManager.status
   })
 
   /**
