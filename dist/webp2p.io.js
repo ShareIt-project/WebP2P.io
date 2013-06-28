@@ -755,6 +755,14 @@ function WebP2P(handshake_servers_file, stun_server)
   this.uid = UUIDv4();
 
 
+  this.__defineGetter__("status", function()
+  {
+    if(!Object.keys(peers).length && handshakeManager.status == 'disconnected')
+      return 'disconnected'
+
+    return 'connected'
+  })
+
   /**
    * Create a new RTCPeerConnection
    * @param {UUID} id Identifier of the other peer so later can be accessed.
@@ -787,19 +795,41 @@ function WebP2P(handshake_servers_file, stun_server)
 
     pc._channels2 = {}
 
+    /**
+     *  Close PeerConnection object if there are no open channels
+     */
+    function closePeer(peer)
+    {
+      if(!Object.keys(peer.channels).length && !peer._routing)
+        peer.close();
+    }
+
     var dispatchEvent = pc.dispatchEvent;
     pc.dispatchEvent = function(event)
     {
-      var channel = event.channel
-
-      if(event.type == 'datachannel' && channel.label == 'webp2p')
-        initDataChannel(pc, channel, uid)
-
-      else
+      if(event.type == 'datachannel')
       {
-        pc._channels2[channel.label] = channel
-        dispatchEvent.call(this, event)
+        var channel = event.channel
+
+        // Routing DataChannel
+        if(channel.label == 'webp2p')
+          initDataChannel_routing(pc, channel, uid)
+
+        // Application DataChannel
+        else
+        {
+          pc._channels2[channel.label] = channel
+
+          channel.addEventListener('close', function(event)
+          {
+            closePeer(pc)
+          });
+
+          dispatchEvent.call(this, event)
+        }
       }
+      else
+        dispatchEvent.call(this, event)
     };
 
     pc.channels = function()
@@ -831,15 +861,15 @@ function WebP2P(handshake_servers_file, stun_server)
    * @param {RTCPeerConnection} pc PeerConnection owner of the DataChannel.
    * @param {RTCDataChannel} channel Communication channel with the other peer.
    */
-  function initDataChannel(pc, channel, uid)
+  function initDataChannel_routing(pc, channel, uid)
   {
-//    pc._routing = channel;
+    pc._routing = channel;
 
     channel.addEventListener('close', function(event)
     {
-//      delete pc._routing;
+      delete pc._routing;
 
-      pc.close();
+      closePeer(pc)
     });
 
     Transport_Routing_init(channel, self, uid);
@@ -904,23 +934,40 @@ function WebP2P(handshake_servers_file, stun_server)
 
 
   // Init handshake manager
-  var handshakeManager = new HandshakeManager(handshake_servers_file, this);
+  var handshakeManager = new HandshakeManager(this.uid);
+      handshakeManager.addConfigs(handshake_servers_file);
+
+  function disconnected()
+  {
+    if(self.status == 'disconnected')
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('disconnected',true,true);
+
+      self.dispatchEvent(event);
+    }
+  }
+
   handshakeManager.onerror = function(event)
   {
     var event2 = document.createEvent("Event");
         event2.initEvent('error',true,true);
         event2.error = event.error
 
-        self.dispatchEvent(event2);
+    self.dispatchEvent(event2);
   };
-  handshakeManager.onopen = function(event)
+  handshakeManager.onconnected = function(event)
   {
+    var channel = event.channel
+    Transport_Presence_init(channel, self)
+
     var event2 = document.createEvent("Event");
-        event2.initEvent('handshake.open',true,true);
+        event2.initEvent('connected',true,true);
         event2.uid = self.uid
 
     self.dispatchEvent(event2);
   };
+  handshakeManager.addEventListener('disconnected', disconnected);
 
 
   /**
@@ -947,7 +994,7 @@ function WebP2P(handshake_servers_file, stun_server)
       peer = createPeerConnection(uid, incomingChannel, cb);
 
       peer._routing = peer.createDataChannel('webp2p');
-      initDataChannel(peer, peer._routing, uid);
+      initDataChannel_routing(peer, peer._routing, uid);
     }
 
     // Add requested channels
@@ -986,12 +1033,11 @@ function WebP2P(handshake_servers_file, stun_server)
         // Send the offer throught all the peers
         else
         {
-          var channels = self.getChannels();
-  //        var channels = self.getPeers();
+          var peers = self.getPeers();
 
           // Send the connection offer to the other connected peers
-          for(var channel_id in channels)
-            channels[channel_id].sendOffer(uid, offer.sdp);
+          for(var id in peers)
+            peers[id]._routing.sendOffer(uid, offer.sdp);
         }
 
         // Set the peer local description
@@ -1002,48 +1048,13 @@ function WebP2P(handshake_servers_file, stun_server)
       cb();
   };
 
+  /**
+   * Get the channels of all the connected peers and handshake servers
+   */
   this.getPeers = function()
   {
     return peers
   }
-
-  /**
-   * Get the channels of all the connected peers and handshake servers
-   */
-  this.getChannels = function()
-  {
-    var channels = {};
-
-    // Peers channels
-    for(var uid in peers)
-    {
-      var channel = peers[uid]._channel;
-      if(channel)
-        channels[uid] = channel;
-    }
-
-    // Handshake servers channels
-    var handshakeChannels = handshakeManager.getChannels();
-
-    for(var uid in handshakeChannels)
-      if(handshakeChannels.hasOwnProperty(uid))
-        channels[uid] = handshakeChannels[uid];
-
-      return channels;
-  };
-
-
-  this.handshakeDisconnected = function()
-  {
-    if(!Object.keys(peers).length)
-    {
-      var event = document.createEvent("Event");
-          event.initEvent('error',true,true);
-          event.error = ERROR_NO_PEERS
-
-      this.dispatchEvent(event);
-    }
-  };
 }
 WebP2P.prototype = new EventTarget();
 
@@ -1051,151 +1062,152 @@ exports.WebP2P = WebP2P;var ERROR_NETWORK_UNKNOWN = {id: 0, msg: 'Unable to fetc
 var ERROR_NETWORK_OFFLINE = {id: 1, msg: "There's no available network"}
 var ERROR_REQUEST_FAILURE = {id: 2, msg: 'Unable to fetch handshake servers configuration'}
 var ERROR_REQUEST_EMPTY   = {id: 3, msg: 'Handshake servers configuration is empty'}
+
 var ERROR_NO_PEERS        = {id: 4, msg: 'Not connected to any peer'}/**
  * Manage the handshake channel using several servers
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-function HandshakeManager(json_uri, webp2p)
+function HandshakeManager(uid)
 {
   var self = this;
 
-  var channels = {};
   var status = 'disconnected';
 
+  var configs = []
+  var index
 
-  function nextHandshake(configuration)
+
+  this.__defineGetter__("status", function()
   {
-    // Remove the configuration from the poll
-    configuration.splice(index, 1);
-
-    // If there are more pending configurations, go to the next one
-    if(configuration.length)
-      getRandomHandshake(configuration);
-
-    // There are no more pending configurations and all channels have been
-    // closed, set as disconnected and notify to the webp2p
-    else if(!Object.keys(channels).length)
-    {
-      status = 'disconnected';
-
-      webp2p.handshakeDisconnected();
-    }
-  }
+    return status
+  })
 
 
   /**
    * Get a random handshake channel or test for the next one
    * @param {Object} configuration Handshake servers configuration.
    */
-  function getRandomHandshake(configuration)
+  function handshake()
   {
-    var index = Math.floor(Math.random() * configuration.length);
-    var index = 0;  // Forced until servers interoperation works
+    if(index == undefined || !configs.length)
+      throw Error('No handshake servers defined')
 
-    var type = configuration[index][0];
-    var conf = configuration[index][1];
+    status = 'connecting';
 
-    conf.uid = webp2p.uid;
-
-    var channelConstructor = HandshakeManager.handshakeServers[type];
-
-    // Check if channel constructor is from a valid handshake server
-    if(!channelConstructor)
+    for(; index < configs.length; index++)
     {
-        console.error("Invalidad handshake server type '" + type + "'");
+      var type = configs[index][0];
+      var conf = configs[index][1];
 
-        // Try to get an alternative handshake channel
-        nextHandshake();
+      conf.uid = uid;
+
+      var channelConstructor = HandshakeManager.handshakeServers[type];
+
+      // Check if channel constructor is from a valid handshake server
+      if(channelConstructor)
+      {
+        var channel = new channelConstructor(conf);
+            channel.max_connections = conf.max_connections
+
+        channel.uid = type;
+
+        channel.addEventListener('open', function(event)
+        {
+          status = 'connected';
+
+          var event = document.createEvent("Event");
+              event.initEvent(status,true,true);
+              event.channel = channel
+
+          self.dispatchEvent(event);
+        });
+        channel.addEventListener('close', function(event)
+        {
+          // Try to get an alternative handshake channel
+          index++
+          handshake();
+        });
+
+        break
+      }
+
+      console.error("Invalid handshake server type '" + type + "'");
     }
 
-    var channel = new channelConstructor(conf);
+    // There are no more available configured handshake servers
+    status = 'disconnected';
 
-    Transport_Presence_init(channel, webp2p, conf.max_connections)
+    var event = document.createEvent("Event");
+        event.initEvent(status,true,true);
+        event.channel = channel
 
-    channel.uid = type;
-    channels[type] = channel;
+    self.dispatchEvent(event);
 
-    channel.addEventListener('open', function(event)
-    {
-      status = 'connected';
-
-      var event = document.createEvent("Event");
-          event.initEvent('open',true,true);
-
-      self.dispatchEvent(event);
-    });
-    channel.addEventListener('close', function(event)
-    {
-      status = 'connecting';
-
-      // Delete the channel from the current ones
-      delete channels[channel.uid];
-
-      // Try to get an alternative handshake channel
-      nextHandshake(configuration);
-    });
+    // Get ready to start again from begining of handshake servers list
+    index = 0
   }
 
 
-  /**
-   * Get the channels of all the connected peers and handshake servers
-   */
-  this.getChannels = function()
+  this.addConfigs = function(json_uri)
   {
-    return channels;
-  };
+    // Request the handshake servers configuration file
+    var http_request = new XMLHttpRequest();
 
-
-  // Request the handshake servers configuration file
-  var http_request = new XMLHttpRequest();
-
-  http_request.open('GET', json_uri);
-  http_request.onload = function(event)
-  {
-    if(this.status == 200)
+    http_request.open('GET', json_uri);
+    http_request.onload = function(event)
     {
-      status = 'connecting';
+      if(this.status == 200)
+      {
+        var configuration = JSON.parse(http_request.response);
 
-      var configuration = JSON.parse(http_request.response);
+        if(configuration.length)
+        {
+          configs = configs.concat(configuration)
 
-      if(configuration.length)
-        getRandomHandshake(configuration);
+          // Start handshaking
+          if(status = 'disconnected')
+          {
+            if(index == undefined)
+              index = 0;
 
+            handshake();
+          }
+        }
+
+        else
+        {
+          var event = document.createEvent("Event");
+              event.initEvent('error',true,true);
+              event.error = ERROR_REQUEST_EMPTY
+
+          self.dispatchEvent(event);
+        }
+      }
       else
       {
-        status = 'disconnected';
-
         var event = document.createEvent("Event");
             event.initEvent('error',true,true);
-            event.error = ERROR_REQUEST_EMPTY
+            event.error = ERROR_REQUEST_FAILURE
 
         self.dispatchEvent(event);
       }
-    }
-    else
+    };
+    http_request.onerror = function(event)
     {
       var event = document.createEvent("Event");
           event.initEvent('error',true,true);
-          event.error = ERROR_REQUEST_FAILURE
+
+      if(navigator.onLine)
+        event.error = ERROR_NETWORK_UNKNOWN
+      else
+        event.error = ERROR_NETWORK_OFFLINE
 
       self.dispatchEvent(event);
-    }
-  };
-  http_request.onerror = function(event)
-  {
-    var event = document.createEvent("Event");
-        event.initEvent('error',true,true);
+    };
 
-    if(navigator.onLine)
-      event.error = ERROR_NETWORK_UNKNOWN
-    else
-      event.error = ERROR_NETWORK_OFFLINE
-
-    self.dispatchEvent(event);
-  };
-
-  http_request.send();
+    http_request.send();
+  }
 }
 HandshakeManager.prototype = new EventTarget()
 
@@ -1487,14 +1499,13 @@ function Handshake_XMPP(configuration)
 }
 Handshake_XMPP.prototype = new EventTarget();
 
-HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_Presence_init(transport, webp2p, max_connections)
+HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_Presence_init(transport, webp2p)
 {
   Transport_Routing_init(transport, webp2p);
 
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
   transport.connections = 0
-  transport.max_connections = max_connections
 
   /**
    * Handle the presence of other new peers
@@ -1581,8 +1592,8 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
 //      route.push(peer_uid);
 //
 //      // Search the peer between the list of currently connected peers
-//      var channels = webp2p.getChannels();
-//      var channel = channels[dest];
+//      var peers = webp2p.getPeers();
+//      var channel = peers[dest]._routing;
 //
 //      // Requested peer is one of the connected, notify directly to it
 //      if(channel)
@@ -1634,12 +1645,12 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
 //    {
 //      var routed = false;
 //
-//      var channels = webp2p.getChannels();
+//      var peers = webp2p.getPeers();
 //
 //      // Run over all the route peers looking for possible "shortcuts"
 //      for(var i = 0, uid; uid = route[i]; i++)
 //      {
-//        var channel = channels[uid];
+//        var channel = peers[uid]._routing;
 //        if(channel)
 //        {
 //          channel.sendAnswer(from, sdp, route.slice(0, i - 1));

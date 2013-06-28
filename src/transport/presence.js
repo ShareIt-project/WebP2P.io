@@ -1,11 +1,10 @@
-function Transport_Presence_init(transport, webp2p, max_connections)
+function Transport_Presence_init(transport, webp2p)
 {
   Transport_Routing_init(transport, webp2p);
 
   // Count the maximum number of pending connections allowed to be
   // done with this handshake server (undefined == unlimited)
   transport.connections = 0
-  transport.max_connections = max_connections
 
   /**
    * Handle the presence of other new peers

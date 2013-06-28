@@ -48,8 +48,8 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
 //      route.push(peer_uid);
 //
 //      // Search the peer between the list of currently connected peers
-//      var channels = webp2p.getChannels();
-//      var channel = channels[dest];
+//      var peers = webp2p.getPeers();
+//      var channel = peers[dest]._routing;
 //
 //      // Requested peer is one of the connected, notify directly to it
 //      if(channel)
@@ -101,12 +101,12 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
 //    {
 //      var routed = false;
 //
-//      var channels = webp2p.getChannels();
+//      var peers = webp2p.getPeers();
 //
 //      // Run over all the route peers looking for possible "shortcuts"
 //      for(var i = 0, uid; uid = route[i]; i++)
 //      {
-//        var channel = channels[uid];
+//        var channel = peers[uid]._routing;
 //        if(channel)
 //        {
 //          channel.sendAnswer(from, sdp, route.slice(0, i - 1));

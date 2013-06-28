@@ -3,146 +3,146 @@
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-function HandshakeManager(json_uri, webp2p)
+function HandshakeManager(uid)
 {
   var self = this;
 
-  var channels = {};
   var status = 'disconnected';
 
+  var configs = []
+  var index
 
-  function nextHandshake(configuration)
+
+  this.__defineGetter__("status", function()
   {
-    // Remove the configuration from the poll
-    configuration.splice(index, 1);
-
-    // If there are more pending configurations, go to the next one
-    if(configuration.length)
-      getRandomHandshake(configuration);
-
-    // There are no more pending configurations and all channels have been
-    // closed, set as disconnected and notify to the webp2p
-    else if(!Object.keys(channels).length)
-    {
-      status = 'disconnected';
-
-      webp2p.handshakeDisconnected();
-    }
-  }
+    return status
+  })
 
 
   /**
    * Get a random handshake channel or test for the next one
    * @param {Object} configuration Handshake servers configuration.
    */
-  function getRandomHandshake(configuration)
+  function handshake()
   {
-    var index = Math.floor(Math.random() * configuration.length);
-    var index = 0;  // Forced until servers interoperation works
+    if(index == undefined || !configs.length)
+      throw Error('No handshake servers defined')
 
-    var type = configuration[index][0];
-    var conf = configuration[index][1];
+    status = 'connecting';
 
-    conf.uid = webp2p.uid;
-
-    var channelConstructor = HandshakeManager.handshakeServers[type];
-
-    // Check if channel constructor is from a valid handshake server
-    if(!channelConstructor)
+    for(; index < configs.length; index++)
     {
-        console.error("Invalidad handshake server type '" + type + "'");
+      var type = configs[index][0];
+      var conf = configs[index][1];
 
-        // Try to get an alternative handshake channel
-        nextHandshake();
+      conf.uid = uid;
+
+      var channelConstructor = HandshakeManager.handshakeServers[type];
+
+      // Check if channel constructor is from a valid handshake server
+      if(channelConstructor)
+      {
+        var channel = new channelConstructor(conf);
+            channel.max_connections = conf.max_connections
+
+        channel.uid = type;
+
+        channel.addEventListener('open', function(event)
+        {
+          status = 'connected';
+
+          var event = document.createEvent("Event");
+              event.initEvent(status,true,true);
+              event.channel = channel
+
+          self.dispatchEvent(event);
+        });
+        channel.addEventListener('close', function(event)
+        {
+          // Try to get an alternative handshake channel
+          index++
+          handshake();
+        });
+
+        break
+      }
+
+      console.error("Invalid handshake server type '" + type + "'");
     }
 
-    var channel = new channelConstructor(conf);
+    // There are no more available configured handshake servers
+    status = 'disconnected';
 
-    Transport_Presence_init(channel, webp2p, conf.max_connections)
+    var event = document.createEvent("Event");
+        event.initEvent(status,true,true);
+        event.channel = channel
 
-    channel.uid = type;
-    channels[type] = channel;
+    self.dispatchEvent(event);
 
-    channel.addEventListener('open', function(event)
-    {
-      status = 'connected';
-
-      var event = document.createEvent("Event");
-          event.initEvent('open',true,true);
-
-      self.dispatchEvent(event);
-    });
-    channel.addEventListener('close', function(event)
-    {
-      status = 'connecting';
-
-      // Delete the channel from the current ones
-      delete channels[channel.uid];
-
-      // Try to get an alternative handshake channel
-      nextHandshake(configuration);
-    });
+    // Get ready to start again from begining of handshake servers list
+    index = 0
   }
 
 
-  /**
-   * Get the channels of all the connected peers and handshake servers
-   */
-  this.getChannels = function()
+  this.addConfigs = function(json_uri)
   {
-    return channels;
-  };
+    // Request the handshake servers configuration file
+    var http_request = new XMLHttpRequest();
 
-
-  // Request the handshake servers configuration file
-  var http_request = new XMLHttpRequest();
-
-  http_request.open('GET', json_uri);
-  http_request.onload = function(event)
-  {
-    if(this.status == 200)
+    http_request.open('GET', json_uri);
+    http_request.onload = function(event)
     {
-      status = 'connecting';
+      if(this.status == 200)
+      {
+        var configuration = JSON.parse(http_request.response);
 
-      var configuration = JSON.parse(http_request.response);
+        if(configuration.length)
+        {
+          configs = configs.concat(configuration)
 
-      if(configuration.length)
-        getRandomHandshake(configuration);
+          // Start handshaking
+          if(status = 'disconnected')
+          {
+            if(index == undefined)
+              index = 0;
 
+            handshake();
+          }
+        }
+
+        else
+        {
+          var event = document.createEvent("Event");
+              event.initEvent('error',true,true);
+              event.error = ERROR_REQUEST_EMPTY
+
+          self.dispatchEvent(event);
+        }
+      }
       else
       {
-        status = 'disconnected';
-
         var event = document.createEvent("Event");
             event.initEvent('error',true,true);
-            event.error = ERROR_REQUEST_EMPTY
+            event.error = ERROR_REQUEST_FAILURE
 
         self.dispatchEvent(event);
       }
-    }
-    else
+    };
+    http_request.onerror = function(event)
     {
       var event = document.createEvent("Event");
           event.initEvent('error',true,true);
-          event.error = ERROR_REQUEST_FAILURE
+
+      if(navigator.onLine)
+        event.error = ERROR_NETWORK_UNKNOWN
+      else
+        event.error = ERROR_NETWORK_OFFLINE
 
       self.dispatchEvent(event);
-    }
-  };
-  http_request.onerror = function(event)
-  {
-    var event = document.createEvent("Event");
-        event.initEvent('error',true,true);
+    };
 
-    if(navigator.onLine)
-      event.error = ERROR_NETWORK_UNKNOWN
-    else
-      event.error = ERROR_NETWORK_OFFLINE
-
-    self.dispatchEvent(event);
-  };
-
-  http_request.send();
+    http_request.send();
+  }
 }
 HandshakeManager.prototype = new EventTarget()
 

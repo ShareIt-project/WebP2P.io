@@ -29,6 +29,14 @@ function WebP2P(handshake_servers_file, stun_server)
   this.uid = UUIDv4();
 
 
+  this.__defineGetter__("status", function()
+  {
+    if(!Object.keys(peers).length && handshakeManager.status == 'disconnected')
+      return 'disconnected'
+
+    return 'connected'
+  })
+
   /**
    * Create a new RTCPeerConnection
    * @param {UUID} id Identifier of the other peer so later can be accessed.
@@ -61,19 +69,41 @@ function WebP2P(handshake_servers_file, stun_server)
 
     pc._channels2 = {}
 
+    /**
+     *  Close PeerConnection object if there are no open channels
+     */
+    function closePeer(peer)
+    {
+      if(!Object.keys(peer.channels).length && !peer._routing)
+        peer.close();
+    }
+
     var dispatchEvent = pc.dispatchEvent;
     pc.dispatchEvent = function(event)
     {
-      var channel = event.channel
-
-      if(event.type == 'datachannel' && channel.label == 'webp2p')
-        initDataChannel(pc, channel, uid)
-
-      else
+      if(event.type == 'datachannel')
       {
-        pc._channels2[channel.label] = channel
-        dispatchEvent.call(this, event)
+        var channel = event.channel
+
+        // Routing DataChannel
+        if(channel.label == 'webp2p')
+          initDataChannel_routing(pc, channel, uid)
+
+        // Application DataChannel
+        else
+        {
+          pc._channels2[channel.label] = channel
+
+          channel.addEventListener('close', function(event)
+          {
+            closePeer(pc)
+          });
+
+          dispatchEvent.call(this, event)
+        }
       }
+      else
+        dispatchEvent.call(this, event)
     };
 
     pc.channels = function()
@@ -105,15 +135,15 @@ function WebP2P(handshake_servers_file, stun_server)
    * @param {RTCPeerConnection} pc PeerConnection owner of the DataChannel.
    * @param {RTCDataChannel} channel Communication channel with the other peer.
    */
-  function initDataChannel(pc, channel, uid)
+  function initDataChannel_routing(pc, channel, uid)
   {
-//    pc._routing = channel;
+    pc._routing = channel;
 
     channel.addEventListener('close', function(event)
     {
-//      delete pc._routing;
+      delete pc._routing;
 
-      pc.close();
+      closePeer(pc)
     });
 
     Transport_Routing_init(channel, self, uid);
@@ -178,23 +208,40 @@ function WebP2P(handshake_servers_file, stun_server)
 
 
   // Init handshake manager
-  var handshakeManager = new HandshakeManager(handshake_servers_file, this);
+  var handshakeManager = new HandshakeManager(this.uid);
+      handshakeManager.addConfigs(handshake_servers_file);
+
+  function disconnected()
+  {
+    if(self.status == 'disconnected')
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('disconnected',true,true);
+
+      self.dispatchEvent(event);
+    }
+  }
+
   handshakeManager.onerror = function(event)
   {
     var event2 = document.createEvent("Event");
         event2.initEvent('error',true,true);
         event2.error = event.error
 
-        self.dispatchEvent(event2);
+    self.dispatchEvent(event2);
   };
-  handshakeManager.onopen = function(event)
+  handshakeManager.onconnected = function(event)
   {
+    var channel = event.channel
+    Transport_Presence_init(channel, self)
+
     var event2 = document.createEvent("Event");
-        event2.initEvent('handshake.open',true,true);
+        event2.initEvent('connected',true,true);
         event2.uid = self.uid
 
     self.dispatchEvent(event2);
   };
+  handshakeManager.addEventListener('disconnected', disconnected);
 
 
   /**
@@ -221,7 +268,7 @@ function WebP2P(handshake_servers_file, stun_server)
       peer = createPeerConnection(uid, incomingChannel, cb);
 
       peer._routing = peer.createDataChannel('webp2p');
-      initDataChannel(peer, peer._routing, uid);
+      initDataChannel_routing(peer, peer._routing, uid);
     }
 
     // Add requested channels
@@ -260,12 +307,11 @@ function WebP2P(handshake_servers_file, stun_server)
         // Send the offer throught all the peers
         else
         {
-          var channels = self.getChannels();
-  //        var channels = self.getPeers();
+          var peers = self.getPeers();
 
           // Send the connection offer to the other connected peers
-          for(var channel_id in channels)
-            channels[channel_id].sendOffer(uid, offer.sdp);
+          for(var id in peers)
+            peers[id]._routing.sendOffer(uid, offer.sdp);
         }
 
         // Set the peer local description
@@ -276,48 +322,13 @@ function WebP2P(handshake_servers_file, stun_server)
       cb();
   };
 
+  /**
+   * Get the channels of all the connected peers and handshake servers
+   */
   this.getPeers = function()
   {
     return peers
   }
-
-  /**
-   * Get the channels of all the connected peers and handshake servers
-   */
-  this.getChannels = function()
-  {
-    var channels = {};
-
-    // Peers channels
-    for(var uid in peers)
-    {
-      var channel = peers[uid]._channel;
-      if(channel)
-        channels[uid] = channel;
-    }
-
-    // Handshake servers channels
-    var handshakeChannels = handshakeManager.getChannels();
-
-    for(var uid in handshakeChannels)
-      if(handshakeChannels.hasOwnProperty(uid))
-        channels[uid] = handshakeChannels[uid];
-
-      return channels;
-  };
-
-
-  this.handshakeDisconnected = function()
-  {
-    if(!Object.keys(peers).length)
-    {
-      var event = document.createEvent("Event");
-          event.initEvent('error',true,true);
-          event.error = ERROR_NO_PEERS
-
-      this.dispatchEvent(event);
-    }
-  };
 }
 WebP2P.prototype = new EventTarget();
 
