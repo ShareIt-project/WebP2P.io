@@ -730,10 +730,12 @@ function SimpleSignaling(configuration)
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-function WebP2P(handshake_servers_file, stun_server)
+function WebP2P(handshake_servers_file, commonLabels, stun_server)
 {
   //Fallbacks for vendor-specific variables until the spec is finalized.
   var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
+
+  this.commonLabels = commonLabels || []
 
   // Set a default STUN server if none is specified
   if(stun_server == undefined)
@@ -980,6 +982,9 @@ function WebP2P(handshake_servers_file, stun_server)
    */
   this.connectTo = function(uid, labels, incomingChannel, cb)
   {
+    if(!labels)
+      labels = []
+
     var createOffer = false
 
     // Search the peer between the list of currently connected peers
@@ -995,6 +1000,28 @@ function WebP2P(handshake_servers_file, stun_server)
 
       peer._routing = peer.createDataChannel('webp2p');
       initDataChannel_routing(peer, peer._routing, uid);
+    }
+
+    // Add common channels
+    for(var i=0, label; label=this.commonLabels[i]; i++)
+    {
+      var channel = peer._channels2[label]
+
+      // Channel doesn't exists, create and initialize it
+      if(!channel)
+      {
+        createOffer = true
+
+        // Create new DataChannel
+        channel = peer.createDataChannel(label);
+        peer._channels2[label] = channel
+
+        // Dispatch new DataChannel to the application
+        var event = document.createEvent("Event");
+            event.initEvent('datachannel',true,true);
+            event.channel = channel
+        peer.dispatchEvent(event);
+      }
     }
 
     // Add requested channels
@@ -1518,7 +1545,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     // the network mesh
 
     // Do the connection with the new peer
-    webp2p.connectTo(from, ['shareit'], transport, function(error)
+    webp2p.connectTo(from, this.commonLabels, transport, function(error)
     {
       if(error)
         console.error(from, peer, transport);
