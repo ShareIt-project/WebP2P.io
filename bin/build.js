@@ -51,6 +51,7 @@ var base =
    'webp2p.js',
 
    'errors.js',
+   'PeerConnection_channels.shim.js',
 
    'handshake/index.js',
    'handshake/PubNub.js',

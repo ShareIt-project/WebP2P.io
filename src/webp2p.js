@@ -78,7 +78,7 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
         delete peers[uid];
     };
 
-    pc._channels2 = {}
+    applyChannelsShim(pc)
 
     var dispatchEvent = pc.dispatchEvent;
     pc.dispatchEvent = function(event)
@@ -94,7 +94,7 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
         // Application DataChannel
         else
         {
-          pc._channels2[channel.label] = channel
+          pc.channels[channel.label] = channel
 
           channel.addEventListener('close', function(event)
           {
@@ -107,11 +107,6 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
       else
         dispatchEvent.call(this, event)
     };
-
-    pc.__defineGetter__('channels', function()
-    {
-      return pc._channels2
-    })
 
 //    pc.onopen = function(event)
     {
@@ -209,10 +204,6 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
   }
 
 
-  // Init handshake manager
-  var handshakeManager = new HandshakeManager(this.uid);
-      handshakeManager.addConfigs(handshake_servers_file);
-
   function disconnected()
   {
     if(self.status == 'disconnected')
@@ -223,6 +214,11 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
       self.dispatchEvent(event);
     }
   }
+
+
+  // Init handshake manager
+  var handshakeManager = new HandshakeManager(this.uid);
+      handshakeManager.addConfigs(handshake_servers_file);
 
   handshakeManager.onerror = function(event)
   {
@@ -279,7 +275,7 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
     // Add common channels
     for(var i=0, label; label=this.commonLabels[i]; i++)
     {
-      var channel = peer._channels2[label]
+      var channel = peer.channels[label]
 
       // Channel doesn't exists, create and initialize it
       if(!channel)
@@ -288,7 +284,7 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
 
         // Create new DataChannel
         channel = peer.createDataChannel(label);
-        peer._channels2[label] = channel
+        peer.channels[label] = channel
 
         // Dispatch new DataChannel to the application
         var event = document.createEvent("Event");
@@ -301,7 +297,7 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
     // Add requested channels
     for(var i=0, label; label=labels[i]; i++)
     {
-      var channel = peer._channels2[label]
+      var channel = peer.channels[label]
 
       // Channel doesn't exists, create and initialize it
       if(!channel)
@@ -310,7 +306,7 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
 
         // Create new DataChannel
         channel = peer.createDataChannel(label);
-        peer._channels2[label] = channel
+        peer.channels[label] = channel
 
         // Dispatch new DataChannel to the application
         var event = document.createEvent("Event");
