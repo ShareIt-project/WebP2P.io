@@ -70,9 +70,6 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
     }
     pc.onstatechange = function(event)
     {
-      console.warn("PeerConnection "+event.target.readyState)
-      console.warn("PeerConnection "+event.target.iceConnectionState)
-
       // Remove the peer from the list of peers when gets closed
       if(event.target.readyState == 'closed')
         delete peers[uid];
@@ -319,8 +316,6 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
     if(createOffer)
       peer.createOffer(function(offer)
       {
-        console.log("[createOffer]: "+uid+"\n"+offer.sdp);
-
         // Send the offer only for the incoming channel
 //        if(peer._routing)
         if(incomingChannel)
