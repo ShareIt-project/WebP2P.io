@@ -813,25 +813,24 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
       {
         var channel = event.channel
 
-        // Routing DataChannel
+        // Routing DataChannel, just init routing functionality on it
         if(channel.label == 'webp2p')
-          initDataChannel_routing(pc, channel, uid)
-
-        // Application DataChannel
-        else
         {
-          pc.channels[channel.label] = channel
-
-          channel.addEventListener('close', function(event)
-          {
-            closePeer(pc)
-          });
-
-          dispatchEvent.call(this, event)
+          initDataChannel_routing(pc, channel, uid)
+          return
         }
+
+        // Application DataChannel, set callback to close PeerConnection
+        pc.channels[channel.label] = channel
+
+        channel.addEventListener('close', function(event)
+        {
+          closePeer(pc)
+        });
       }
-      else
-        dispatchEvent.call(this, event)
+
+      // Dispatch application datachannel events and regular ones
+      dispatchEvent.call(this, event)
     };
 
 //    pc.onopen = function(event)
