@@ -271,29 +271,9 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
       initDataChannel_routing(peer, peer._routing, uid);
     }
 
-    // Add common channels
-    for(var i=0, label; label=this.commonLabels[i]; i++)
-    {
-      var channel = peer.channels[label]
+    // Add channels
+    labels = this.commonLabels.concat(labels)
 
-      // Channel doesn't exists, create and initialize it
-      if(!channel)
-      {
-        createOffer = true
-
-        // Create new DataChannel
-        channel = peer.createDataChannel(label);
-        peer.channels[label] = channel
-
-        // Dispatch new DataChannel to the application
-        var event = document.createEvent("Event");
-            event.initEvent('datachannel',true,true);
-            event.channel = channel
-        peer.dispatchEvent(event);
-      }
-    }
-
-    // Add requested channels
     for(var i=0, label; label=labels[i]; i++)
     {
       var channel = peer.channels[label]
