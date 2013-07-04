@@ -96,12 +96,13 @@ function HandshakeManager(uid)
       {
         var configuration = JSON.parse(http_request.response);
 
+        // We got some config entries
         if(configuration.length)
         {
           configs = configs.concat(configuration)
 
           // Start handshaking
-          if(status = 'disconnected')
+          if(status == 'disconnected')
           {
             if(index == undefined)
               index = 0;
@@ -110,6 +111,7 @@ function HandshakeManager(uid)
           }
         }
 
+        // Config was empty
         else
         {
           var event = document.createEvent("Event");
@@ -119,6 +121,8 @@ function HandshakeManager(uid)
           self.dispatchEvent(event);
         }
       }
+
+      // Request returned an error
       else
       {
         var event = document.createEvent("Event");
@@ -128,6 +132,8 @@ function HandshakeManager(uid)
         self.dispatchEvent(event);
       }
     };
+
+    // Connection error
     http_request.onerror = function(event)
     {
       var event = document.createEvent("Event");
