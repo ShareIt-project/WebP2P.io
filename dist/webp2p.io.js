@@ -757,14 +757,6 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
   this.uid = UUIDv4();
 
 
-  this.__defineGetter__("status", function()
-  {
-    if(Object.keys(peers).length)
-      return 'connected'
-
-    return handshakeManager.status
-  })
-
   /**
    *  Close PeerConnection object if there are no open channels
    */
@@ -773,6 +765,18 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
     if(!Object.keys(peer.channels).length && !peer._routing)
       peer.close();
   }
+
+  function disconnected()
+  {
+    if(self.status == 'disconnected')
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('disconnected',true,true);
+
+      self.dispatchEvent(event);
+    }
+  }
+
 
   /**
    * Create a new RTCPeerConnection
@@ -798,7 +802,10 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
     {
       // Remove the peer from the list of peers when gets closed
       if(event.target.readyState == 'closed')
+      {
         delete peers[uid];
+        disconnected()
+      }
     };
 
     applyChannelsShim(pc)
@@ -926,18 +933,6 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
   }
 
 
-  function disconnected()
-  {
-    if(self.status == 'disconnected')
-    {
-      var event = document.createEvent("Event");
-          event.initEvent('disconnected',true,true);
-
-      self.dispatchEvent(event);
-    }
-  }
-
-
   // Init handshake manager
   var handshakeManager = new HandshakeManager(this.uid);
       handshakeManager.addConfigs(handshake_servers_file);
@@ -963,6 +958,14 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
   };
   handshakeManager.addEventListener('disconnected', disconnected);
 
+
+  this.__defineGetter__("status", function()
+  {
+    if(Object.keys(peers).length)
+      return 'connected'
+
+    return handshakeManager.status
+  })
 
   /**
    * Connects to another peer based on its UID. If we are already connected,
@@ -994,29 +997,9 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
       initDataChannel_routing(peer, peer._routing, uid);
     }
 
-    // Add common channels
-    for(var i=0, label; label=this.commonLabels[i]; i++)
-    {
-      var channel = peer.channels[label]
+    // Add channels
+    labels = this.commonLabels.concat(labels)
 
-      // Channel doesn't exists, create and initialize it
-      if(!channel)
-      {
-        createOffer = true
-
-        // Create new DataChannel
-        channel = peer.createDataChannel(label);
-        peer.channels[label] = channel
-
-        // Dispatch new DataChannel to the application
-        var event = document.createEvent("Event");
-            event.initEvent('datachannel',true,true);
-            event.channel = channel
-        peer.dispatchEvent(event);
-      }
-    }
-
-    // Add requested channels
     for(var i=0, label; label=labels[i]; i++)
     {
       var channel = peer.channels[label]
@@ -1049,13 +1032,8 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
 
         // Send the offer throught all the peers
         else
-        {
-          var peers = self.getPeers();
-
-          // Send the connection offer to the other connected peers
           for(var id in peers)
             peers[id]._routing.sendOffer(uid, offer.sdp);
-        }
 
         // Set the peer local description
         peer.setLocalDescription(offer);
@@ -1188,12 +1166,13 @@ function HandshakeManager(uid)
       {
         var configuration = JSON.parse(http_request.response);
 
+        // We got some config entries
         if(configuration.length)
         {
           configs = configs.concat(configuration)
 
           // Start handshaking
-          if(status = 'disconnected')
+          if(status == 'disconnected')
           {
             if(index == undefined)
               index = 0;
@@ -1202,6 +1181,7 @@ function HandshakeManager(uid)
           }
         }
 
+        // Config was empty
         else
         {
           var event = document.createEvent("Event");
@@ -1211,6 +1191,8 @@ function HandshakeManager(uid)
           self.dispatchEvent(event);
         }
       }
+
+      // Request returned an error
       else
       {
         var event = document.createEvent("Event");
@@ -1220,6 +1202,8 @@ function HandshakeManager(uid)
         self.dispatchEvent(event);
       }
     };
+
+    // Connection error
     http_request.onerror = function(event)
     {
       var event = document.createEvent("Event");
