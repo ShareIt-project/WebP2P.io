@@ -61,5 +61,7 @@ function Handshake_PubNub(configuration)
     });
   };
 }
+Handshake_PubNub.prototype = new HandshakeConnector();
+Handshake_PubNub.prototype.constructor = Handshake_PubNub;
 
 HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);

@@ -1342,6 +1342,8 @@ function Handshake_PubNub(configuration)
     });
   };
 }
+Handshake_PubNub.prototype = new HandshakeConnector();
+Handshake_PubNub.prototype.constructor = Handshake_PubNub;
 
 HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);/**
  * Handshake channel connector for SimpleSignaling
@@ -1349,6 +1351,8 @@ HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);/**
  */
 function Handshake_SimpleSignaling(configuration)
 {
+  HandshakeConnector.call(this);
+
   var self = this;
 
   // Connect a handshake channel to the SimpleSignaling server
@@ -1395,6 +1399,7 @@ function Handshake_SimpleSignaling(configuration)
   }
 }
 Handshake_SimpleSignaling.prototype = new HandshakeConnector();
+Handshake_SimpleSignaling.prototype.constructor = Handshake_SimpleSignaling;
 
 HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling);/**
  * Signaling channel connector for XMPP
@@ -1402,6 +1407,8 @@ HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignalin
  */
 function Handshake_XMPP(configuration)
 {
+  HandshakeConnector.call(this);
+
   var self = this
 
 //configuration.oDbg = new JSJaCConsoleLogger(1)
@@ -1480,6 +1487,7 @@ function Handshake_XMPP(configuration)
   }
 }
 Handshake_XMPP.prototype = new HandshakeConnector();
+Handshake_XMPP.prototype.constructor = Handshake_XMPP;
 
 HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_Presence_init(transport, webp2p)
 {

@@ -4,6 +4,8 @@
  */
 function Handshake_XMPP(configuration)
 {
+  HandshakeConnector.call(this);
+
   var self = this
 
 //configuration.oDbg = new JSJaCConsoleLogger(1)
@@ -82,5 +84,6 @@ function Handshake_XMPP(configuration)
   }
 }
 Handshake_XMPP.prototype = new HandshakeConnector();
+Handshake_XMPP.prototype.constructor = Handshake_XMPP;
 
 HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);

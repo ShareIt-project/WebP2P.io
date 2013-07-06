@@ -4,6 +4,8 @@
  */
 function Handshake_Pusher(configuration)
 {
+  HandshakeConnector.call(this);
+
   var self = this
 
   // Connect a handshake channel to the Pusher server
@@ -52,5 +54,6 @@ function Handshake_Pusher(configuration)
   }
 }
 Handshake_Pusher.prototype = new HandshakeConnector();
+Handshake_Pusher.prototype.constructor = Handshake_Pusher;
 
 HandshakeManager.registerConstructor('Pusher', Handshake_Pusher);

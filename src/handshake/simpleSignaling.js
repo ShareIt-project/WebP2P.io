@@ -4,6 +4,8 @@
  */
 function Handshake_SimpleSignaling(configuration)
 {
+  HandshakeConnector.call(this);
+
   var self = this;
 
   // Connect a handshake channel to the SimpleSignaling server
@@ -50,5 +52,6 @@ function Handshake_SimpleSignaling(configuration)
   }
 }
 Handshake_SimpleSignaling.prototype = new HandshakeConnector();
+Handshake_SimpleSignaling.prototype.constructor = Handshake_SimpleSignaling;
 
 HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling);

@@ -4,6 +4,8 @@
  */
 function Handshake_xRTML(configuration)
 {
+  HandshakeConnector.call(this);
+
     var self = this
 
     // Connect a handshake channel to the PubNub server
@@ -68,5 +70,6 @@ function Handshake_xRTML(configuration)
     }
 }
 Handshake_xRTML.prototype = new EventTarget();
+Handshake_xRTML.prototype.constructor = Handshake_xRTML;
 
 HandshakeManager.registerConstructor('xRTML', Handshake_xRTML);
