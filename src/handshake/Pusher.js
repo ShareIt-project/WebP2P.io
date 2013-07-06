@@ -51,6 +51,6 @@ function Handshake_Pusher(configuration)
     })
   }
 }
-Handshake_Pusher.prototype = HandshakeConnector;
+Handshake_Pusher.prototype = new HandshakeConnector();
 
 HandshakeManager.registerConstructor('Pusher', Handshake_Pusher);

@@ -49,6 +49,6 @@ function Handshake_SimpleSignaling(configuration)
     connection.send(JSON.stringify(data));
   }
 }
-Handshake_SimpleSignaling.prototype = HandshakeConnector;
+Handshake_SimpleSignaling.prototype = new HandshakeConnector();
 
 HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling);

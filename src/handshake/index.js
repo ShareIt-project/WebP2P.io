@@ -160,39 +160,41 @@ HandshakeManager.registerConstructor = function(type, constructor)
 }
 
 
-var HandshakeConnector =
+function HandshakeConnector()
 {
+  var self = this
+
   /**
    * Handle the connection to the handshake server
    */
-  connect: function()
+  this.connect = function()
   {
     // Notify our presence
-    this.presence()
+    self.presence()
 
     // Notify that the connection to this handshake server is open
     var event = document.createEvent("Event");
         event.initEvent('open',true,true);
 
     self.dispatchEvent(event);
-  },
+  }
 
   /**
    * Dispatch received messages
    */
-  dispatchMessageEvent: function(event, uid)
+  this.dispatchMessageEvent = function(event, uid)
   {
     // Don't try to connect to ourselves
     if(event.from == uid)
       return
 
     self.dispatchEvent(event);
-  },
+  }
 
   /**
    * Dispatch received messages
    */
-  dispatchPresence: function(from)
+  this.dispatchPresence = function(from)
   {
     var event = document.createEvent("Event");
         event.initEvent('presence',true,true);
@@ -200,12 +202,12 @@ var HandshakeConnector =
         event.from = from
 
     self.dispatchMessageEvent(event);
-  },
+  }
 
   /**
    * Handle errors on the connection
    */
-  error: function(event)
+  this.error = function(event)
   {
     self.dispatchEvent(event)
   }

@@ -81,6 +81,6 @@ function Handshake_XMPP(configuration)
     connection.send(oMsg);
   }
 }
-Handshake_XMPP.prototype = HandshakeConnector;
+Handshake_XMPP.prototype = new HandshakeConnector();
 
 HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);

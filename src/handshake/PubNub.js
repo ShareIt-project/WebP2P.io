@@ -4,6 +4,8 @@
  */
 function Handshake_PubNub(configuration)
 {
+  HandshakeConnector.call(this);
+
   var self = this;
 
   // Connect a handshake channel to the PubNub server
@@ -59,6 +61,5 @@ function Handshake_PubNub(configuration)
     });
   };
 }
-Handshake_PubNub.prototype = HandshakeConnector;
 
 HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);

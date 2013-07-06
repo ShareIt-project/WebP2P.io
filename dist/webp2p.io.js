@@ -1230,39 +1230,41 @@ HandshakeManager.registerConstructor = function(type, constructor)
 }
 
 
-var HandshakeConnector =
+function HandshakeConnector()
 {
+  var self = this
+
   /**
    * Handle the connection to the handshake server
    */
-  connect: function()
+  this.connect = function()
   {
     // Notify our presence
-    this.presence()
+    self.presence()
 
     // Notify that the connection to this handshake server is open
     var event = document.createEvent("Event");
         event.initEvent('open',true,true);
 
     self.dispatchEvent(event);
-  },
+  }
 
   /**
    * Dispatch received messages
    */
-  dispatchMessageEvent: function(event, uid)
+  this.dispatchMessageEvent = function(event, uid)
   {
     // Don't try to connect to ourselves
     if(event.from == uid)
       return
 
     self.dispatchEvent(event);
-  },
+  }
 
   /**
    * Dispatch received messages
    */
-  dispatchPresence: function(from)
+  this.dispatchPresence = function(from)
   {
     var event = document.createEvent("Event");
         event.initEvent('presence',true,true);
@@ -1270,12 +1272,12 @@ var HandshakeConnector =
         event.from = from
 
     self.dispatchMessageEvent(event);
-  },
+  }
 
   /**
    * Handle errors on the connection
    */
-  error: function(event)
+  this.error = function(event)
   {
     self.dispatchEvent(event)
   }
@@ -1286,6 +1288,8 @@ HandshakeConnector.prototype = new EventTarget();/**
  */
 function Handshake_PubNub(configuration)
 {
+  HandshakeConnector.call(this);
+
   var self = this;
 
   // Connect a handshake channel to the PubNub server
@@ -1341,7 +1345,6 @@ function Handshake_PubNub(configuration)
     });
   };
 }
-Handshake_PubNub.prototype = HandshakeConnector;
 
 HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);/**
  * Handshake channel connector for SimpleSignaling
@@ -1394,7 +1397,7 @@ function Handshake_SimpleSignaling(configuration)
     connection.send(JSON.stringify(data));
   }
 }
-Handshake_SimpleSignaling.prototype = HandshakeConnector;
+Handshake_SimpleSignaling.prototype = new HandshakeConnector();
 
 HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling);/**
  * Signaling channel connector for XMPP
@@ -1479,7 +1482,7 @@ function Handshake_XMPP(configuration)
     connection.send(oMsg);
   }
 }
-Handshake_XMPP.prototype = HandshakeConnector;
+Handshake_XMPP.prototype = new HandshakeConnector();
 
 HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_Presence_init(transport, webp2p)
 {
