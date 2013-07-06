@@ -4,59 +4,45 @@
  */
 function Handshake_PubNub(configuration)
 {
-  this.isPubsub = true;
-
   var self = this;
 
   // Connect a handshake channel to the PubNub server
   var pubnub = PUBNUB.init(configuration);
 
-
+  // Configure handshake channel
   pubnub.subscribe(
   {
     channel: configuration.channel,
 
-
-    /**
-     * Receive messages
-     */
     callback: function(message)
     {
-      var event = JSON.parse(message)
-
-      // Don't try to connect to ourselves
-      if(event.from == configuration.uid)
-        return
-
-      self.dispatchEvent(event);
+      self.dispatchMessageEvent(message, configuration.uid)
     },
-
-    /**
-     * Handle the connection to the handshake server
-     */
-    connect: function()
-    {
-      // Notify our presence
-      self.send({type: 'presence', from: configuration.uid});
-
-      // Notify that the connection to this handshake server is open
-      var event = document.createEvent("Event");
-          event.initEvent('open',true,true);
-
-      self.dispatchEvent(event);
-    },
-
-
-    /**
-     * Handle errors on the connection
-     */
-    error: function(error)
-    {
-      if(self.onerror)
-         self.onerror(error)
-    }
+    connect: self.connect,
+    error:   self.error
   });
 
+
+  // Define methods
+
+  /**
+   * Close the connection with this handshake server
+   */
+  this.close = function()
+  {
+    pubnub.unsubscribe(
+    {
+      channel: configuration.channel
+    });
+  }
+
+  /**
+   *  Notify our presence
+   */
+  this.presence = function()
+  {
+    self.send({type: 'presence', from: configuration.uid});
+  }
 
   /**
    * Send a message to a peer
@@ -69,22 +55,10 @@ function Handshake_PubNub(configuration)
     pubnub.publish(
     {
       channel: configuration.channel,
-      message: JSON.stringify(data)
+      message: data
     });
   };
-
-
-  /**
-   * Close the connection with this handshake server
-   */
-  this.close = function()
-  {
-    pubnub.unsubscribe(
-    {
-      channel: configuration.channel
-    });
-  }
 }
-Handshake_PubNub.prototype = new EventTarget();
+Handshake_PubNub.prototype = HandshakeConnector;
 
 HandshakeManager.registerConstructor('PubNub', Handshake_PubNub);

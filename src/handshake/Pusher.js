@@ -4,64 +4,53 @@
  */
 function Handshake_Pusher(configuration)
 {
-    var self = this
+  var self = this
 
-    // Connect a handshake channel to the Pusher server
-    var pusher = new Pusher(configuration.appKey, configuration);
-    var channel = pusher.subscribe(configuration.channel);
+  // Connect a handshake channel to the Pusher server
+  var pusher = new Pusher(configuration.appKey, configuration);
+  var channel = pusher.subscribe(configuration.channel);
 
-    // Receive messages
-    callback: function(message)
+  // Receive messages
+  callback: function(message)
+  {
+    self.dispatchMessageEvent(message, configuration.uid)
+  },
+  connect: self.connect,
+  error:   self.error
+
+
+  // Define methods
+
+  /**
+   * Close the connection with this handshake server
+   */
+  this.close = function()
+  {
+//      pusher.unsubscribe(configuration.channel);
+      pusher.disconnect();
+  }
+
+  /**
+   *  Notify our presence
+   */
+  this.presence = function(){}
+
+  /**
+   * Send a message to a peer
+   */
+  this.send = function(data, uid)
+  {
+    data.from = configuration.uid
+    data.to = uid
+
+    pubnub.publish(
     {
-        var uid  = message[0]
-        var dest = message[1]
+        channel: configuration.channel,
 
-        // Only launch callback if message is not from ours
-        // and it's a broadcast or send directly to us
-        if( uid  != configuration.uuid
-        &&(!dest || dest == configuration.uuid))
-        {
-            var data = message[2]
-
-            if(self.onmessage)
-                self.onmessage(uid, data)
-        }
-    },
-
-    connect: function()
-    {
-        // Compose and send message
-        self.send = function(dest, data)
-        {
-            var message = [configuration.uuid, dest, data]
-
-            pubnub.publish(
-            {
-                channel: configuration.channel,
-
-                message: message
-            })
-        }
-
-        // Set handshake as open
-        var event = document.createEvent("Event");
-            event.initEvent('open',true,true);
-
-        self.dispatchEvent(event);
-    },
-
-    error: function(error)
-    {
-        if(self.onerror)
-            self.onerror(error)
-    }
-
-    this.close = function()
-    {
-//        pusher.unsubscribe(configuration.channel);
-        pusher.disconnect();
-    }
+        message: data
+    })
+  }
 }
-Handshake_Pusher.prototype = new EventTarget();
+Handshake_Pusher.prototype = HandshakeConnector;
 
 HandshakeManager.registerConstructor('Pusher', Handshake_Pusher);

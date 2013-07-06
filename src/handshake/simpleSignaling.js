@@ -4,54 +4,39 @@
  */
 function Handshake_SimpleSignaling(configuration)
 {
-  this.isPubsub = true;
-
   var self = this;
 
   // Connect a handshake channel to the SimpleSignaling server
   var connection = new SimpleSignaling(configuration);
 
-
-  /**
-   * Receive messages
-   */
+  // Configure handshake channel
   connection.onmessage = function(message)
   {
     var event = JSON.parse(message.data);
 
-    // Don't try to connect to ourselves
-    if(event.from == configuration.uid)
-      return
-
-    this.dispatchEvent(event);
+    self.dispatchMessageEvent(event, configuration.uid)
   };
+  connection.onopen  = self.connect;
+  connection.onerror = self.error;
 
+
+  // Define methods
 
   /**
-   * Handle the connection to the handshake server
+   * Close the connection with this handshake server
    */
-  connection.onopen = function()
+  this.close = function()
   {
-    // Notify our presence
-    send({type: 'presence', from: configuration.uid});
-
-    // Notify that the connection to this handshake server is open
-    var event = document.createEvent("Event");
-        event.initEvent('open',true,true);
-
-    self.dispatchEvent(event);
-  };
-
+    connection.close()
+  }
 
   /**
-   * Handle errors on the connection
+   *  Notify our presence
    */
-  connection.onerror = function(error)
+  this.presence = function()
   {
-    if(self.onerror)
-       self.onerror(error);
-  };
-
+    self.send({type: 'presence', from: configuration.uid});
+  }
 
   /**
    * Send a message to a peer
@@ -63,16 +48,7 @@ function Handshake_SimpleSignaling(configuration)
 
     connection.send(JSON.stringify(data));
   }
-
-
-  /**
-   * Close the connection with this handshake server
-   */
-  this.close = function()
-  {
-    connection.close()
-  }
 }
-Handshake_SimpleSignaling.prototype = new EventTarget();
+Handshake_SimpleSignaling.prototype = HandshakeConnector;
 
 HandshakeManager.registerConstructor('SimpleSignaling', Handshake_SimpleSignaling);

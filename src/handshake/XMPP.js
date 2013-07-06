@@ -6,44 +6,45 @@ function Handshake_XMPP(configuration)
 {
   var self = this
 
-//  configuration.oDbg = new JSJaCConsoleLogger(1)
+//configuration.oDbg = new JSJaCConsoleLogger(1)
 
   // Connect a handshake channel to the XMPP server
   var connection = new JSJaCHttpBindingConnection(configuration);
       connection.connect(configuration);  // Ugly hack to have only one config object
 
-
-  /**
-   * Receive messages
-   */
+  // Configure handshake channel
   connection.registerHandler('message', function(message)
   {
-    var from = message.getFromJID().getResource()
-
-    // Don't try to connect to ourselves
-    if(from == configuration.uid)
-      return
-
     var body = message.getBody()
     if(body == "")
       return
 
     var event = JSON.parse(body)
+        event.from = message.getFromJID().getResource()
 
-    event.from = from
-
-    self.dispatchEvent(event);
+    self.dispatchMessageEvent(event, configuration.uid)
   })
+  connection.registerHandler('onconnect', self.connect);
+  connection.registerHandler('onerror',   self.error);
 
+
+  // Define methods
 
   /**
-   * Handle the connection to the handshake server
+   * Close the connection with this handshake server
    */
-  connection.registerHandler('onconnect', function()
+  this.close = function()
   {
-    // Notify our presence
+    connection.disconnect()
+  }
+
+  /**
+   *  Notify our presence
+   */
+  this.presence = function()
+  {
     var presence = new JSJaCPresence();
-        presence.setTo(configuration.room+"/"+configuration.uid);
+    presence.setTo(configuration.room+"/"+configuration.uid);
 
     connection.send(presence);
 
@@ -56,41 +57,17 @@ function Handshake_XMPP(configuration)
        */
       connection.registerHandler('presence', function(presence)
       {
-        var from = presence.getFromJID().getResource()
-
         // Only notify new connections
-        if(from != configuration.uid
-        && !presence.getType()
+        if(!presence.getType()
         && !presence.getShow())
         {
-          var event = document.createEvent("Event");
-              event.initEvent('presence',true,true);
+          var from = presence.getFromJID().getResource()
 
-              event.from = from
-
-          self.dispatchEvent(event);
+          self.dispatchPresence(from);
         }
       });
     }, 1000)
-
-
-    // Notify that the connection to this handshake server is open
-    var event = document.createEvent("Event");
-        event.initEvent('open',true,true);
-
-    self.dispatchEvent(event);
-  });
-
-
-  /**
-   * Handle errors on the connection
-   */
-  connection.registerHandler('onerror', function(error)
-  {
-    if(self.onerror)
-       self.onerror(error)
-  });
-
+  }
 
   /**
    * Send a message to a peer
@@ -103,16 +80,7 @@ function Handshake_XMPP(configuration)
 
     connection.send(oMsg);
   }
-
-
-  /**
-   * Close the connection with this handshake server
-   */
-  this.close = function()
-  {
-    connection.disconnect()
-  }
 }
-Handshake_XMPP.prototype = new EventTarget();
+Handshake_XMPP.prototype = HandshakeConnector;
 
 HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);
