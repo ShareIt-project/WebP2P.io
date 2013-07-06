@@ -730,7 +730,7 @@ function SimpleSignaling(configuration)
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-function WebP2P(handshake_servers_file, commonLabels, stun_server)
+function WebP2P(handshake_servers, commonLabels, stun_server)
 {
   //Fallbacks for vendor-specific variables until the spec is finalized.
   var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
@@ -935,7 +935,11 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
 
   // Init handshake manager
   var handshakeManager = new HandshakeManager(this.uid);
-      handshakeManager.addConfigs(handshake_servers_file);
+
+  if(handshake_servers instanceof Array)
+    handshakeManager.addConfigs_byArray(handshake_servers)
+  else
+    handshakeManager.addConfigs_byUri(handshake_servers)
 
   handshakeManager.onerror = function(event)
   {
@@ -1154,8 +1158,31 @@ function HandshakeManager(uid)
   }
 
 
-  this.addConfigs = function(json_uri)
+  this.addConfigs_byArray = function(configuration)
   {
+    configs = configs.concat(configuration)
+
+    // Start handshaking
+    if(status == 'disconnected')
+    {
+      if(index == undefined)
+         index = 0;
+
+      handshake();
+    }
+  }
+
+  this.addConfigs_byUri = function(json_uri)
+  {
+    function dispatchError(error)
+    {
+      var event = document.createEvent("Event");
+          event.initEvent('error',true,true);
+          event.error = error
+
+      self.dispatchEvent(event);
+    }
+
     // Request the handshake servers configuration file
     var http_request = new XMLHttpRequest();
 
@@ -1168,53 +1195,23 @@ function HandshakeManager(uid)
 
         // We got some config entries
         if(configuration.length)
-        {
-          configs = configs.concat(configuration)
-
-          // Start handshaking
-          if(status == 'disconnected')
-          {
-            if(index == undefined)
-              index = 0;
-
-            handshake();
-          }
-        }
+          this.addConfigs_byArray(configuration)
 
         // Config was empty
         else
-        {
-          var event = document.createEvent("Event");
-              event.initEvent('error',true,true);
-              event.error = ERROR_REQUEST_EMPTY
-
-          self.dispatchEvent(event);
-        }
+          dispatchError(ERROR_REQUEST_EMPTY)
       }
 
       // Request returned an error
       else
-      {
-        var event = document.createEvent("Event");
-            event.initEvent('error',true,true);
-            event.error = ERROR_REQUEST_FAILURE
-
-        self.dispatchEvent(event);
-      }
+        dispatchError(ERROR_REQUEST_FAILURE)
     };
 
     // Connection error
     http_request.onerror = function(event)
     {
-      var event = document.createEvent("Event");
-          event.initEvent('error',true,true);
-
-      if(navigator.onLine)
-        event.error = ERROR_NETWORK_UNKNOWN
-      else
-        event.error = ERROR_NETWORK_OFFLINE
-
-      self.dispatchEvent(event);
+      dispatchError(navigator.onLine ? ERROR_NETWORK_UNKNOWN
+                                     : ERROR_NETWORK_OFFLINE)
     };
 
     http_request.send();

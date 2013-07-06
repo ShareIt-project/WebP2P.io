@@ -4,7 +4,7 @@
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-function WebP2P(handshake_servers_file, commonLabels, stun_server)
+function WebP2P(handshake_servers, commonLabels, stun_server)
 {
   //Fallbacks for vendor-specific variables until the spec is finalized.
   var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
@@ -209,7 +209,11 @@ function WebP2P(handshake_servers_file, commonLabels, stun_server)
 
   // Init handshake manager
   var handshakeManager = new HandshakeManager(this.uid);
-      handshakeManager.addConfigs(handshake_servers_file);
+
+  if(handshake_servers instanceof Array)
+    handshakeManager.addConfigs_byArray(handshake_servers)
+  else
+    handshakeManager.addConfigs_byUri(handshake_servers)
 
   handshakeManager.onerror = function(event)
   {
