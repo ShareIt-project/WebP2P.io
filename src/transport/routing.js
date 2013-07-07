@@ -138,35 +138,28 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     go(event, function(from, sdp, route)
     {
       // Create PeerConnection
-      var pc = webp2p.onoffer(from, sdp, transport, function(error)
+      webp2p.onoffer(from, sdp, transport, function(error, sdp)
       {
         if(error)
           console.error(error);
-      });
 
-      // Send answer
-      pc.createAnswer(function(answer)
-      {
-        console.log("[createAnswer]: "+from+"\n"+answer.sdp);
-
-        pc.setLocalDescription(new RTCSessionDescription(
+        else
         {
-          sdp: answer.sdp,
-          type: 'answer'
-        }));
+          console.log("[createAnswer]: "+from+"\n"+sdp);
 
-        // Run over all the route peers looking for possible "shortcuts"
-        var peers = webp2p.getPeers();
+          // Run over all the route peers looking for possible "shortcuts"
+          var peers = webp2p.getPeers();
 
-        for(var i=0, route_uid; uid=route[i]; i++)
-          for(var uid in peers)
-            if(route_uid == uid)
-            {
-              peers[uid]._routing.sendAnswer(from, answer.sdp, route);
-              return;
-            }
+          for(var i=0, route_uid; uid=route[i]; i++)
+            for(var uid in peers)
+              if(route_uid == uid)
+              {
+                peers[uid]._routing.sendAnswer(from, sdp, route);
+                return;
+              }
 
-        transport.sendAnswer(from, answer.sdp, route);
+          transport.sendAnswer(from, sdp, route);
+        }
       });
     },
     'sendOffer')

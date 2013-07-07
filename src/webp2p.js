@@ -172,7 +172,17 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       type: 'offer'
     }));
 
-    return peer;
+    // Send answer
+    peer.createAnswer(function(answer)
+    {
+      peer.setLocalDescription(new RTCSessionDescription(
+      {
+        sdp: answer.sdp,
+        type: 'answer'
+      }));
+
+      cb(null, answer.sdp);
+    })
   };
 
   /**
