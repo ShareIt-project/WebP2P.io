@@ -196,12 +196,12 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       onerror(uid);
   };
 
-  this.oncandidate = function(uid, candidate, onerror)
+  this.oncandidate = function(uid, sdp, onerror)
   {
     // Search the peer on the list of currently connected peers
     var peer = peers[uid];
     if(peer)
-      peer.addIceCandidate(new RTCIceCandidate(candidate));
+      peer.addIceCandidate(new RTCIceCandidate(sdp));
     else if(onerror)
       onerror(uid);
   }
