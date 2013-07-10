@@ -20,7 +20,7 @@ function Transport_Presence_init(transport, webp2p)
     webp2p.connectTo(from, this.commonLabels, transport, function(error)
     {
       if(error)
-        console.error(from, peer, transport);
+        console.error(from, this.commonLabels, transport, error);
 
       else
         // Increase the number of connections reached throught

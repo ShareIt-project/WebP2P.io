@@ -783,7 +783,7 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
    * @param {UUID} id Identifier of the other peer so later can be accessed.
    * @return {RTCPeerConnection}
    */
-  function createPeerConnection(uid, incomingChannel, cb)
+  function createPeerConnection(uid, incomingChannel)
   {
     var pc = peers[uid] = new RTCPeerConnection(
     {
@@ -793,6 +793,10 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       optional: [{RtpDataChannels: true}]
     });
 
+    pc.onerror = function(error)
+    {
+      console.error(error);
+    };
     pc.onicecandidate = function(event)
     {
       if(event.candidate)
@@ -829,6 +833,8 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
 
         channel.addEventListener('close', function(event)
         {
+          delete pc.channels[channel.label]
+
           closePeer(pc)
         });
       }
@@ -846,12 +852,6 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
 
       self.dispatchEvent(event);
     }
-
-    if(cb)
-      pc.onerror = function(event)
-      {
-        cb({uid: uid, peer:pc});
-      };
 
     return pc;
   }
@@ -871,6 +871,10 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
 
       closePeer(pc)
     });
+    channel.addEventListener('error', function(event)
+    {
+      console.error(event)
+    });
 
     Transport_Routing_init(channel, self, uid);
   }
@@ -882,33 +886,48 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp, incomingChannel, cb)
+  this.onoffer = function(uid, sdp, incomingChannel, callback)
   {
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
 
     // Peer is not connected, create a new channel
     if(!peer)
-      peer = createPeerConnection(uid, incomingChannel, cb);
+      peer = createPeerConnection(uid, incomingChannel);
+
+    function onerror(error)
+    {
+      callback(error)
+    }
 
     // Process offer
     peer.setRemoteDescription(new RTCSessionDescription(
     {
       sdp: sdp,
       type: 'offer'
-    }));
-
-    // Send answer
-    peer.createAnswer(function(answer)
+    }),
+    function()
     {
-      peer.setLocalDescription(new RTCSessionDescription(
+      // Send answer
+      peer.createAnswer(function(answer)
       {
-        sdp: answer.sdp,
-        type: 'answer'
-      }));
-
-      cb(null, answer.sdp);
-    })
+        peer.setLocalDescription(new RTCSessionDescription(
+        {
+          sdp: answer.sdp,
+          type: 'answer'
+        }),
+        function()
+        {
+          callback(null, answer.sdp)
+        },
+        function(error)
+        {
+          callback(error, answer.sdp)
+        });
+      },
+      onerror)
+    },
+    onerror);
   };
 
   /**
@@ -927,9 +946,15 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       {
         sdp: sdp,
         type: 'answer'
-      }));
-    else if(onerror)
-      onerror(uid);
+      }),
+      function()
+      {
+        console.info("Received answer for UID "+uid)
+      },
+      onerror);
+
+    else
+      onerror("PeerConnection '" + uid + "' not found");
   };
 
   this.oncandidate = function(uid, sdp, onerror)
@@ -986,10 +1011,10 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
    * it does nothing.
    * @param {UUID} uid Identifier of the other peer to be connected.
    * @param {MessageChannel} incomingChannel Optional channel where to
-   * @param {Function(error, channel)} cb Callback
+   * @param {Function(error, channel)} callback Callback
    * send the offer. If not defined send it to all connected peers.
    */
-  this.connectTo = function(uid, labels, incomingChannel, cb)
+  this.connectTo = function(uid, labels, incomingChannel, callback)
   {
     if(!labels)
       labels = []
@@ -1005,7 +1030,7 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       createOffer = true
 
       // Create PeerConnection
-      peer = createPeerConnection(uid, incomingChannel, cb);
+      peer = createPeerConnection(uid, incomingChannel);
 
       peer._routing = peer.createDataChannel('webp2p');
       initDataChannel_routing(peer, peer._routing, uid);
@@ -1035,6 +1060,11 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       }
     }
 
+    function onerror(error)
+    {
+      callback(error)
+    }
+
     // Send offer to new PeerConnection if connection characteristics changed
     if(createOffer)
       peer.createOffer(function(offer)
@@ -1050,11 +1080,12 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
             peers[id]._routing.sendOffer(uid, offer.sdp);
 
         // Set the peer local description
-        peer.setLocalDescription(offer);
-      });
+        peer.setLocalDescription(offer, callback, onerror);
+      },
+      onerror);
 
-    if(cb)
-      cb();
+    else
+      callback();
   };
 
   /**
@@ -1521,7 +1552,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     webp2p.connectTo(from, this.commonLabels, transport, function(error)
     {
       if(error)
-        console.error(from, peer, transport);
+        console.error(from, this.commonLabels, transport, error);
 
       else
         // Increase the number of connections reached throught
@@ -1716,9 +1747,9 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
   {
     come(event, function(from, sdp, route)
     {
-      webp2p.onanswer(from, sdp, function(uid)
+      webp2p.onanswer(from, sdp, function(error)
       {
-        console.error("[routing.answer] PeerConnection '" + uid + "' not found");
+        console.error(error);
       });
     },
     'sendAnswer')

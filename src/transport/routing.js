@@ -172,9 +172,9 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
   {
     come(event, function(from, sdp, route)
     {
-      webp2p.onanswer(from, sdp, function(uid)
+      webp2p.onanswer(from, sdp, function(error)
       {
-        console.error("[routing.answer] PeerConnection '" + uid + "' not found");
+        console.error(error);
       });
     },
     'sendAnswer')
