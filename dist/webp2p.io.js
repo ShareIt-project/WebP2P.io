@@ -746,6 +746,9 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
   var self = this;
 
 
+  this.routingLabel = "webp2p"
+
+
   /**
    * UUID generator
    */
@@ -762,7 +765,7 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
    */
   function closePeer(peer)
   {
-    if(!Object.keys(peer.channels).length && !peer._routing)
+    if(!Object.keys(peer.channels).length)
       peer.close();
   }
 
@@ -814,34 +817,19 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
 
     applyChannelsShim(pc)
 
-    var dispatchEvent = pc.dispatchEvent;
-    pc.dispatchEvent = function(event)
+    pc.addEventListener('datachannel', function(event)
     {
-      if(event.type == 'datachannel')
+      var channel = event.channel
+
+      channel.addEventListener('close', function(event)
       {
-        var channel = event.channel
+        closePeer(pc)
+      });
 
-        // Routing DataChannel, just init routing functionality on it
-        if(channel.label == 'webp2p')
-        {
-          initDataChannel_routing(pc, channel, uid)
-          return
-        }
-
-        // Application DataChannel, set callback to close PeerConnection
-        pc.channels[channel.label] = channel
-
-        channel.addEventListener('close', function(event)
-        {
-          delete pc.channels[channel.label]
-
-          closePeer(pc)
-        });
-      }
-
-      // Dispatch application datachannel events and regular ones
-      dispatchEvent.call(this, event)
-    };
+      // Routing DataChannel, just init routing functionality on it
+      if(channel.label == self.routingLabel)
+        initDataChannel_routing(pc, channel, uid)
+    });
 
 //    pc.onopen = function(event)
     {
@@ -863,14 +851,6 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
    */
   function initDataChannel_routing(pc, channel, uid)
   {
-    pc._routing = channel;
-
-    channel.addEventListener('close', function(event)
-    {
-      delete pc._routing;
-
-      closePeer(pc)
-    });
     channel.addEventListener('error', function(event)
     {
       console.error(event)
@@ -1032,8 +1012,8 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       // Create PeerConnection
       peer = createPeerConnection(uid, incomingChannel);
 
-      peer._routing = peer.createDataChannel('webp2p');
-      initDataChannel_routing(peer, peer._routing, uid);
+      peer.channels[this.routingLabel] = peer.createDataChannel(this.routingLabel);
+      initDataChannel_routing(peer, peer.channels[this.routingLabel], uid);
     }
 
     // Add channels
@@ -1070,14 +1050,14 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       peer.createOffer(function(offer)
       {
         // Send the offer only for the incoming channel
-//        if(peer._routing)
+//        if(peer.channels[this.routingLabel])
         if(incomingChannel)
            incomingChannel.sendOffer(uid, offer.sdp);
 
         // Send the offer throught all the peers
         else
           for(var id in peers)
-            peers[id]._routing.sendOffer(uid, offer.sdp);
+            peers[id].channels[this.routingLabel].sendOffer(uid, offer.sdp);
 
         // Set the peer local description
         peer.setLocalDescription(offer, callback, onerror);
@@ -1113,6 +1093,26 @@ var ERROR_NO_PEERS        = {id: 4, msg: 'Not connected to any peer'};function a
   {
     return channels
   })
+
+  var dispatchEvent = pc.dispatchEvent;
+  pc.dispatchEvent = function(event)
+  {
+    if(event.type == 'datachannel')
+    {
+      var channel = event.channel
+
+      // Application DataChannel, set callback to close PeerConnection
+      channels[channel.label] = channel
+
+      channel.addEventListener('close', function(event)
+      {
+        delete channels[channel.label]
+      });
+    }
+
+    // Dispatch application datachannel events and regular ones
+    dispatchEvent.call(this, event)
+  };
 }/**
  * Manage the handshake channel using several servers
  * @constructor
