@@ -21,54 +21,116 @@
       <div class="inner">
         <h1>WebP2P</h1>
         <h2>The server-less signaling channel for WebRTC</h2>
-        <a href="https://github.com/ShareIt-project/WebP2P" class="button"><small>View project on</small>GitHub</a>
+        <a href="https://github.com/ShareIt-project/WebP2P.io" class="button"><small>View project on</small>GitHub</a>
       </div>
     </header>
 
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <h3>Welcome to GitHub Pages.</h3>
+          <h1>
+<a name="webp2p---pure-javascript-framework-for-peer-to-peer-applications-over-webrtc" class="anchor" href="#webp2p---pure-javascript-framework-for-peer-to-peer-applications-over-webrtc"><span class="octicon octicon-link"></span></a>WebP2P - Pure Javascript framework for Peer to Peer applications over WebRTC</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>Jesús Leganés Combarro "Piranna" - [<a href="mailto:piranna@gmail.com">piranna@gmail.com</a>]</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<p>WebP2P is a "Peer to Peer" filesharing framework written in pure Javascript
+mainly focused on the development of P2P filesharing applications. This project
+is also candidate for the <a href="http://www.concursosoftwarelibre.org/1213">Universitary Free Software Championship</a>.</p>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>If you will fork the project (specially if you want to do modifications) please
+send me an email just to let me know about your progress :-)</p>
 
-<h3>Designer Templates</h3>
+<h2>
+<a name="about" class="anchor" href="#about"><span class="octicon octicon-link"></span></a>About</h2>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p>File transfers in WebP2P is build over WebRTC PeerConnection <a href="http://dev.w3.org/2011/webrtc/editor/webrtc.html#rtcdatachannel">DataChannels</a> so they could
+be transfered directly between peers, but since currently they are not available
+natively it's necesary to use a <a href="https://github.com/piranna/DataChannel-polyfill">DataChannel polyfill</a>. This makes it perfect for
+anonymity.</p>
 
-<h3>Rather Drive Stick?</h3>
+<p>Let's make a purely browser based, ad-free, Free and Open Source private and
+anonymous distributed filesharing system!</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<h2>
+<a name="mailing-list" class="anchor" href="#mailing-list"><span class="octicon octicon-link"></span></a>Mailing List</h2>
 
-<h3>Authors and Contributors</h3>
+<p>If you'd like to discuss P2P web applications further, send an email to </p>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<blockquote>
+<p><a href="mailto:webp2p@librelist.com">webp2p@librelist.com</a></p>
+</blockquote>
 
-<h3>Support or Contact</h3>
+<p>and you'll be part of the discussion mailing list! (<a href="http://librelist.com/browser/webp2p/">Archives here</a>).</p>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<h2>
+<a name="how-to-test-it" class="anchor" href="#how-to-test-it"><span class="octicon octicon-link"></span></a>How to test it</h2>
+
+<p>This library is part of the <a href="http://github.com/piranna/ShareIt">ShareIt!</a>
+project, so maybe you would interested in go directly there.</p>
+
+<p>The peer connections are managed by an external handshake channel. Currently is
+being used primarily <a href="http://www.pubnub.com">PubNub</a> and <a href="https://github.com/piranna/SimpleSignaling">SimpleSignaling</a> using a test server hosted on
+Nodejitsu, but it's being researched to use some more standard and distributed
+handshake protocols in an annonimous way so this single-point-of-failure could
+be dropped.</p>
+
+<p>Regarding to the browser, it's recomended to use a high edge one. Test are being
+done on Chromium v24 at this moment and currently it's the only officially
+supported (news about it being used sucesfully on other browser are greatly
+accepted!!! :-D ). You can test it locally opening two browser tabs, but it
+should work also if used between several machines (it was succesfully tested
+to transfer files through the wild Internet from Findland to Spain... :-) ).</p>
+
+<h2>
+<a name="external-libraries" class="anchor" href="#external-libraries"><span class="octicon octicon-link"></span></a>External libraries</h2>
+
+<h3>
+<a name="handshake" class="anchor" href="#handshake"><span class="octicon octicon-link"></span></a>Handshake</h3>
+
+<ul>
+<li><a href="https://github.com/piranna/SimpleSignaling">SimpleSignaling</a></li>
+<li><a href="http://www.pubnub.com">PubNub</a></li>
+</ul><h3>
+<a name="random-utilities" class="anchor" href="#random-utilities"><span class="octicon octicon-link"></span></a>Random utilities</h3>
+
+<ul>
+<li><a href="https://github.com/piranna/BoolArray.js">BoolArray.js</a></li>
+<li><a href="https://github.com/piranna/DataChannel-polyfill">DataChannel-polyfill</a></li>
+<li><a href="https://github.com/piranna/EventTarget.js">EventTarget.js</a></li>
+<li><a href="https://github.com/Caligatio/jsSHA">jsSHA</a></li>
+</ul><h2>
+<a name="some-related-project" class="anchor" href="#some-related-project"><span class="octicon octicon-link"></span></a>Some related project</h2>
+
+<ul>
+<li><a href="https://github.com/webRTC/webRTC.io">WebRTC.io</a></li>
+<li><a href="https://github.com/theninj4/bonevalue">bonevalue</a></li>
+<li><a href="https://github.com/orefalo/QuickShare">QuickShare</a></li>
+<li><a href="https://github.com/Peer5/ShareFest">ShareFest</a></li>
+</ul><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>All this code is under the Affero GNU General Public License. Regarding to the
+core of the application at js/webp2p (that I'll distribute as an independent
+library/framework some date in the future) I am willing to relicense it under
+the BSD/MIT/Apache license, I simply ask that you email me and tell me why. I'll
+almost certainly agree.</p>
+
+<p>Patches graciously accepted!</p>
         </section>
 
         <aside id="sidebar">
-          <a href="https://github.com/ShareIt-project/WebP2P/zipball/master" class="button">
+          <a href="https://github.com/ShareIt-project/WebP2P.io/zipball/master" class="button">
             <small>Download</small>
             .zip file
           </a>
-          <a href="https://github.com/ShareIt-project/WebP2P/tarball/master" class="button">
+          <a href="https://github.com/ShareIt-project/WebP2P.io/tarball/master" class="button">
             <small>Download</small>
             .tar.gz file
           </a>
 
-          <p class="repo-owner"><a href="https://github.com/ShareIt-project/WebP2P"></a> is maintained by <a href="https://github.com/ShareIt-project">ShareIt-project</a>.</p>
+          <p class="repo-owner"><a href="https://github.com/ShareIt-project/WebP2P.io"></a> is maintained by <a href="https://github.com/ShareIt-project">ShareIt-project</a>.</p>
 
-          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.</p>
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
         </aside>
       </div>
     </div>
