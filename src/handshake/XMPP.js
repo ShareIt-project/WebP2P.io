@@ -74,7 +74,7 @@ function Handshake_XMPP(configuration)
   /**
    * Send a message to a peer
    */
-  this.send = function(data, uid)
+  this.sendData = function(data, uid)
   {
     var oMsg = new JSJaCMessage();
         oMsg.setTo(configuration.room+"/"+uid);

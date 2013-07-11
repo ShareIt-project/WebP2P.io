@@ -218,7 +218,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     if(route && route.length)
       data.route = route;
 
-    transport.send(data, orig);
+    transport.sendData(data, orig);
   };
 
   /**
@@ -235,7 +235,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     if(route && route.length)
       data.route = route;
 
-    transport.send(data, dest);
+    transport.sendData(data, dest);
   };
 
   /**
@@ -252,6 +252,6 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     if(route && route.length)
       data.route = route;
 
-    transport.send(data, dest);
+    transport.sendData(data, dest);
   };
 }

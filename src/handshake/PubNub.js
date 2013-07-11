@@ -49,7 +49,7 @@ function Handshake_PubNub(configuration)
   /**
    * Send a message to a peer
    */
-  this.send = function(data, uid)
+  this.sendData = function(data, uid)
   {
     data.from = configuration.uid
     data.to = uid

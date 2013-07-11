@@ -35,7 +35,7 @@ function Handshake_xRTML(configuration)
             connect: function()
             {
                 // Compose and send message
-                self.send = function(dest, data)
+                self.sendData = function(dest, data)
                 {
                     var message = [configuration.uuid, dest, data]
 
