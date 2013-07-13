@@ -862,16 +862,13 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
     channel.onmessage = function(event)
     {
       event = JSON.parse(event)
-
-      if(event.from == self.uid)
-        return
+      event.from = channel.uid
 
       self.dispatchEvent(event);
     }
-    channel.sendData = function(data, uid)
+    channel.sendData = function(data, dest)
     {
-      data.from = self.uid
-      data.to = uid
+      data.dest = dest
 
       channel.send(JSON.stringify(data));
     }
