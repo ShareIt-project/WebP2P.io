@@ -130,6 +130,26 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       console.error(event)
     });
 
+    // Adapt DataChannel to be compatible with handshake connectors
+    EventTarget.call(channel)
+
+    channel.onmessage = function(event)
+    {
+      event = JSON.parse(event)
+
+      if(event.from == self.uid)
+        return
+
+      self.dispatchEvent(event);
+    }
+    channel.sendData = function(data, uid)
+    {
+      data.from = self.uid
+      data.to = uid
+
+      channel.send(JSON.stringify(data));
+    }
+
     Transport_Routing_init(channel, self, uid);
   }
 

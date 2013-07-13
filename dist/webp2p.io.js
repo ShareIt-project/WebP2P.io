@@ -856,6 +856,26 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       console.error(event)
     });
 
+    // Adapt DataChannel to be compatible with handshake connectors
+    EventTarget.call(channel)
+
+    channel.onmessage = function(event)
+    {
+      event = JSON.parse(event)
+
+      if(event.from == self.uid)
+        return
+
+      self.dispatchEvent(event);
+    }
+    channel.sendData = function(data, uid)
+    {
+      data.from = self.uid
+      data.to = uid
+
+      channel.send(JSON.stringify(data));
+    }
+
     Transport_Routing_init(channel, self, uid);
   }
 
@@ -1365,16 +1385,16 @@ function Handshake_PubNub(configuration)
    */
   this.presence = function()
   {
-    self.send({type: 'presence', from: configuration.uid});
+    self.sendData({type: 'presence'});
   }
 
   /**
    * Send a message to a peer
    */
-  this.send = function(data, uid)
+  this.sendData = function(data, dest)
   {
     data.from = configuration.uid
-    data.to = uid
+    data.dest = dest
 
     pubnub.publish(
     {
@@ -1431,7 +1451,7 @@ function Handshake_SimpleSignaling(configuration)
   /**
    * Send a message to a peer
    */
-  this.send = function(data, uid)
+  this.sendData = function(data, uid)
   {
     data.from = configuration.uid
     data.to = uid
@@ -1518,10 +1538,10 @@ function Handshake_XMPP(configuration)
   /**
    * Send a message to a peer
    */
-  this.send = function(data, uid)
+  this.sendData = function(data, dest)
   {
     var oMsg = new JSJaCMessage();
-        oMsg.setTo(configuration.room+"/"+uid);
+        oMsg.setTo(configuration.room+"/"+dest);
         oMsg.setBody(JSON.stringify(data));
 
     connection.send(oMsg);
@@ -1575,12 +1595,14 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
   };
 }function Transport_Routing_init(transport, webp2p, peer_uid)
 {
-  function go(event, us_func, fwd_func)
+  function orig2dest(event, us_func, fwd_func)
   {
     var from  = event.from;
-    var to    = event.to;
-    var sdp   = event.sdp;
+    var dest  = event.dest;
     var route = event.route || [];
+    var sdp   = event.sdp;
+
+    var orig  = route.lenght ? route[0] : from;
 
     // Message is from ourselves, ignore it
     if(from == webp2p.uid)
@@ -1592,8 +1614,8 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
         return;
 
     // Message is for us
-    if(to == webp2p.uid)
-      us_func(from, sdp, route);
+    if(dest == webp2p.uid)
+      us_func(orig, sdp, route);
 
     // Message is not for us, route it over the other connected peers
     else
@@ -1603,11 +1625,11 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
 
       // Search the peer between the list of currently connected peers
       var peers = webp2p.getPeers();
-      var peer = peers[to]
+      var peer = peers[dest]
 
       // Requested peer is one of the connected, notify directly to it
       if(peer)
-         peer._routing[fwd_func](to, sdp, route);
+         peer._routing[fwd_func](dest, sdp, route);
 
       // Requested peer is not one of the directly connected, broadcast it
       else
@@ -1629,25 +1651,27 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
 
           // Notify the message request to the other connected peers
           if(!routed)
-            peers[uid]._routing[fwd_func](to, sdp, route);
+            peers[uid]._routing[fwd_func](dest, sdp, route);
         }
     }
   }
 
-  function come(event, us_func, fwd_func)
+  function dest2orig(event, us_func, fwd_func)
   {
     var from  = event.from;
-    var to    = event.to;
-    var sdp   = event.sdp;
+    var dest  = event.dest;
     var route = event.route || [];
+    var sdp   = event.sdp;
+
+    var orig  = route.lenght ? route[0] : from;
 
     // Answer is from ourselves, ignore it
     if(from == webp2p.uid)
       return;
 
     // Answer is for us
-    if(to == webp2p.uid)
-      us_func(from, sdp, route)
+    if(dest == webp2p.uid)
+      us_func(orig, sdp, route)
 
     // Answer is not for us but we know where it goes, search peers on route
     // where we could send it
@@ -1662,11 +1686,11 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
         for(var uid in peers)
           if(route_uid == uid)
           {
-            peers[uid]._routing[fwd_func](to, sdp, route.slice(0, i-1));
+            peers[uid]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
 
-            // Currently is sending the message to all the shortcuts, but maybe it
-            // would be necessary only the first one so some band-width could be
-            // saved?
+            // Currently is sending the message to all the shortcuts, but maybe
+            // it would be necessary only the first one so some band-width could
+            // be saved?
             routed = true;
           }
 
@@ -1694,7 +1718,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
 
           // Notify the offer request to the other connected peers
           if(!routed)
-            peers[uid]._routing[fwd_func](to, sdp, route);
+            peers[uid]._routing[fwd_func](dest, sdp, route);
         }
       }
     }
@@ -1710,17 +1734,17 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
    */
   transport.addEventListener('offer', function(event)
   {
-    go(event, function(from, sdp, route)
+    orig2dest(event, function(orig, sdp, route)
     {
       // Create PeerConnection
-      webp2p.onoffer(from, sdp, transport, function(error, sdp)
+      webp2p.onoffer(orig, sdp, transport, function(error, sdp)
       {
         if(error)
           console.error(error);
 
         else
         {
-          console.log("[createAnswer]: "+from+"\n"+sdp);
+          console.log("[createAnswer]: "+orig+"\n"+sdp);
 
           // Run over all the route peers looking for possible "shortcuts"
           var peers = webp2p.getPeers();
@@ -1729,11 +1753,11 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
             for(var uid in peers)
               if(route_uid == uid)
               {
-                peers[uid]._routing.sendAnswer(from, sdp, route);
+                peers[uid]._routing.sendAnswer(orig, sdp, route);
                 return;
               }
 
-          transport.sendAnswer(from, sdp, route);
+          transport.sendAnswer(orig, sdp, route);
         }
       });
     },
@@ -1745,9 +1769,9 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
    */
   transport.addEventListener('answer', function(event)
   {
-    come(event, function(from, sdp, route)
+    dest2orig(event, function(orig, sdp, route)
     {
-      webp2p.onanswer(from, sdp, function(error)
+      webp2p.onanswer(orig, sdp, function(error)
       {
         console.error(error);
       });
@@ -1760,9 +1784,9 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
    */
   transport.addEventListener('candidate', function(event)
   {
-    go(event, function(from, sdp, route)
+    orig2dest(event, function(orig, sdp, route)
     {
-      webp2p.oncandidate(from, sdp, function(uid)
+      webp2p.oncandidate(orig, sdp, function(uid)
       {
         console.error("[routing.candidate] PeerConnection '" + uid + "' not found");
       });
@@ -1793,7 +1817,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     if(route && route.length)
       data.route = route;
 
-    transport.send(data, orig);
+    transport.sendData(data, orig);
   };
 
   /**
@@ -1810,7 +1834,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     if(route && route.length)
       data.route = route;
 
-    transport.send(data, dest);
+    transport.sendData(data, dest);
   };
 
   /**
@@ -1827,7 +1851,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     if(route && route.length)
       data.route = route;
 
-    transport.send(data, dest);
+    transport.sendData(data, dest);
   };
 }
 })(this);

@@ -43,16 +43,16 @@ function Handshake_PubNub(configuration)
    */
   this.presence = function()
   {
-    self.send({type: 'presence', from: configuration.uid});
+    self.sendData({type: 'presence'});
   }
 
   /**
    * Send a message to a peer
    */
-  this.sendData = function(data, uid)
+  this.sendData = function(data, dest)
   {
     data.from = configuration.uid
-    data.to = uid
+    data.dest = dest
 
     pubnub.publish(
     {

@@ -74,10 +74,10 @@ function Handshake_XMPP(configuration)
   /**
    * Send a message to a peer
    */
-  this.sendData = function(data, uid)
+  this.sendData = function(data, dest)
   {
     var oMsg = new JSJaCMessage();
-        oMsg.setTo(configuration.room+"/"+uid);
+        oMsg.setTo(configuration.room+"/"+dest);
         oMsg.setBody(JSON.stringify(data));
 
     connection.send(oMsg);
