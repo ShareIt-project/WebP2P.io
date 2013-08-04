@@ -1,4 +1,4 @@
-/*! datachannel.js build:1.1.1, development. Copyright(c) 2013 Jesús Leganés Combarro "Piranna" <piranna@gmail.com> */
+/*! datachannel.js build:0.9.0, development. Copyright(c) 2013 Jesús Leganés Combarro "Piranna" <piranna@gmail.com> */
 (function(exports){
 /* JSJaC - The JavaScript Jabber Client Library
  * Copyright (C) 2004-2008 Stefan Strigler
@@ -1064,6 +1064,16 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
 
     // Send offer to new PeerConnection if connection characteristics changed
     if(createOffer)
+    {
+      var mediaConstraints =
+      {
+        mandatory:
+        {
+          OfferToReceiveAudio: false,
+          OfferToReceiveVideo: false
+        }
+      }
+
       peer.createOffer(function(offer)
       {
         // Send the offer only for the incoming channel
@@ -1079,7 +1089,9 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
         // Set the peer local description
         peer.setLocalDescription(offer, callback, onerror);
       },
-      onerror);
+      onerror,
+      mediaConstraints);
+    }
 
     else
       callback();

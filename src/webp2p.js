@@ -338,6 +338,16 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
 
     // Send offer to new PeerConnection if connection characteristics changed
     if(createOffer)
+    {
+      var mediaConstraints =
+      {
+        mandatory:
+        {
+          OfferToReceiveAudio: false,
+          OfferToReceiveVideo: false
+        }
+      }
+
       peer.createOffer(function(offer)
       {
         // Send the offer only for the incoming channel
@@ -353,7 +363,9 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
         // Set the peer local description
         peer.setLocalDescription(offer, callback, onerror);
       },
-      onerror);
+      onerror,
+      mediaConstraints);
+    }
 
     else
       callback();
