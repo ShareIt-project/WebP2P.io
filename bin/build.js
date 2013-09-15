@@ -41,7 +41,7 @@ var starttagIF = '// if node'
 var libs =
   [
    'jsjac.js',
-   'pubnub-3.5.0.min.js',
+   'pubnub-3.5.4.min.js',
    'pusher.min.js',
    'simpleSignaling.js',
   ];
