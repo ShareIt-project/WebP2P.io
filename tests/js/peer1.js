@@ -1,6 +1,6 @@
 module("1 peer");
 
-test("No parameters", function()
+test("No options", function()
 {
   var conn = new WebP2P();
 
@@ -9,11 +9,14 @@ test("No parameters", function()
 
 test("No handshake servers defined", function()
 {
-  var handshake_servers = [];
+  var options =
+  {
+    handshake_servers: []
+  }
 
   throws(function()
   {
-    new WebP2P(handshake_servers);
+    new WebP2P(options);
   },
   Error);
 });
@@ -21,22 +24,25 @@ test("No handshake servers defined", function()
 /*
 asyncTest("Connect to PubNub", function()
 {
-  var handshake_servers =
-  [
+  var options =
+  {
+    handshake_servers:
     [
-      "PubNub",
-      {
-        "channel"      : "ShareIt",
-        "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
-        "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
-        "ssl"          : true,
+      [
+        "PubNub",
+        {
+          "channel"      : "ShareIt",
+          "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
+          "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
+          "ssl"          : true,
 
-        "max_connections" : 50
-      }
+          "max_connections" : 50
+        }
+      ]
     ]
-  ];
+  };
 
-  var conn = new WebP2P(handshake_servers);
+  var conn = new WebP2P(options);
 
   conn.addEventListener('connected', function(event)
   {
@@ -57,22 +63,25 @@ asyncTest("Connect to PubNub", function()
 
 asyncTest("Connect to only one new peer over PubNub", function()
 {
-  var handshake_servers =
-  [
+  var options =
+  {
+    handshake_servers:
     [
-      "PubNub",
-      {
-        "channel"      : "ShareIt",
-        "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
-        "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
-        "ssl"          : true,
+      [
+        "PubNub",
+        {
+          "channel"      : "ShareIt",
+          "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
+          "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
+          "ssl"          : true,
 
-        "max_connections" : 1
-      }
+          "max_connections" : 1
+        }
+      ]
     ]
-  ];
+  };
 
-  var conn = new WebP2P(handshake_servers);
+  var conn = new WebP2P(options);
 
   conn.addEventListener('connected', function(event)
   {

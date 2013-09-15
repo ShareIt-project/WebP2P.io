@@ -4,16 +4,18 @@
  * @param {String} [stun_server="stun.l.google.com:19302"] URL of the server
  * used for the STUN communications.
  */
-function WebP2P(handshake_servers, commonLabels, stun_server)
+function WebP2P(options)
 {
   //Fallbacks for vendor-specific variables until the spec is finalized.
   var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
 
-  this.commonLabels = commonLabels || []
+  var options = options || {};
+
+  var handshake_servers = options.handshake_servers;
+  this.commonLabels     = options.commonLabels || []
 
   // Set a default STUN server if none is specified
-  if(stun_server == undefined)
-     stun_server = 'stun.l.google.com:19302';
+  var stun_server = options.stun_server || 'stun.l.google.com:19302';
 
   var peers = {};
 
