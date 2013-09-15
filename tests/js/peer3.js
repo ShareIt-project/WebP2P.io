@@ -1,6 +1,6 @@
 module("3 peers");
 
-asyncTest("Connect to current peers on PubNub", 2, function()
+asyncTest("Connect to peers over the mesh network", 3, function()
 {
   var options =
   {
@@ -33,9 +33,32 @@ asyncTest("Connect to current peers on PubNub", 2, function()
   {
     var peers = conn.getPeers();
 
-    notDeepEqual(peers, {}, "Connected to previous peers: "+JSON.stringify(peers));
+    switch(event.uid)
+    {
+      case "Peer 1":
+      {
+        notEqual(peers["Peer 1"], undefined, "Connected to Peer 1");
+        notEqual(peers["Peer 2"], undefined, "Connected to Peer 2");
 
-    start();
+        start();
+      }
+      break;
+
+      case "Peer 2":
+      {
+        equal   (peers["Peer 1"], undefined, "Not yet connected to Peer 1");
+        notEqual(peers["Peer 2"], undefined, "Connected to Peer 2");
+
+        conn.connectTo("Peer 1")
+      }
+      break;
+
+      default:
+      {
+        ok(false, "Unknown peer: "+event.uid);
+        start();
+      }
+    }
   });
 
   conn.addEventListener('error', function(event)
