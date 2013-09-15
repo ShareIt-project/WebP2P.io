@@ -23,14 +23,16 @@ function Transport_Presence_init(transport, webp2p)
         console.error(from, this.commonLabels, transport, error);
 
       else
+      {
         // Increase the number of connections reached throught
         // this handshake server
         transport.connections++;
 
-      // Close connection with handshake server if we got its
-      // quota of peers
-      if(transport.connections == transport.max_connections)
-        transport.close();
+        // Close connection with handshake server if we got its
+        // quota of peers
+        if(transport.connections == transport.max_connections)
+          transport.close();
+      }
     });
   })
 

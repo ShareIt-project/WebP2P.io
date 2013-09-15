@@ -7,6 +7,8 @@ function HandshakeManager(uid)
 {
   var self = this;
 
+  EventTarget.call(this);
+
   var status = 'disconnected';
 
   var configs = []
@@ -30,6 +32,8 @@ function HandshakeManager(uid)
 
     status = 'connecting';
 
+    var channel;
+
     for(; index < configs.length; index++)
     {
       var type = configs[index][0];
@@ -42,8 +46,8 @@ function HandshakeManager(uid)
       // Check if channel constructor is from a valid handshake server
       if(channelConstructor)
       {
-        var channel = new channelConstructor(conf);
-            channel.max_connections = conf.max_connections
+        channel = new channelConstructor(conf);
+        channel.max_connections = conf.max_connections
 
         channel.uid = type;
 
@@ -64,7 +68,7 @@ function HandshakeManager(uid)
           handshake();
         });
 
-        break
+        return
       }
 
       console.error("Invalid handshake server type '" + type + "'");
@@ -143,7 +147,6 @@ function HandshakeManager(uid)
     http_request.send();
   }
 }
-HandshakeManager.prototype = new EventTarget()
 
 
 HandshakeManager.handshakeServers = {}
@@ -168,6 +171,14 @@ function HandshakeConnector()
     // Notify that the connection to this handshake server is open
     var event = document.createEvent("Event");
         event.initEvent('open',true,true);
+
+    self.dispatchEvent(event);
+  }
+
+  this.disconnect = function()
+  {
+    var event = document.createEvent("Event");
+        event.initEvent('close',true,true);
 
     self.dispatchEvent(event);
   }

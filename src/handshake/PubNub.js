@@ -20,8 +20,9 @@ function Handshake_PubNub(configuration)
     {
       self.dispatchMessageEvent(message, configuration.uid)
     },
-    connect: self.connect,
-    error:   self.error
+    connect:    self.connect,
+    disconnect: self.disconnect,
+    error:      self.error
   });
 
 
@@ -36,6 +37,8 @@ function Handshake_PubNub(configuration)
     {
       channel: configuration.channel
     });
+
+    self.disconnect();
   }
 
   /**
