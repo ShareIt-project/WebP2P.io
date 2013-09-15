@@ -85,6 +85,13 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       if(event.target.readyState == 'closed')
       {
         delete peers[uid];
+
+        var event = document.createEvent("Event");
+            event.initEvent('peerConnection.disconnected',true,true);
+            event.peerConnection = pc;
+
+        self.dispatchEvent(event);
+
         disconnected()
       }
     };
@@ -166,11 +173,6 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
     if(!peer)
       peer = createPeerConnection(uid, incomingChannel);
 
-    function onerror(error)
-    {
-      callback(error)
-    }
-
     // Process offer
     peer.setRemoteDescription(new RTCSessionDescription(
     {
@@ -182,11 +184,7 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
       // Send answer
       peer.createAnswer(function(answer)
       {
-        peer.setLocalDescription(new RTCSessionDescription(
-        {
-          sdp: answer.sdp,
-          type: 'answer'
-        }),
+        peer.setLocalDescription(answer,
         function()
         {
           callback(null, answer.sdp)
@@ -196,9 +194,9 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
           callback(error, answer.sdp)
         });
       },
-      onerror)
+      callback)
     },
-    onerror);
+    callback);
   };
 
   /**
@@ -208,7 +206,7 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
    * @param {Function} onerror Callback called if we don't have previously
    * wanted to connect to the other peer.
    */
-  this.onanswer = function(uid, sdp, onerror)
+  this.onanswer = function(uid, sdp, callback)
   {
     // Search the peer on the list of currently connected peers
     var peer = peers[uid];
@@ -218,14 +216,11 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
         sdp: sdp,
         type: 'answer'
       }),
-      function()
-      {
-        console.info("Received answer for UID "+uid)
-      },
-      onerror);
+      callback,
+      callback);
 
     else
-      onerror("PeerConnection '" + uid + "' not found");
+      callback("PeerConnection '" + uid + "' not found");
   };
 
   this.oncandidate = function(uid, sdp, onerror)
@@ -242,10 +237,13 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
   // Init handshake manager
   var handshakeManager = new HandshakeManager(this.uid);
 
-  if(handshake_servers instanceof Array)
-    handshakeManager.addConfigs_byArray(handshake_servers)
-  else
-    handshakeManager.addConfigs_byUri(handshake_servers)
+  if(handshake_servers)
+  {
+    if(handshake_servers instanceof Array)
+      handshakeManager.addConfigs_byArray(handshake_servers)
+    else
+      handshakeManager.addConfigs_byUri(handshake_servers)
+  };
 
   handshakeManager.onerror = function(event)
   {
@@ -266,7 +264,16 @@ function WebP2P(handshake_servers, commonLabels, stun_server)
 
     self.dispatchEvent(event2);
   };
-  handshakeManager.addEventListener('disconnected', disconnected);
+  handshakeManager.addEventListener('disconnected', function()
+  {
+    var event = document.createEvent("Event");
+        event.initEvent('handshakeManager.disconnected',true,true);
+        event.handshakeManager = handshakeManager;
+
+    self.dispatchEvent(event);
+
+    disconnected();
+  });
 
 
   this.__defineGetter__("status", function()

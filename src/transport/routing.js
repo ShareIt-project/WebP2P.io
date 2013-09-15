@@ -149,7 +149,8 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
 
         else
         {
-          console.log("[createAnswer]: "+orig+"\n"+sdp);
+          console.log("Received offer from "+orig);
+          console.log("Created answer SDP: "+sdp);
 
           // Run over all the route peers looking for possible "shortcuts"
           var peers = webp2p.getPeers();
@@ -178,7 +179,11 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     {
       webp2p.onanswer(orig, sdp, function(error)
       {
-        console.error(error);
+        if(error)
+          console.error(error);
+
+        else
+          console.log("Received answer from "+orig);
       });
     },
     'sendAnswer')
