@@ -17,7 +17,8 @@ asyncTest("Connect to current peers over PubNub", 2, function()
           "max_connections" : 50
         }
       ]
-    ]
+    ],
+    uid: "Peer 2"
   };
 
   var conn = new WebP2P(options);

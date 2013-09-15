@@ -741,21 +741,6 @@ function WebP2P(options)
   //Fallbacks for vendor-specific variables until the spec is finalized.
   var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection || mozRTCPeerConnection;
 
-  var options = options || {};
-
-  var handshake_servers = options.handshake_servers;
-  this.commonLabels     = options.commonLabels || []
-
-  // Set a default STUN server if none is specified
-  var stun_server = options.stun_server || 'stun.l.google.com:19302';
-
-  var peers = {};
-
-  var self = this;
-
-
-  this.routingLabel = "webp2p"
-
 
   /**
    * UUID generator
@@ -765,7 +750,20 @@ function WebP2P(options)
     return a ? (a ^ Math.random() * 16 >> a / 4).toString(16) : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, b);
   };
 
-  this.uid = UUIDv4();
+
+  var self = this;
+
+  var peers = {};
+
+
+  var options = options || {};
+
+  var handshake_servers = options.handshake_servers;
+  var stun_server       = options.stun_server || 'stun.l.google.com:19302';
+
+  this.commonLabels = options.commonLabels || []
+  this.routingLabel = options.routingLabel || "webp2p";
+  this.uid          = options.uid          || UUIDv4();
 
 
   /**

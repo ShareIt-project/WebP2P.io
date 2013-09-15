@@ -1,23 +1,27 @@
-module("2 peers");
+module("3 peers");
 
 asyncTest("Connect to current peers on PubNub", 2, function()
 {
-  var handshake_servers =
-  [
+  var options =
+  {
+    handshake_servers:
     [
-      "PubNub",
-      {
-        "channel"      : "ShareIt",
-        "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
-        "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
-        "ssl"          : true,
+      [
+        "PubNub",
+        {
+          "channel"      : "ShareIt",
+          "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
+          "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
+          "ssl"          : true,
 
-        "max_connections" : 50
-      }
-    ]
-  ];
+          "max_connections" : 50
+        }
+      ]
+    ],
+    uid: "Peer 3"
+  };
 
-  var conn = new WebP2P(handshake_servers);
+  var conn = new WebP2P(options);
 
   conn.addEventListener('connected', function(event)
   {
