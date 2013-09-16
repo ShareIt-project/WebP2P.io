@@ -276,6 +276,15 @@ function WebP2P(options)
   });
 
 
+  this.close = function()
+  {
+    handshakeManager.close();
+
+    for(var i=0, peer; peer=peers[i]; i++)
+      peer.close();
+  }
+
+
   this.__defineGetter__("status", function()
   {
     if(Object.keys(peers).length)

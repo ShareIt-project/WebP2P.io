@@ -1008,6 +1008,15 @@ function WebP2P(options)
   });
 
 
+  this.close = function()
+  {
+    handshakeManager.close();
+
+    for(var i=0, peer; peer=peers[i]; i++)
+      peer.close();
+  }
+
+
   this.__defineGetter__("status", function()
   {
     if(Object.keys(peers).length)
@@ -1178,6 +1187,8 @@ function HandshakeManager(uid)
   })
 
 
+  var channel;
+
   /**
    * Get a random handshake channel or test for the next one
    * @param {Object} configuration Handshake servers configuration.
@@ -1188,8 +1199,6 @@ function HandshakeManager(uid)
       throw Error('No handshake servers defined')
 
     status = 'connecting';
-
-    var channel;
 
     for(; index < configs.length; index++)
     {
@@ -1244,6 +1253,12 @@ function HandshakeManager(uid)
     index = 0
   }
 
+
+  this.close = function()
+  {
+    if(channel)
+       channel.close();
+  }
 
   this.addConfigs_byArray = function(configuration)
   {
