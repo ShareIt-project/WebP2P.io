@@ -1,6 +1,27 @@
-module("2 peers");
+module("1 peer");
 
-asyncTest("Connect to current peers over PubNub", 2, function()
+test("No options", function()
+{
+  var conn = new WebP2P();
+
+  ok(true, "Passed!");
+});
+
+test("No handshake servers defined", function()
+{
+  var options =
+  {
+    handshake_servers: []
+  }
+
+  throws(function()
+  {
+    new WebP2P(options);
+  },
+  Error);
+});
+
+asyncTest("Connect to PubNub", function()
 {
   var options =
   {
@@ -17,23 +38,21 @@ asyncTest("Connect to current peers over PubNub", 2, function()
           "max_connections" : 50
         }
       ]
-    ],
-    uid: "Peer 2"
+    ]
   };
 
   var conn = new WebP2P(options);
 
   conn.addEventListener('connected', function(event)
   {
-    ok(true, "Own UID: "+event.uid);
-//    start();
+    ok(true, "UID: "+event.uid);
+
+    conn.close();
   });
 
-  conn.addEventListener('peerconnection', function(event)
+  conn.addEventListener('disconnected', function(event)
   {
-    var peers = conn.getPeers();
-
-    notDeepEqual(peers, {}, "Connected to previous peers: "+JSON.stringify(peers));
+    ok(true, "Disconnected");
 
     start();
   });
