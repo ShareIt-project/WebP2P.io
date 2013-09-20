@@ -17,10 +17,10 @@ function Transport_Presence_init(transport, webp2p)
     // the network mesh
 
     // Do the connection with the new peer
-    webp2p.connectTo(from, this.commonLabels, transport, function(error)
+    webp2p.connectTo(from, webp2p.commonLabels, transport, function(error)
     {
       if(error)
-        console.error(from, this.commonLabels, transport, error);
+        console.error(from, webp2p.commonLabels, transport, error);
 
       else
       {

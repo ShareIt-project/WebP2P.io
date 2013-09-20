@@ -65,9 +65,6 @@ function WebP2P(options)
     var pc = peers[uid] = new RTCPeerConnection(
     {
       iceServers: [{url: 'stun:'+stun_server}]
-    },
-    {
-      optional: [{RtpDataChannels: true}]
     });
 
     pc.onerror = function(error)
@@ -153,6 +150,8 @@ function WebP2P(options)
 
       channel.send(JSON.stringify(data));
     }
+
+    pc._routing = channel;
 
     Transport_Routing_init(channel, self, uid);
   }

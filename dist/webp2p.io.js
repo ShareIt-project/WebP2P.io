@@ -797,9 +797,6 @@ function WebP2P(options)
     var pc = peers[uid] = new RTCPeerConnection(
     {
       iceServers: [{url: 'stun:'+stun_server}]
-    },
-    {
-      optional: [{RtpDataChannels: true}]
     });
 
     pc.onerror = function(error)
@@ -885,6 +882,8 @@ function WebP2P(options)
 
       channel.send(JSON.stringify(data));
     }
+
+    pc._routing = channel;
 
     Transport_Routing_init(channel, self, uid);
   }
@@ -1620,10 +1619,10 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     // the network mesh
 
     // Do the connection with the new peer
-    webp2p.connectTo(from, this.commonLabels, transport, function(error)
+    webp2p.connectTo(from, webp2p.commonLabels, transport, function(error)
     {
       if(error)
-        console.error(from, this.commonLabels, transport, error);
+        console.error(from, webp2p.commonLabels, transport, error);
 
       else
       {
