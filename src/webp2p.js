@@ -284,6 +284,14 @@ function WebP2P(options)
   }
 
 
+  // Close all connections when user goes out of the page
+  if(window)
+    window.addEventListener('beforeunload', function(event)
+    {
+      self.close();
+    });
+
+
   this.__defineGetter__("status", function()
   {
     if(Object.keys(peers).length)
