@@ -29,9 +29,25 @@ function WebP2P(options)
   var handshake_servers = options.handshake_servers;
   var stun_server       = options.stun_server || 'stun.l.google.com:19302';
 
-  this.commonLabels = options.commonLabels || []
-  this.routingLabel = options.routingLabel || "webp2p";
-  this.uid          = options.uid          || UUIDv4();
+  var commonLabels = options.commonLabels || []
+  var routingLabel = options.routingLabel || "webp2p";
+  var ownUid       = options.uid          || UUIDv4();
+
+
+  this.__defineGetter__("commonLabels", function()
+  {
+    return commonLabels;
+  })
+
+  this.__defineGetter__("routingLabel", function()
+  {
+    return routingLabel;
+  })
+
+  this.__defineGetter__("uid", function()
+  {
+    return ownUid;
+  })
 
 
   /**
@@ -105,7 +121,7 @@ function WebP2P(options)
       });
 
       // Routing DataChannel, just init routing functionality on it
-      if(channel.label == self.routingLabel)
+      if(channel.label == routingLabel)
         initDataChannel_routing(pc, channel, uid)
     });
 
@@ -234,7 +250,7 @@ function WebP2P(options)
 
 
   // Init handshake manager
-  var handshakeManager = new HandshakeManager(this.uid);
+  var handshakeManager = new HandshakeManager(ownUid);
 
   if(handshake_servers)
   {
@@ -259,7 +275,7 @@ function WebP2P(options)
 
     var event2 = document.createEvent("Event");
         event2.initEvent('connected',true,true);
-        event2.uid = self.uid
+        event2.uid = ownUid
 
     self.dispatchEvent(event2);
   };
@@ -326,12 +342,12 @@ function WebP2P(options)
       // Create PeerConnection
       peer = createPeerConnection(uid, incomingChannel);
 
-      peer.channels[this.routingLabel] = peer.createDataChannel(this.routingLabel);
-      initDataChannel_routing(peer, peer.channels[this.routingLabel], uid);
+      peer.channels[routingLabel] = peer.createDataChannel(routingLabel);
+      initDataChannel_routing(peer, peer.channels[routingLabel], uid);
     }
 
     // Add channels
-    labels = this.commonLabels.concat(labels)
+    labels = commonLabels.concat(labels)
 
     for(var i=0, label; label=labels[i]; i++)
     {
@@ -374,14 +390,14 @@ function WebP2P(options)
       peer.createOffer(function(offer)
       {
         // Send the offer only for the incoming channel
-//        if(peer.channels[this.routingLabel])
+//        if(peer.channels[routingLabel])
         if(incomingChannel)
            incomingChannel.sendOffer(uid, offer.sdp);
 
         // Send the offer throught all the peers
         else
           for(var id in peers)
-            peers[id].channels[this.routingLabel].sendOffer(uid, offer.sdp);
+            peers[id].channels[routingLabel].sendOffer(uid, offer.sdp);
 
         // Set the peer local description
         peer.setLocalDescription(offer, callback, onerror);
