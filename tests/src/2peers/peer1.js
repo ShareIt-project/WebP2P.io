@@ -20,6 +20,11 @@ var options =
 var conn = new WebP2P(options);
 
 
+QUnit.log(function( details )
+{
+  console.log("Log: ", details.result, details.message);
+});
+
 module("2 peers - Connect to only one new peer over PubNub");
 
 asyncTest("Connect to PubNub", function()
@@ -41,9 +46,16 @@ asyncTest("Connected to peer, disconnect from handshakeManager", function()
 {
   conn.addEventListener('peerconnection', function(event)
   {
-    var peers = conn.getPeers();
+    var peerconnection = event.peerconnection;
 
-    notDeepEqual(peers, {}, "Peers: "+JSON.stringify(peers));
+    ok(true, "PeerConnection: "+peerconnection);
+
+    peerconnection.addEventListener('open', function()
+    {
+      var peers = conn.getPeers();
+
+      notDeepEqual(peers, {}, "Peers: "+JSON.stringify(peers));
+    })
   });
 
   conn.addEventListener('handshakeManager.disconnected', function(event)

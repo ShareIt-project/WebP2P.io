@@ -20,6 +20,11 @@ var options =
 var conn = new WebP2P(options);
 
 
+QUnit.log(function( details )
+{
+  console.log("Log: ", details.result, details.message);
+});
+
 module("2 peers - Connect to current peers over PubNub");
 
 asyncTest("Connect to PubNub", function()
@@ -41,11 +46,18 @@ asyncTest("Connect to current peers over PubNub", function()
 {
   conn.addEventListener('peerconnection', function(event)
   {
-    var peers = conn.getPeers();
+    var peerconnection = event.peerconnection;
 
-    notDeepEqual(peers, {}, "Peers: "+JSON.stringify(peers));
+    ok(true, "PeerConnection: "+peerconnection);
 
-    start();
+    peerconnection.addEventListener('open', function()
+    {
+  	  var peers = conn.getPeers();
+
+      notDeepEqual(peers, {}, "Peers: "+JSON.stringify(peers));
+
+      start();
+    })
   });
 
   conn.addEventListener('error', function(event)

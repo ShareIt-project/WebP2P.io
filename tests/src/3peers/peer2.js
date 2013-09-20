@@ -20,6 +20,8 @@ var options =
 var conn = new WebP2P(options);
 
 
+QUnit.config.reorder = false;
+
 module("3 peers - Connect to new peers over P2P mesh");
 
 asyncTest("Connect to PubNub", function()
@@ -47,10 +49,17 @@ asyncTest("Connect to current peers over PubNub", 2, function()
     {
       case "Peer 1":
       {
-        notEqual(peers["Peer 1"], undefined, "Connected to Peer 1");
-        equal   (peers["Peer 3"], undefined, "Not yet connected to Peer 3");
+        var peerconnection = event.peerconnection;
 
-        start();
+        ok(true, "PeerConnection: "+peerconnection);
+
+        peerconnection.addEventListener('open', function()
+        {
+          notEqual(peers["Peer 1"], undefined, "Connected to Peer 1");
+          equal   (peers["Peer 3"], undefined, "Not yet connected to Peer 3");
+
+          start();
+        })
       }
       break;
 
@@ -91,10 +100,17 @@ asyncTest("Connect to new peer", function()
 
       case "Peer 3":
       {
-        notEqual(peers["Peer 1"], undefined, "Connected to Peer 1");
-        notEqual(peers["Peer 3"], undefined, "Connected to Peer 3");
+        var peerconnection = event.peerconnection;
 
-        start();
+        ok(true, "PeerConnection: "+peerconnection);
+
+        peerconnection.addEventListener('open', function()
+        {
+          notEqual(peers["Peer 1"], undefined, "Connected to Peer 1");
+          notEqual(peers["Peer 3"], undefined, "Connected to Peer 3");
+
+          start();
+        })
       }
       break;
 

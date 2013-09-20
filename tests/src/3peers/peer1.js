@@ -20,6 +20,8 @@ var options =
 var conn = new WebP2P(options);
 
 
+QUnit.config.reorder = false;
+
 module("3 peers - Connect to new peers over P2P mesh");
 
 asyncTest("Connect to PubNub", function()
@@ -41,16 +43,23 @@ asyncTest("Connect to peer, disconnect from handshakeManager", function()
 {
   conn.addEventListener('peerconnection', function(event)
   {
-    var peers = conn.getPeers();
-
     switch(event.uid)
     {
       case "Peer 2":
       {
-        notEqual(peers["Peer 2"], undefined, "Connected to Peer 2");
-        equal   (peers["Peer 3"], undefined, "Not yet connected to Peer 3");
+        var peerconnection = event.peerconnection;
 
-        start();
+        ok(true, "PeerConnection: "+peerconnection);
+
+        peerconnection.addEventListener('open', function()
+        {
+          var peers = conn.getPeers();
+
+          notEqual(peers["Peer 2"], undefined, "Connected to Peer 2");
+          equal   (peers["Peer 3"], undefined, "Not yet connected to Peer 3");
+
+          start();
+        });
       }
       break;
 
@@ -78,8 +87,6 @@ asyncTest("Receive connection from Peer 3 over the mesh network", function()
 {
   conn.addEventListener('peerconnection', function(event)
   {
-    var peers = conn.getPeers();
-
     switch(event.uid)
     {
       case "Peer 2":
@@ -90,10 +97,19 @@ asyncTest("Receive connection from Peer 3 over the mesh network", function()
 
       case "Peer 3":
       {
-        notEqual(peers["Peer 2"], undefined, "Connected to Peer 2");
-        notEqual(peers["Peer 3"], undefined, "Connected to Peer 3");
+        var peerconnection = event.peerconnection;
 
-        start();
+        ok(true, "PeerConnection: "+peerconnection);
+
+        peerconnection.addEventListener('open', function()
+        {
+          var peers = conn.getPeers();
+
+          notEqual(peers["Peer 2"], undefined, "Connected to Peer 2");
+          notEqual(peers["Peer 3"], undefined, "Connected to Peer 3");
+
+          start();
+        });
       }
       break;
 
