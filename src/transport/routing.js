@@ -142,29 +142,10 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     orig2dest(event, function(orig, sdp, route)
     {
       // Create PeerConnection
-      webp2p.onoffer(orig, sdp, transport, function(error, sdp)
+      webp2p.onoffer(orig, sdp, route, transport, function(error)
       {
         if(error)
           console.error(error);
-
-        else
-        {
-          console.log("Received offer from "+orig);
-          console.log("Created answer SDP: "+sdp);
-
-          // Run over all the route peers looking for possible "shortcuts"
-          var peers = webp2p.getPeers();
-
-          for(var i=0, route_uid; uid=route[i]; i++)
-            for(var uid in peers)
-              if(route_uid == uid)
-              {
-                peers[uid]._routing.sendAnswer(orig, sdp, route);
-                return;
-              }
-
-          transport.sendAnswer(orig, sdp, route);
-        }
       });
     },
     'sendOffer')
@@ -181,9 +162,6 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
       {
         if(error)
           console.error(error);
-
-        else
-          console.log("Received answer from "+orig);
       });
     },
     'sendAnswer')

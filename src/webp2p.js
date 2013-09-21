@@ -26,13 +26,15 @@ function WebP2P(options)
 
   var options = options || {};
 
+  // Internal options
   var handshake_servers = options.handshake_servers;
-  var stun_server       = options.stun_server || 'stun.l.google.com:19302';
+  var stun_server       = options.stun_server   || 'stun.l.google.com:19302';
+  var useTrickleICE     = options.useTrickleICE || true;
 
+  // Read-only options
   var commonLabels = options.commonLabels || []
   var routingLabel = options.routingLabel || "webp2p";
   var ownUid       = options.uid          || UUIDv4();
-
 
   this.__defineGetter__("commonLabels", function()
   {
@@ -89,8 +91,23 @@ function WebP2P(options)
     };
     pc.onicecandidate = function(event)
     {
+      // There's a candidate, if using Trickle ICE send it
       if(event.candidate)
-        incomingChannel.sendCandidate(uid, event.candidate);
+      {
+        if(useTrickleICE)
+          incomingChannel.sendCandidate(uid, event.candidate);
+
+        return;
+      }
+
+      // There's no candidate, if not using Trickle ICE send the full SDP
+      if(!useTrickleICE)
+      {
+        var method = (this.localDescription.type == 'offer')
+                   ? 'sendOffer'
+                   : 'sendAnswer';
+        incomingChannel[method](uid, this.localDescription.sdp);
+      }
     }
     pc.onstatechange = function(event)
     {
@@ -179,8 +196,10 @@ function WebP2P(options)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp, incomingChannel, callback)
+  this.onoffer = function(uid, sdp, route, incomingChannel, callback)
   {
+    console.log("Received offer from "+uid);
+
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
 
@@ -199,15 +218,26 @@ function WebP2P(options)
       // Send answer
       peer.createAnswer(function(answer)
       {
-        peer.setLocalDescription(answer,
-        function()
+        // Set the peer local description
+        peer.setLocalDescription(answer, callback, callback);
+
+        if(useTrickleICE)
         {
-          callback(null, answer.sdp)
-        },
-        function(error)
-        {
-          callback(error, answer.sdp)
-        });
+          console.log("Sending answer to "+uid);
+
+          var sdp = answer.sdp;
+
+          // Run over all the route peers looking for possible "shortcuts"
+          for(var i=0, route_uid; route_uid=route[i]; i++)
+            for(var uid in peers)
+              if(route_uid == uid)
+              {
+                peers[uid]._routing.sendAnswer(orig, sdp, route);
+                return;
+              }
+
+          incomingChannel.sendAnswer(orig, sdp, route);
+        }
       },
       callback)
     },
@@ -223,6 +253,8 @@ function WebP2P(options)
    */
   this.onanswer = function(uid, sdp, callback)
   {
+    console.log("Received answer from "+uid);
+
     // Search the peer on the list of currently connected peers
     var peer = peers[uid];
     if(peer)
@@ -370,11 +402,6 @@ function WebP2P(options)
       }
     }
 
-    function onerror(error)
-    {
-      callback(error)
-    }
-
     // Send offer to new PeerConnection if connection characteristics changed
     if(createOffer)
     {
@@ -389,20 +416,27 @@ function WebP2P(options)
 
       peer.createOffer(function(offer)
       {
-        // Send the offer only for the incoming channel
-//        if(peer.channels[routingLabel])
-        if(incomingChannel)
-           incomingChannel.sendOffer(uid, offer.sdp);
-
-        // Send the offer throught all the peers
-        else
-          for(var id in peers)
-            peers[id].channels[routingLabel].sendOffer(uid, offer.sdp);
-
         // Set the peer local description
-        peer.setLocalDescription(offer, callback, onerror);
+        peer.setLocalDescription(offer, callback, callback);
+
+        if(useTrickleICE)
+        {
+          console.log("Sending offer to "+uid);
+
+          var sdp = offer.sdp;
+
+          // Send the offer only for the incoming channel
+//          if(peer.channels[routingLabel])
+          if(incomingChannel)
+             incomingChannel.sendOffer(uid, sdp);
+
+          // Send the offer throught all the peers
+          else
+            for(var id in peers)
+              peers[id].channels[routingLabel].sendOffer(uid, sdp);
+        }
       },
-      onerror,
+      callback,
       mediaConstraints);
     }
 

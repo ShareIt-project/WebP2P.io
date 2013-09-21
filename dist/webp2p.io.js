@@ -758,12 +758,30 @@ function WebP2P(options)
 
   var options = options || {};
 
+  // Internal options
   var handshake_servers = options.handshake_servers;
-  var stun_server       = options.stun_server || 'stun.l.google.com:19302';
+  var stun_server       = options.stun_server   || 'stun.l.google.com:19302';
+  var useTrickleICE     = options.useTrickleICE || true;
 
-  this.commonLabels = options.commonLabels || []
-  this.routingLabel = options.routingLabel || "webp2p";
-  this.uid          = options.uid          || UUIDv4();
+  // Read-only options
+  var commonLabels = options.commonLabels || []
+  var routingLabel = options.routingLabel || "webp2p";
+  var ownUid       = options.uid          || UUIDv4();
+
+  this.__defineGetter__("commonLabels", function()
+  {
+    return commonLabels;
+  })
+
+  this.__defineGetter__("routingLabel", function()
+  {
+    return routingLabel;
+  })
+
+  this.__defineGetter__("uid", function()
+  {
+    return ownUid;
+  })
 
 
   /**
@@ -805,8 +823,23 @@ function WebP2P(options)
     };
     pc.onicecandidate = function(event)
     {
+      // There's a candidate, if using Trickle ICE send it
       if(event.candidate)
-        incomingChannel.sendCandidate(uid, event.candidate);
+      {
+        if(useTrickleICE)
+          incomingChannel.sendCandidate(uid, event.candidate);
+
+        return;
+      }
+
+      // There's no candidate, if not using Trickle ICE send the full SDP
+      if(!useTrickleICE)
+      {
+        var method = (this.localDescription.type == 'offer')
+                   ? 'sendOffer'
+                   : 'sendAnswer';
+        incomingChannel[method](uid, this.localDescription.sdp);
+      }
     }
     pc.onstatechange = function(event)
     {
@@ -837,7 +870,7 @@ function WebP2P(options)
       });
 
       // Routing DataChannel, just init routing functionality on it
-      if(channel.label == self.routingLabel)
+      if(channel.label == routingLabel)
         initDataChannel_routing(pc, channel, uid)
     });
 
@@ -895,8 +928,10 @@ function WebP2P(options)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp, incomingChannel, callback)
+  this.onoffer = function(uid, sdp, route, incomingChannel, callback)
   {
+    console.log("Received offer from "+uid);
+
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
 
@@ -915,15 +950,26 @@ function WebP2P(options)
       // Send answer
       peer.createAnswer(function(answer)
       {
-        peer.setLocalDescription(answer,
-        function()
+        // Set the peer local description
+        peer.setLocalDescription(answer, callback, callback);
+
+        if(useTrickleICE)
         {
-          callback(null, answer.sdp)
-        },
-        function(error)
-        {
-          callback(error, answer.sdp)
-        });
+          console.log("Sending answer to "+uid);
+
+          var sdp = answer.sdp;
+
+          // Run over all the route peers looking for possible "shortcuts"
+          for(var i=0, route_uid; route_uid=route[i]; i++)
+            for(var uid in peers)
+              if(route_uid == uid)
+              {
+                peers[uid]._routing.sendAnswer(orig, sdp, route);
+                return;
+              }
+
+          incomingChannel.sendAnswer(orig, sdp, route);
+        }
       },
       callback)
     },
@@ -939,6 +985,8 @@ function WebP2P(options)
    */
   this.onanswer = function(uid, sdp, callback)
   {
+    console.log("Received answer from "+uid);
+
     // Search the peer on the list of currently connected peers
     var peer = peers[uid];
     if(peer)
@@ -966,7 +1014,7 @@ function WebP2P(options)
 
 
   // Init handshake manager
-  var handshakeManager = new HandshakeManager(this.uid);
+  var handshakeManager = new HandshakeManager(ownUid);
 
   if(handshake_servers)
   {
@@ -991,7 +1039,7 @@ function WebP2P(options)
 
     var event2 = document.createEvent("Event");
         event2.initEvent('connected',true,true);
-        event2.uid = self.uid
+        event2.uid = ownUid
 
     self.dispatchEvent(event2);
   };
@@ -1014,6 +1062,14 @@ function WebP2P(options)
     for(var i=0, peer; peer=peers[i]; i++)
       peer.close();
   }
+
+
+  // Close all connections when user goes out of the page
+  if(window)
+    window.addEventListener('beforeunload', function(event)
+    {
+      self.close();
+    });
 
 
   this.__defineGetter__("status", function()
@@ -1050,12 +1106,12 @@ function WebP2P(options)
       // Create PeerConnection
       peer = createPeerConnection(uid, incomingChannel);
 
-      peer.channels[this.routingLabel] = peer.createDataChannel(this.routingLabel);
-      initDataChannel_routing(peer, peer.channels[this.routingLabel], uid);
+      peer.channels[routingLabel] = peer.createDataChannel(routingLabel);
+      initDataChannel_routing(peer, peer.channels[routingLabel], uid);
     }
 
     // Add channels
-    labels = this.commonLabels.concat(labels)
+    labels = commonLabels.concat(labels)
 
     for(var i=0, label; label=labels[i]; i++)
     {
@@ -1078,11 +1134,6 @@ function WebP2P(options)
       }
     }
 
-    function onerror(error)
-    {
-      callback(error)
-    }
-
     // Send offer to new PeerConnection if connection characteristics changed
     if(createOffer)
     {
@@ -1097,20 +1148,27 @@ function WebP2P(options)
 
       peer.createOffer(function(offer)
       {
-        // Send the offer only for the incoming channel
-//        if(peer.channels[this.routingLabel])
-        if(incomingChannel)
-           incomingChannel.sendOffer(uid, offer.sdp);
-
-        // Send the offer throught all the peers
-        else
-          for(var id in peers)
-            peers[id].channels[this.routingLabel].sendOffer(uid, offer.sdp);
-
         // Set the peer local description
-        peer.setLocalDescription(offer, callback, onerror);
+        peer.setLocalDescription(offer, callback, callback);
+
+        if(useTrickleICE)
+        {
+          console.log("Sending offer to "+uid);
+
+          var sdp = offer.sdp;
+
+          // Send the offer only for the incoming channel
+//          if(peer.channels[routingLabel])
+          if(incomingChannel)
+             incomingChannel.sendOffer(uid, sdp);
+
+          // Send the offer throught all the peers
+          else
+            for(var id in peers)
+              peers[id].channels[routingLabel].sendOffer(uid, sdp);
+        }
       },
-      onerror,
+      callback,
       mediaConstraints);
     }
 
@@ -1789,29 +1847,10 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     orig2dest(event, function(orig, sdp, route)
     {
       // Create PeerConnection
-      webp2p.onoffer(orig, sdp, transport, function(error, sdp)
+      webp2p.onoffer(orig, sdp, route, transport, function(error)
       {
         if(error)
           console.error(error);
-
-        else
-        {
-          console.log("Received offer from "+orig);
-          console.log("Created answer SDP: "+sdp);
-
-          // Run over all the route peers looking for possible "shortcuts"
-          var peers = webp2p.getPeers();
-
-          for(var i=0, route_uid; uid=route[i]; i++)
-            for(var uid in peers)
-              if(route_uid == uid)
-              {
-                peers[uid]._routing.sendAnswer(orig, sdp, route);
-                return;
-              }
-
-          transport.sendAnswer(orig, sdp, route);
-        }
       });
     },
     'sendOffer')
@@ -1828,9 +1867,6 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
       {
         if(error)
           console.error(error);
-
-        else
-          console.log("Received answer from "+orig);
       });
     },
     'sendAnswer')
