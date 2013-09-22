@@ -87,11 +87,11 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
       // Run over all the route peers looking for possible "shortcuts"
       var peers = webp2p.getPeers();
 
-      for(var i=0, route_uid; uid=route[i]; i++)
-        for(var uid in peers)
-          if(route_uid == uid)
+      for(var i=0, route_uid; route_uid=route[i]; i++)
+        for(var id in peers)
+          if(route_uid == id)
           {
-            peers[uid]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
+            peers[id]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
 
             // Currently is sending the message to all the shortcuts, but maybe
             // it would be necessary only the first one so some band-width could
@@ -142,7 +142,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     orig2dest(event, function(orig, sdp, route)
     {
       // Create PeerConnection
-      webp2p.onoffer(orig, sdp, route, transport, function(error)
+      webp2p.onoffer(orig, sdp, transport, route, function(error)
       {
         if(error)
           console.error(error);
@@ -189,23 +189,15 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
    * @param {String} sdp Content of the SDP object.
    * @param {Array} [route] Route path where this answer have circulated.
    */
-  transport.sendAnswer = function(orig, sdp, route)
+  transport.sendAnswer = function(uid, sdp, route)
   {
     var data = {type: 'answer',
                 sdp:  sdp}
 
-    // Remove all the later routed peers
-    for(var i=0, uid; uid=route[i]; i++)
-      if(uid == peer_uid)
-      {
-        route.length = i;
-        break;
-      }
-
     if(route && route.length)
       data.route = route;
 
-    transport.sendData(data, orig);
+    transport.sendData(data, uid);
   };
 
   /**
@@ -214,7 +206,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
    * @param {String} sdp Content of the SDP object.
    * @param {Array} [route] Route path where this offer have circulated.
    */
-  transport.sendCandidate = function(dest, sdp, route)
+  transport.sendCandidate = function(uid, sdp, route)
   {
     var data = {type: 'candidate',
                 sdp:  sdp}
@@ -222,7 +214,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     if(route && route.length)
       data.route = route;
 
-    transport.sendData(data, dest);
+    transport.sendData(data, uid);
   };
 
   /**
@@ -231,7 +223,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
    * @param {String} sdp Content of the SDP object.
    * @param {Array} [route] Route path where this offer have circulated.
    */
-  transport.sendOffer = function(dest, sdp, route)
+  transport.sendOffer = function(uid, sdp, route)
   {
     var data = {type: 'offer',
                 sdp:  sdp}
@@ -239,6 +231,6 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     if(route && route.length)
       data.route = route;
 
-    transport.sendData(data, dest);
+    transport.sendData(data, uid);
   };
 }

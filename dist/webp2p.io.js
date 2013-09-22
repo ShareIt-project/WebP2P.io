@@ -805,6 +805,39 @@ function WebP2P(options)
   }
 
 
+  function sendOffer(uid, sdp, incomingChannel)
+  {
+    console.log("Sending offer to "+uid);
+
+    // Send the offer only over the incoming channel
+//    if(peer.channels[routingLabel])
+    if(incomingChannel)
+       incomingChannel.sendOffer(uid, sdp);
+
+    // Send the offer throught all the peers
+    else
+      for(var id in peers)
+        peers[id].channels[routingLabel].sendOffer(uid, sdp);
+    }
+
+  function sendAnswer(dest, sdp, incomingChannel, route)
+  {
+    console.log("Sending answer to "+dest);
+
+    // Run over all the route peers looking for a possible shortcut
+    for(var i=0, route_uid; route_uid=route[i]; i++)
+      for(var id in peers)
+        if(route_uid == id)
+        {
+          peers[id]._routing.sendAnswer(dest, sdp, route.slice(0, i-1));
+          return;
+        }
+
+    // No shortcut was found, send the answer over the incoming channel
+    incomingChannel.sendAnswer(dest, sdp, route);
+  }
+
+
   /**
    * Create a new RTCPeerConnection
    * @param {UUID} id Identifier of the other peer so later can be accessed.
@@ -832,15 +865,26 @@ function WebP2P(options)
         return;
       }
 
-      // There's no candidate, if not using Trickle ICE send the full SDP
+      // There's no candidate and not using Trickle ICE, send the full SDP
       if(!useTrickleICE)
       {
-        var method = (this.localDescription.type == 'offer')
-                   ? 'sendOffer'
-                   : 'sendAnswer';
-        incomingChannel[method](uid, this.localDescription.sdp);
+        var type = this.localDescription.type;
+
+        switch(type)
+        {
+          case 'offer':
+            sendOffer(uid, sdp, incomingChannel)
+            break;
+
+          case 'answer':
+            sendAnswer(uid, sdp, incomingChannel, this._trickleICE_route)
+            break;
+
+          default:
+            console.error("Unknown description type: "+type);
+        }
       }
-    }
+    };
     pc.onstatechange = function(event)
     {
       // Remove the peer from the list of peers when gets closed
@@ -928,7 +972,7 @@ function WebP2P(options)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp, route, incomingChannel, callback)
+  this.onoffer = function(uid, sdp, incomingChannel, route, callback)
   {
     console.log("Received offer from "+uid);
 
@@ -954,22 +998,9 @@ function WebP2P(options)
         peer.setLocalDescription(answer, callback, callback);
 
         if(useTrickleICE)
-        {
-          console.log("Sending answer to "+uid);
-
-          var sdp = answer.sdp;
-
-          // Run over all the route peers looking for possible "shortcuts"
-          for(var i=0, route_uid; route_uid=route[i]; i++)
-            for(var uid in peers)
-              if(route_uid == uid)
-              {
-                peers[uid]._routing.sendAnswer(orig, sdp, route);
-                return;
-              }
-
-          incomingChannel.sendAnswer(orig, sdp, route);
-        }
+          sendAnswer(uid, answer.sdp, incomingChannel, route)
+        else
+          peer._trickleICE_route = route;
       },
       callback)
     },
@@ -1151,22 +1182,9 @@ function WebP2P(options)
         // Set the peer local description
         peer.setLocalDescription(offer, callback, callback);
 
+        // Using Trickle ICE, send offer inmediately
         if(useTrickleICE)
-        {
-          console.log("Sending offer to "+uid);
-
-          var sdp = offer.sdp;
-
-          // Send the offer only for the incoming channel
-//          if(peer.channels[routingLabel])
-          if(incomingChannel)
-             incomingChannel.sendOffer(uid, sdp);
-
-          // Send the offer throught all the peers
-          else
-            for(var id in peers)
-              peers[id].channels[routingLabel].sendOffer(uid, sdp);
-        }
+          sendOffer(uid, offer.sdp, incomingChannel);
       },
       callback,
       mediaConstraints);
@@ -1792,11 +1810,11 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
       // Run over all the route peers looking for possible "shortcuts"
       var peers = webp2p.getPeers();
 
-      for(var i=0, route_uid; uid=route[i]; i++)
-        for(var uid in peers)
-          if(route_uid == uid)
+      for(var i=0, route_uid; route_uid=route[i]; i++)
+        for(var id in peers)
+          if(route_uid == id)
           {
-            peers[uid]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
+            peers[id]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
 
             // Currently is sending the message to all the shortcuts, but maybe
             // it would be necessary only the first one so some band-width could
@@ -1847,7 +1865,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     orig2dest(event, function(orig, sdp, route)
     {
       // Create PeerConnection
-      webp2p.onoffer(orig, sdp, route, transport, function(error)
+      webp2p.onoffer(orig, sdp, transport, route, function(error)
       {
         if(error)
           console.error(error);
@@ -1894,23 +1912,15 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
    * @param {String} sdp Content of the SDP object.
    * @param {Array} [route] Route path where this answer have circulated.
    */
-  transport.sendAnswer = function(orig, sdp, route)
+  transport.sendAnswer = function(uid, sdp, route)
   {
     var data = {type: 'answer',
                 sdp:  sdp}
 
-    // Remove all the later routed peers
-    for(var i=0, uid; uid=route[i]; i++)
-      if(uid == peer_uid)
-      {
-        route.length = i;
-        break;
-      }
-
     if(route && route.length)
       data.route = route;
 
-    transport.sendData(data, orig);
+    transport.sendData(data, uid);
   };
 
   /**
@@ -1919,7 +1929,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
    * @param {String} sdp Content of the SDP object.
    * @param {Array} [route] Route path where this offer have circulated.
    */
-  transport.sendCandidate = function(dest, sdp, route)
+  transport.sendCandidate = function(uid, sdp, route)
   {
     var data = {type: 'candidate',
                 sdp:  sdp}
@@ -1927,7 +1937,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     if(route && route.length)
       data.route = route;
 
-    transport.sendData(data, dest);
+    transport.sendData(data, uid);
   };
 
   /**
@@ -1936,7 +1946,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
    * @param {String} sdp Content of the SDP object.
    * @param {Array} [route] Route path where this offer have circulated.
    */
-  transport.sendOffer = function(dest, sdp, route)
+  transport.sendOffer = function(uid, sdp, route)
   {
     var data = {type: 'offer',
                 sdp:  sdp}
@@ -1944,7 +1954,7 @@ HandshakeManager.registerConstructor('XMPP', Handshake_XMPP);function Transport_
     if(route && route.length)
       data.route = route;
 
-    transport.sendData(data, dest);
+    transport.sendData(data, uid);
   };
 }
 })(this);
