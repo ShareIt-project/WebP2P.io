@@ -86,7 +86,7 @@ function WebP2P(options)
     else
       for(var id in peers)
         peers[id].channels[routingLabel].sendOffer(uid, sdp);
-    }
+  }
 
   function sendAnswer(dest, sdp, incomingChannel, route)
   {
@@ -405,8 +405,9 @@ function WebP2P(options)
       // Create PeerConnection
       peer = createPeerConnection(uid, incomingChannel);
 
-      peer.channels[routingLabel] = peer.createDataChannel(routingLabel);
-      initDataChannel_routing(peer, peer.channels[routingLabel], uid);
+      var channel = peer.createDataChannel(routingLabel);
+      peer.channels[routingLabel] = channel;
+      initDataChannel_routing(peer, channel, uid);
     }
 
     // Add channels
@@ -468,6 +469,57 @@ function WebP2P(options)
   this.getPeers = function()
   {
     return peers
+  }
+
+
+  this._forwardRequest = function(fwd_func, dest, sdp, route)
+  {
+    // Search the peer between the list of currently connected peers
+    var peer = peers[dest]
+
+    // Requested peer is one of the connected, notify directly to it
+    if(peer)
+       peer._routing[fwd_func](dest, sdp, route);
+
+    // Requested peer is not one of the directly connected, broadcast it
+    else
+      for(var uid in peers)
+        // Don't broadcast message back to the sender peer
+        if(uid != peer_uid)
+        {
+          // Ignore peers already on the route path
+          var routed = false;
+
+          for(var i=0, route_id; route_id=route[i]; i++)
+            if(route_id == uid)
+            {
+              routed = true;
+              break;
+            }
+
+          // Notify the message request to the other connected peers
+          if(!routed)
+            peers[uid]._routing[fwd_func](dest, sdp, route);
+        }
+  }
+
+  this._forwardResponse = function(fwd_func, dest, sdp, route)
+  {
+    // Run over all the route peers looking for possible "shortcuts"
+    for(var i=0, route_uid; route_uid=route[i]; i++)
+      for(var id in peers)
+        if(route_uid == id)
+        {
+          peers[id]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
+          return
+        }
+
+    // Answer couldn't be routed (maybe a peer was disconnected?), try to find
+    // the connection request initiator peer by broadcast
+    for(var uid in peers)
+      // Don't broadcast message back to the sender peer
+      if(uid != peer_uid)
+        peers[uid]._routing[fwd_func](dest, sdp, route);
   }
 }
 WebP2P.prototype = new EventTarget();

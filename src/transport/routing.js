@@ -25,39 +25,10 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     // Message is not for us, route it over the other connected peers
     else
     {
-      // Add the transport where it was received to the route path
+      // Add the transport where the message was received to the route path
       route.push(peer_uid);
 
-      // Search the peer between the list of currently connected peers
-      var peers = webp2p.getPeers();
-      var peer = peers[dest]
-
-      // Requested peer is one of the connected, notify directly to it
-      if(peer)
-         peer._routing[fwd_func](dest, sdp, route);
-
-      // Requested peer is not one of the directly connected, broadcast it
-      else
-        for(var uid in peers)
-        {
-          // Don't broadcast message back to the sender peer
-          if(uid == peer_uid)
-            continue
-
-          // Ignore peers already on the route path
-          var routed = false;
-
-          for(var i=0, route_id; route_id=route[i]; i++)
-            if(route_id == uid)
-            {
-              routed = true;
-              break;
-            }
-
-          // Notify the message request to the other connected peers
-          if(!routed)
-            peers[uid]._routing[fwd_func](dest, sdp, route);
-        }
+      webp2p._forwardRequest(fwd_func, dest, sdp, route);
     }
   }
 
@@ -82,50 +53,9 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
     // where we could send it
     else if(route.length)
     {
-      var routed = false;
+      route = route.slice(0, route.length-1);
 
-      // Run over all the route peers looking for possible "shortcuts"
-      var peers = webp2p.getPeers();
-
-      for(var i=0, route_uid; route_uid=route[i]; i++)
-        for(var id in peers)
-          if(route_uid == id)
-          {
-            peers[id]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
-
-            // Currently is sending the message to all the shortcuts, but maybe
-            // it would be necessary only the first one so some band-width could
-            // be saved?
-            routed = true;
-          }
-
-      // Answer couldn't be routed (maybe a peer was disconnected?), try to find
-      // the connection request initiator peer by broadcast
-      if(!routed)
-      {
-        route = route.slice(0, route.length-1)
-
-        for(var uid in peers)
-        {
-          // Don't broadcast message back to the sender peer
-          if(uid == peer_uid)
-            continue
-
-          // Ignore peers already on the route path
-          var routed = false;
-
-          for(var i=0, route_id; route_id=route[i]; i++)
-            if(route_id == uid)
-            {
-              routed = true;
-              break;
-            }
-
-          // Notify the offer request to the other connected peers
-          if(!routed)
-            peers[uid]._routing[fwd_func](dest, sdp, route);
-        }
-      }
+      webp2p._forwardResponse(fwd_func, dest, sdp, route);
     }
 
     // route is empty, ignore it
