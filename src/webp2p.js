@@ -240,9 +240,14 @@ function WebP2P(options)
    * @param {String} sdp Session Description Protocol data of the other peer.
    * @return {RTCPeerConnection} The (newly created) peer.
    */
-  this.onoffer = function(uid, sdp, incomingChannel, route, callback)
+  this.onoffer = function(uid, sdp, incomingChannel, route)
   {
     console.log("Received offer from "+uid);
+
+    function onerror(error)
+    {
+      console.error(error);
+    }
 
     // Search the peer between the list of currently connected peers
     var peer = peers[uid];
@@ -263,16 +268,21 @@ function WebP2P(options)
       peer.createAnswer(function(answer)
       {
         // Set the peer local description
-        peer.setLocalDescription(answer, callback, callback);
+        peer.setLocalDescription(answer,
+        function()
+        {
+          console.log("setLocalDescription");
+        },
+        onerror);
 
         if(useTrickleICE)
           sendAnswer(uid, answer.sdp, incomingChannel, route)
         else
           peer._trickleICE_route = route;
       },
-      callback)
+      onerror)
     },
-    callback);
+    onerror);
   };
 
   /**
@@ -282,9 +292,14 @@ function WebP2P(options)
    * @param {Function} onerror Callback called if we don't have previously
    * wanted to connect to the other peer.
    */
-  this.onanswer = function(uid, sdp, callback)
+  this.onanswer = function(uid, sdp)
   {
     console.log("Received answer from "+uid);
+
+    function onerror(error)
+    {
+      console.error(error);
+    }
 
     // Search the peer on the list of currently connected peers
     var peer = peers[uid];
@@ -294,21 +309,29 @@ function WebP2P(options)
         sdp: sdp,
         type: 'answer'
       }),
-      callback,
-      callback);
+      function()
+      {
+        console.log("setRemoteDescription");
+      },
+      onerror);
 
     else
-      callback("PeerConnection '" + uid + "' not found");
+      onerror("PeerConnection '" + uid + "' not found");
   };
 
-  this.oncandidate = function(uid, sdp, onerror)
+  this.oncandidate = function(uid, sdp)
   {
+    function onerror(error)
+    {
+      console.error(error);
+    }
+
     // Search the peer on the list of currently connected peers
     var peer = peers[uid];
     if(peer)
       peer.addIceCandidate(new RTCIceCandidate(sdp));
-    else if(onerror)
-      onerror(uid);
+    else
+      onerror("[routing.candidate] PeerConnection '" + uid + "' not found");
   }
 
 
@@ -479,7 +502,10 @@ function WebP2P(options)
 
     // Requested peer is one of the connected, notify directly to it
     if(peer)
-       peer._routing[fwd_func](dest, sdp, route);
+    {
+      var channel = peer._routing;
+      channel[fwd_func](dest, sdp, route);
+    }
 
     // Requested peer is not one of the directly connected, broadcast it
     else
@@ -499,7 +525,10 @@ function WebP2P(options)
 
           // Notify the message request to the other connected peers
           if(!routed)
-            peers[uid]._routing[fwd_func](dest, sdp, route);
+          {
+            var channel = peers[uid]._routing;
+            channel[fwd_func](dest, sdp, route);
+          }
         }
   }
 
@@ -507,10 +536,12 @@ function WebP2P(options)
   {
     // Run over all the route peers looking for possible "shortcuts"
     for(var i=0, route_uid; route_uid=route[i]; i++)
-      for(var id in peers)
-        if(route_uid == id)
+      for(var uid in peers)
+        if(route_uid == uid)
         {
-          peers[id]._routing[fwd_func](dest, sdp, route.slice(0, i-1));
+          var channel = peers[uid]._routing;
+          channel[fwd_func](dest, sdp, route.slice(0, i-1));
+
           return
         }
 
@@ -519,7 +550,10 @@ function WebP2P(options)
     for(var uid in peers)
       // Don't broadcast message back to the sender peer
       if(uid != peer_uid)
-        peers[uid]._routing[fwd_func](dest, sdp, route);
+      {
+        var channel = peers[uid]._routing;
+        channel[fwd_func](dest, sdp, route);
+      }
   }
 }
 WebP2P.prototype = new EventTarget();

@@ -60,7 +60,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
 
     // route is empty, ignore it
     else
-      console.warn("["+fwd_func+"] Wrong destination and route is empty")
+      console.warn("Wrong destination and route is empty")
   }
 
 
@@ -71,12 +71,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
   {
     orig2dest(event, function(orig, sdp, route)
     {
-      // Create PeerConnection
-      webp2p.onoffer(orig, sdp, transport, route, function(error)
-      {
-        if(error)
-          console.error(error);
-      });
+      webp2p.onoffer(orig, sdp, transport, route);
     },
     'sendOffer')
   });
@@ -88,11 +83,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
   {
     dest2orig(event, function(orig, sdp, route)
     {
-      webp2p.onanswer(orig, sdp, function(error)
-      {
-        if(error)
-          console.error(error);
-      });
+      webp2p.onanswer(orig, sdp);
     },
     'sendAnswer')
   });
@@ -104,14 +95,22 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
   {
     orig2dest(event, function(orig, sdp, route)
     {
-      webp2p.oncandidate(orig, sdp, function(uid)
-      {
-        console.error("[routing.candidate] PeerConnection '" + uid + "' not found");
-      });
+      webp2p.oncandidate(orig, sdp);
     },
     'sendCandidate')
   })
 
+
+  function sendSDP(type, uid, sdp, route)
+  {
+    var data = {type: type,
+                sdp:  sdp}
+
+    if(route && route.length)
+      data.route = route;
+
+    transport.sendData(data, uid);
+  }
 
   /**
    * Send a RTCPeerConnection answer through the active handshake channel
@@ -121,13 +120,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
    */
   transport.sendAnswer = function(uid, sdp, route)
   {
-    var data = {type: 'answer',
-                sdp:  sdp}
-
-    if(route && route.length)
-      data.route = route;
-
-    transport.sendData(data, uid);
+    sendSDP('answer', uid, sdp, route)
   };
 
   /**
@@ -138,13 +131,7 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
    */
   transport.sendCandidate = function(uid, sdp, route)
   {
-    var data = {type: 'candidate',
-                sdp:  sdp}
-
-    if(route && route.length)
-      data.route = route;
-
-    transport.sendData(data, uid);
+    sendSDP('candidate', uid, sdp, route)
   };
 
   /**
@@ -155,12 +142,6 @@ function Transport_Routing_init(transport, webp2p, peer_uid)
    */
   transport.sendOffer = function(uid, sdp, route)
   {
-    var data = {type: 'offer',
-                sdp:  sdp}
-
-    if(route && route.length)
-      data.route = route;
-
-    transport.sendData(data, uid);
+    sendSDP('offer', uid, sdp, route)
   };
 }
