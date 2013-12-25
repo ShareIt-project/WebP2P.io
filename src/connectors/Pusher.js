@@ -1,5 +1,5 @@
 /**
- * Handshake channel connector for Pusher
+ * Handshake connector for Pusher
  * @param {Object} configuration Configuration object
  */
 function Handshake_Pusher(configuration)
@@ -8,7 +8,7 @@ function Handshake_Pusher(configuration)
 
   var self = this
 
-  // Connect a handshake channel to the Pusher server
+  // Connect a handshake connector to the Pusher server
   var pusher = new Pusher(configuration.appKey, configuration);
   var channel = pusher.subscribe(configuration.channel);
 

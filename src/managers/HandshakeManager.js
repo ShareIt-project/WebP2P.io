@@ -1,13 +1,12 @@
 /**
- * Manage the handshake channel using several servers
+ * Manage the handshake connectors using several servers
+ *
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
 function HandshakeManager(uid)
 {
   var self = this;
-
-  EventTarget.call(this);
 
   var status = 'disconnected';
 
@@ -21,10 +20,10 @@ function HandshakeManager(uid)
   })
 
 
-  var channel;
+  var connector;
 
   /**
-   * Get a random handshake channel or test for the next one
+   * Get a random handshake connector or test for the next one
    * @param {Object} configuration Handshake servers configuration.
    */
   function handshake()
@@ -41,32 +40,82 @@ function HandshakeManager(uid)
 
       conf.uid = uid;
 
-      var channelConstructor = HandshakeManager.handshakeServers[type];
+      var connectorConstructor = HandshakeManager.handshakeServers[type];
 
-      // Check if channel constructor is from a valid handshake server
-      if(channelConstructor)
+      // Check if connector constructor is from a valid handshake server
+      if(connectorConstructor)
       {
-        channel = new channelConstructor(conf);
-        channel.max_connections = conf.max_connections
+        connector = new connectorConstructor(conf);
+        connector.max_connections = conf.max_connections
 
-        channel.uid = type;
+        // Count the maximum number of pending connections allowed to be
+        // done with this handshake server (undefined == unlimited)
+        connector.connections = 0
 
-        channel.addEventListener('open', function(event)
+        connector.uid = type;
+
+        connector.onopen = function(event)
         {
           status = 'connected';
 
-          var event = document.createEvent("Event");
-              event.initEvent(status,true,true);
-              event.channel = channel
+          var event = new Event(status);
+              event.connector = connector;
 
-          self.dispatchEvent(event);
-        });
-        channel.addEventListener('close', function(event)
+          self.onconnected(event);
+        };
+
+        connector.onpresence = function(event)
         {
-          // Try to get an alternative handshake channel
+          var from = event.from;
+
+          // Check if we should ignore this new peer to increase entropy in
+          // the network mesh
+
+
+          // Do the connection with the new peer
+          var event = new Event('connect');
+              event.from = from;
+              event.connector = this;
+
+          self.onpresence(event);
+        };
+
+        connector.onconnect = function(event)
+        {
+          self.onconnect(event);
+        };
+
+        connector.onforward = function(event)
+        {
+          var connector = event.connector;
+          var message = event.message;
+
+          for(var i=0, peer; peer=peers[i]; i++)
+          {
+            // Don't send the message to the same connector where we received it
+            if(peer === connector)
+              continue;
+
+            peer.send(message);
+          };
+
+          self.onforward(event);
+        };
+
+        connector.onclose = function(event)
+        {
+          // Try to get an alternative handshake connector
           index++
           handshake();
-        });
+        };
+
+        connector.onerror = function(event)
+        {
+          console.error(error);
+
+          // Close the connector (and try with the next one)
+          transport.close();
+        };
 
         return
       }
@@ -77,21 +126,20 @@ function HandshakeManager(uid)
     // There are no more available configured handshake servers
     status = 'disconnected';
 
-    var event = document.createEvent("Event");
-        event.initEvent(status,true,true);
-        event.channel = channel
+    var event = new Event(status);
+        event.connector = connector;
 
-    self.dispatchEvent(event);
+    self.ondisconnected(event);
 
     // Get ready to start again from begining of handshake servers list
-    index = 0
+    index = 0;
   }
 
 
   this.close = function()
   {
-    if(channel)
-       channel.close();
+    if(connector)
+       connector.close();
   }
 
   this.addConfigs_byArray = function(configuration)
@@ -116,7 +164,7 @@ function HandshakeManager(uid)
           event.initEvent('error',true,true);
           event.error = error
 
-      self.dispatchEvent(event);
+      self.onerror(event);
     }
 
     // Request the handshake servers configuration file
@@ -151,75 +199,13 @@ function HandshakeManager(uid)
     };
 
     http_request.send();
-  }
-}
-
+  };
+};
+HandshakeManager.prototype.__proto__   = Manager.prototype;
+HandshakeManager.prototype.constructor = HandshakeManager;
 
 HandshakeManager.handshakeServers = {}
 HandshakeManager.registerConstructor = function(type, constructor)
 {
   HandshakeManager.handshakeServers[type] = constructor
-}
-
-
-function HandshakeConnector()
-{
-  var self = this
-
-  /**
-   * Handle the connection to the handshake server
-   */
-  this.connect = function()
-  {
-    // Notify our presence
-    self.presence()
-
-    // Notify that the connection to this handshake server is open
-    var event = document.createEvent("Event");
-        event.initEvent('open',true,true);
-
-    self.dispatchEvent(event);
-  }
-
-  this.disconnect = function()
-  {
-    var event = document.createEvent("Event");
-        event.initEvent('close',true,true);
-
-    self.dispatchEvent(event);
-  }
-
-  /**
-   * Dispatch received messages
-   */
-  this.dispatchMessageEvent = function(event, uid)
-  {
-    // Don't try to connect to ourselves
-    if(event.from == uid)
-      return
-
-    self.dispatchEvent(event);
-  }
-
-  /**
-   * Dispatch received messages
-   */
-  this.dispatchPresence = function(from)
-  {
-    var event = document.createEvent("Event");
-        event.initEvent('presence',true,true);
-
-        event.from = from
-
-    self.dispatchMessageEvent(event);
-  }
-
-  /**
-   * Handle errors on the connection
-   */
-  this.error = function(event)
-  {
-    self.dispatchEvent(event)
-  }
-}
-HandshakeConnector.prototype = new EventTarget();
+};

@@ -41,6 +41,7 @@ var starttagIF = '// if node'
 var libs =
   [
    'jsjac.js',
+   'nsdLib.js',
    'pubnub-3.5.4.min.js',
    'pusher.min.js',
    'simpleSignaling.js',
@@ -56,9 +57,9 @@ var base =
    'handshake/index.js',
    'handshake/PubNub.js',
    'handshake/simpleSignaling.js',
+   'handshake/UPnP.js',
    'handshake/XMPP.js',
 
-   'transport/presence.js',
    'transport/routing.js'
   ];
 

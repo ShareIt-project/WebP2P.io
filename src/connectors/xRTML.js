@@ -1,5 +1,5 @@
 /**
- * Handshake channel connector for xRTML
+ * Handshake connector for xRTML
  * @param {Object} configuration Configuration object
  */
 function Handshake_xRTML(configuration)
@@ -8,7 +8,7 @@ function Handshake_xRTML(configuration)
 
     var self = this
 
-    // Connect a handshake channel to the PubNub server
+    // Connect a handshake connector to the PubNub server
     var pubnub = PUBNUB.init(configuration);
         pubnub.subscribe(
         {
