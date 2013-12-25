@@ -2,12 +2,47 @@
   "name": "WebP2P.io",
   "version": "0.9.0",
   "description": "The server-less signaling channel for WebRTC",
+  "homepage": "http://webp2p.io",
+  "license": "Affero-GPL",
+  "contributors": [
+    {
+      "name": "Jesús Leganés Combarro 'piranna'",
+      "email": "piranna@gmail.com",
+      "url": "http://pirannafs.blogspot.com.es"
+    }
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "node_modules/.bin/nodeunit test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShareIt-project/WebP2P.io.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ShareIt-project/WebP2P.io/issues"
+  },
+  "keywords": [
+    "P2P",
+    "web",
+    "WebP2P",
+    "WebRTC"
+  ],
   "dependencies": {
-    "pubnub"   : "latest",
-    "pusher"   : "latest",
-    "node-xmpp": "latest"
+    "pubnub": "~3.5.48",
+    "pusher": "latest",
+    "node-xmpp": "~0.12.0"
   },
   "devDependencies": {
-    "uglify-js": "~1.3.4"
+    "grunt": "~0.4.2",
+    "grunt-browserify": "~1.3.0",
+    "grunt-cli": "~0.1.11",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-jshint": "~0.7.2",
+    "grunt-contrib-nodeunit": "~0.2.2",
+    "grunt-jsdoc": "~0.4.2",
+    "minifyify": "~1.1.2",
+    "nodeunit": "~0.8.2",
+    "browserify": "~3.4.1"
   }
 }
