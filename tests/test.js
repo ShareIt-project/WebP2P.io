@@ -34,17 +34,19 @@ asyncTest("Connect to PubNub", function()
   {
     handshake_servers:
     [
-      [
-        "PubNub",
+      {
+        type: "PubNub",
+        config_init:
         {
-          "channel"      : "ShareIt",
-          "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
-          "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
-          "ssl"          : true,
-
-          "max_connections" : 50
+          publish_key  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
+          subscribe_key: "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
+          ssl          : true
+        },
+        config_mess:
+        {
+          channel: "ShareIt"
         }
-      ]
+      }
     ]
   };
 

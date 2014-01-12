@@ -31,7 +31,8 @@
   "dependencies": {
     "pubnub": "~3.5.48",
     "pusher": "latest",
-    "node-xmpp": "~0.12.0"
+    "node-xmpp": "~0.12.0",
+    "uuid": "~1.4.1"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
