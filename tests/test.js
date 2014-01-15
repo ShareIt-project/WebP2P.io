@@ -14,6 +14,7 @@ test("No options", function()
   ok(true, "Passed!");
 });
 
+/*
 test("No handshake servers defined", function()
 {
   var options =
@@ -27,6 +28,7 @@ test("No handshake servers defined", function()
   },
   Error);
 });
+*/
 
 asyncTest("Connect to PubNub", function()
 {
@@ -52,23 +54,23 @@ asyncTest("Connect to PubNub", function()
 
   var conn = new WebP2P(options);
 
-  conn.addEventListener('connected', function(event)
+  conn.on('connected', function()
   {
-    ok(true, "UID: "+event.uid);
+    ok(true, "SessionID: "+conn.sessionID);
 
     conn.close();
   });
 
-  conn.addEventListener('disconnected', function(event)
+  conn.on('disconnected', function()
   {
     ok(true, "Disconnected");
 
     start();
   });
 
-  conn.addEventListener('error', function(event)
+  conn.on('error', function(error)
   {
-    ok(false, "Error: "+event.error);
+    ok(false, "Error: "+error);
     start();
   });
 });
@@ -82,17 +84,21 @@ var options1 =
 {
   handshake_servers:
   [
-    [
-      "PubNub",
+    {
+      type: "PubNub",
+      config_init:
       {
-        "channel"      : "ShareIt",
-        "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
-        "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
-        "ssl"          : true,
+        publish_key  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
+        subscribe_key: "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
+        ssl          : true,
 
         "max_connections" : 1
+      },
+      config_mess:
+      {
+        channel: "ShareIt"
       }
-    ]
+    }
   ],
   uid: "Peer 1"
 };
@@ -102,17 +108,19 @@ var options2 =
 {
   handshake_servers:
   [
-    [
-      "PubNub",
+    {
+      type: "PubNub",
+      config_init:
       {
-        "channel"      : "ShareIt",
-        "publish_key"  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
-        "subscribe_key": "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
-        "ssl"          : true,
-
-        "max_connections" : 50
+        publish_key  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
+        subscribe_key: "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
+        ssl          : true
+      },
+      config_mess:
+      {
+        channel: "ShareIt"
       }
-    ]
+    }
   ],
   uid: "Peer 2"
 };
@@ -126,29 +134,29 @@ asyncTest("Connect to PubNub", function()
 {
   // Conn 1
 
-  conn1.addEventListener('connected', function(event)
+  conn1.on('connected', function()
   {
-    ok(true, "Conn1 UID: "+event.uid);
+    ok(true, "Conn1 SessionID: "+conn1.sessionID);
     start();
   });
 
-  conn1.addEventListener('error', function(event)
+  conn1.on('error', function(error)
   {
-    ok(false, "Conn1 error: "+event.error);
+    ok(false, "Conn1 error: "+error);
     start();
   });
 
   // Conn 2
 
-  conn2.addEventListener('connected', function(event)
+  conn2.on('connected', function()
   {
-    ok(true, "Conn2 UID: "+event.uid);
+    ok(true, "Conn2 SessionID: "+conn2.sessionID);
     start();
   });
 
-  conn2.addEventListener('error', function(event)
+  conn2.on('error', function(error)
   {
-    ok(false, "Conn2 error: "+event.error);
+    ok(false, "Conn2 error: "+error);
     start();
   });
 });
@@ -160,53 +168,57 @@ function()
 {
   // Conn 1
 
-  conn1.addEventListener('peerconnection', function(event)
+  conn1.on('peerconnection', function(peerconnection)
   {
-    var peerconnection = event.peerconnection;
-
     ok(true, "Conn1 PeerConnection: "+peerconnection);
 
-    peerconnection.addEventListener('open', function()
+    peerconnection.addEventListener('signalingstatechange', function()
     {
-      var peers = conn1.getPeers();
+      if(peerconnection.signalingState == 'open')
+      {
+        var peers = conn1.getPeers();
 
-      notDeepEqual(peers, {}, "Conn1 peers: "+JSON.stringify(peers));
+        notDeepEqual(peers, {}, "Conn1 peers: "+JSON.stringify(peers));
+      }
     })
   });
 
-  conn1.addEventListener('handshakeManager.disconnected', function(event)
+/*
+  conn1.on('handshakeManager.disconnected', function(event)
   {
     ok(true, "Conn1: "+JSON.stringify(event.handshakeManager));
     start();
   });
+*/
 
-  conn1.addEventListener('error', function(event)
+  conn1.on('error', function(error)
   {
-    ok(false, "Conn1 error: "+event.error);
+    ok(false, "Conn1 error: ", error);
     start();
   });
 
   // Conn 2
 
-  conn2.addEventListener('peerconnection', function(event)
+  conn2.on('peerconnection', function(peerconnection)
   {
-    var peerconnection = event.peerconnection;
+    ok(true, "Conn2 PeerConnection: ",peerconnection);
 
-    ok(true, "Conn2 PeerConnection: "+peerconnection);
-
-    peerconnection.addEventListener('open', function()
+    peerconnection.addEventListener('signalingstatechange', function()
     {
-  	  var peers = conn2.getPeers();
+      if(peerconnection.signalingState == 'open')
+      {
+        var peers = conn2.getPeers();
 
-      notDeepEqual(peers, {}, "Conn2 peers: "+JSON.stringify(peers));
+        notDeepEqual(peers, {}, "Conn2 peers: "+JSON.stringify(peers));
 
-      start();
+        start();
+      }
     })
   });
 
-  conn2.addEventListener('error', function(event)
+  conn2.on('error', function(error)
   {
-    ok(false, "Conn2 error: "+event.error);
+    ok(false, "Conn2 error: ", error);
     start();
   });
 });

@@ -179,6 +179,6 @@ module.exports = function(grunt)
   });
 
   // Alias tasks
-  grunt.registerTask('default', ['clean', 'jsdoc', 'browserify', 'minifyify', 'clean:browserify_sourcemap']);
+  grunt.registerTask('default', ['clean', 'browserify', 'minifyify', 'clean:browserify_sourcemap']);
 //  grunt.registerTask('default', ['nodeunit', 'clean', 'jsdoc', 'browserify', 'minifyify', 'clean:browserify_sourcemap']);
 };
