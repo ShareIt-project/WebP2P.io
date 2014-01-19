@@ -1,6 +1,9 @@
 QUnit.log(function(details)
 {
-  console.log("Log: ", details.result, details.message);
+  if(details.result)
+    console.log("Log: ", details.message);
+  else
+    console.warn("Log: ", details.message);
 });
 
 
@@ -9,7 +12,7 @@ module("1 peer");
 
 test("No options", function()
 {
-  var conn = new WebP2P();
+  new WebP2P();
 
   ok(true, "Passed!");
 });
@@ -32,6 +35,8 @@ test("No handshake servers defined", function()
 
 asyncTest("Connect to PubNub", function()
 {
+  expect(2);
+
   var options =
   {
     handshake_servers:
@@ -126,12 +131,14 @@ var options2 =
 };
 
 
-var conn1 = new WebP2P(options1);
-var conn2 = new WebP2P(options2);
-
-
 asyncTest("Connect to PubNub", function()
 {
+  expect(2);
+  stop();
+
+  var conn1 = new WebP2P(options1);
+  var conn2 = new WebP2P(options2);
+
   // Conn 1
 
   conn1.on('connected', function()
@@ -162,25 +169,27 @@ asyncTest("Connect to PubNub", function()
 });
 
 asyncTest(
-"Conn1 connect to current peers over PubNub,"+
+"Conn1 connect to current peers over PubNub, "+
 "Conn2 connect to new peer and disconnect from handshakeManager",
 function()
 {
+  expect(4);
+  stop();
+
+  var conn1 = new WebP2P(options1);
+  var conn2 = new WebP2P(options2);
+
   // Conn 1
 
   conn1.on('peerconnection', function(peerconnection)
   {
-    ok(true, "Conn1 PeerConnection: "+peerconnection);
+    ok(true, "Conn1 PeerConnection: "+peerconnection.sessionID);
 
-    peerconnection.addEventListener('signalingstatechange', function()
-    {
-      if(peerconnection.signalingState == 'open')
-      {
-        var peers = conn1.getPeers();
+    var peers = conn1.peers;
 
-        notDeepEqual(peers, {}, "Conn1 peers: "+JSON.stringify(peers));
-      }
-    })
+    notDeepEqual(peers, {}, "Conn1 peers: "+JSON.stringify(peers));
+
+    start();
   });
 
 /*
@@ -193,7 +202,7 @@ function()
 
   conn1.on('error', function(error)
   {
-    ok(false, "Conn1 error: ", error);
+    ok(false, "Conn1 error: "+error);
     start();
   });
 
@@ -201,24 +210,18 @@ function()
 
   conn2.on('peerconnection', function(peerconnection)
   {
-    ok(true, "Conn2 PeerConnection: ",peerconnection);
+    ok(true, "Conn2 PeerConnection: "+peerconnection.sessionID);
 
-    peerconnection.addEventListener('signalingstatechange', function()
-    {
-      if(peerconnection.signalingState == 'open')
-      {
-        var peers = conn2.getPeers();
+    var peers = conn2.peers;
 
-        notDeepEqual(peers, {}, "Conn2 peers: "+JSON.stringify(peers));
+    notDeepEqual(peers, {}, "Conn2 peers: "+JSON.stringify(peers));
 
-        start();
-      }
-    })
+    start();
   });
 
   conn2.on('error', function(error)
   {
-    ok(false, "Conn2 error: ", error);
+    ok(false, "Conn2 error: "+error);
     start();
   });
 });

@@ -4,9 +4,10 @@
  */
 
 
-const PRESENCE = 0;
-const OFFER    = 1;
-const ANSWER   = 2;
+const ERROR    = 0;
+const PRESENCE = 1;
+const OFFER    = 2;
+const ANSWER   = 3;
 
 const MAX_TTL_DEFAULT = 5;
 
@@ -15,6 +16,8 @@ const BASE_TIMEOUT = 5000;
 
 function MessagePacker(sessionID)
 {
+  var self = this;
+
   var requestID = 0;
 
   var requests  = {};
@@ -24,13 +27,14 @@ function MessagePacker(sessionID)
   /**
    * Store the response to prevent to process duplicate request later
    */
-  function storeResponse(message, dest)
+  function storeResponse(message, dest, id)
   {
     message.stored = true;
 
     var response =
     {
       message: message,
+      id: id,
       timeout: setTimeout(function()
       {
         clearTimeout(response.timeout);
@@ -46,7 +50,7 @@ function MessagePacker(sessionID)
   // Pack & Unpack
   //
 
-  this.pack = function(message)
+  this.pack = function(message, id)
   {
     var result = new Array(6);
 
@@ -82,10 +86,8 @@ function MessagePacker(sessionID)
 
     if(result.type != PRESENCE)
     {
-      var id = message.id  || requestID++;
-
       result[2] = message.dest;
-      result[3] = id;
+      result[3] = id || requestID++;
       result[4] = Math.min(message.ttl || MAX_TTL_DEFAULT, MAX_TTL_DEFAULT);
       result[5] = message.sdp;
     };
@@ -96,6 +98,9 @@ function MessagePacker(sessionID)
   this.unpack = function(message)
   {
     var result = {};
+
+    var from = message[1];
+    var id   = message[3];
 
     // Type
     var type = message[0];
@@ -123,32 +128,31 @@ function MessagePacker(sessionID)
     };
 
     // From
-    result.from = message[1];
+    result.from = from;
 
     // Offer & Answer
 
     if(type != PRESENCE)
     {
       result.dest = message[2];
-      result.id   = message[3];
       result.ttl  = message[4];
       result.sdp  = message[5];
+
+      result.pack = function()
+      {
+        return self.pack(this, id);
+      };
     };
 
     // Dispatch responses callbacks
-    var from = result.from;
-    var id   = result.id;
-
     if(result.type == 'offer')
     {
       // Check if it's a re-try
       var response = responses[from];
       if(response)
       {
-        var message = response.message;
-
         // Old message, ignore it
-        if(message.id > id)
+        if(response.id > id)
           return;
 
         // Updated message (or duplicated one), delete old response
@@ -156,15 +160,33 @@ function MessagePacker(sessionID)
         delete responses[from];
 
         // Duplicated message, re-send it
-        if(message.id == id)
+        if(response.id == id)
         {
+          var message = response.message;
+
           // Store the response to prevent to process duplicate request later
-          storeResponse(message, from);
+          storeResponse(message, from, id);
 
           // Return the stored response so it can be directly send back
           return message;
         };
-      };
+      }
+      else
+        result.reply = function(dest, sdp)
+        {
+          var message = self.pack(
+          {
+            type: "answer",
+            dest: dest,
+            sdp:  sdp
+          }, id);
+
+          // Store the response to prevent to process duplicate request later
+          storeResponse(message, dest, id);
+
+          // Return the packed message
+          return message;
+        };
     };
 
     if(result.type == 'answer')
@@ -212,15 +234,18 @@ function MessagePacker(sessionID)
       sdp:  sdp
     });
 
+    message.cancel = function(){};
+
     // Store callback if defined to be executed when received the response
     if(callback)
     {
       var request_ids = requests[dest] = requests[dest] || {};
 
-      var id = message.id;
+      var id = message[3];
 
-      var request_id = request_ids[id] =
+      var request = request_ids[id] =
       {
+        message: message,
         callback: dispatchCallback,
         timeout:  setTimeout(function()
         {
@@ -232,34 +257,22 @@ function MessagePacker(sessionID)
         BASE_TIMEOUT)
       };
 
-      function dispatchCallback(error, result)
+      message.cancel = function()
       {
-        clearTimeout(request_id.timeout);
+        clearTimeout(request.timeout);
 
         delete request_ids[id];
         if(!Object.keys(request_ids).length)
           delete requests[dest];
+      };
+
+      function dispatchCallback(error, result)
+      {
+        message.cancel();
 
         callback(error, result);
       };
     };
-
-    // Return the packed message
-    return message;
-  };
-
-  this.answer = function(dest, id, sdp)
-  {
-    var message = this.pack(
-    {
-      type: "answer",
-      dest: dest,
-      id:   id,
-      sdp:  sdp
-    });
-
-    // Store the response to prevent to process duplicate request later
-    storeResponse(message, dest);
 
     // Return the packed message
     return message;
@@ -283,10 +296,8 @@ function applyChannelsShim(pc)
     return channels;
   };
 
-  function initChannel(channel, starter)
+  function initChannel(channel)
   {
-    Object.defineProperty(channel, "starter", {value : starter});
-
     channels.push(channel);
 
     channel.addEventListener('close', function(event)
@@ -303,7 +314,7 @@ function applyChannelsShim(pc)
     {
       var channel = event.channel;
 
-      initChannel(channel, false);
+      initChannel(channel);
     };
 
     // Dispatch events
@@ -316,13 +327,9 @@ function applyChannelsShim(pc)
   {
     var channel = createDataChannel.call(this, label, dataChannelDict);
 
-    initChannel(channel, true);
+    initChannel(channel);
 
-    // Dispatch datachannel events for local created ones
-    var event = new Event('datachannel');
-        event.channel = channel;
-
-    dispatchEvent.call(this, event);
+    return channel;
   };
 };
 
@@ -331,6 +338,7 @@ module.exports = applyChannelsShim;
 },{}],3:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
+var RTCPeerConnection = require('wrtc').RTCPeerConnection;
 //var uuid = require('uuid');
 
 var HandshakeManager = require('./managers/HandshakeManager');
@@ -339,9 +347,6 @@ var PeersManager     = require('./managers/PeersManager');
 var MessagePacker = require('./MessagePacker');
 
 var applyChannelsShim = require("./PeerConnection_channels.shim");
-
-
-var RTCPeerConnection = RTCPeerConnection || webkitRTCPeerConnection;
 
 
 /**
@@ -395,12 +400,19 @@ function WebP2P(options)
     return handshakeManager.status
   });
 
+  this.__defineGetter__("peers", function()
+  {
+    return peersManager.peers;
+  });
+
 
   function onerror(error)
   {
     self.emit('error', new Error(error));
   };
 
+
+  var offers = {};
 
   /**
    * Create a new RTCPeerConnection
@@ -417,10 +429,6 @@ function WebP2P(options)
     );
 
     applyChannelsShim(pc);
-
-    self.emit('peerconnection', pc);
-
-    pc.createDataChannel(self.routingLabel);
 
     pc.addEventListener('icecandidate', function(event)
     {
@@ -441,9 +449,17 @@ function WebP2P(options)
     pc.addEventListener('signalingstatechange', function(event)
     {
       // Add PeerConnection object to available ones when gets open
-      if(pc.signalingState == 'open')
+      if(pc.signalingState == 'stable')
+      {
         peersManager.add(sessionID, pc);
+        delete offers[sessionID];
+
+        self.emit('peerconnection', pc);
+      };
     });
+
+    // Set ID of the PeerConnection
+    Object.defineProperty(pc, "sessionID", {value : sessionID});
 
     return pc;
   };
@@ -452,7 +468,8 @@ function WebP2P(options)
   function initPeerConnection_Offer(pc, labels)
   {
     // Set channels for this PeerConnection object
-    labels = commonLabels.concat(labels);
+    labels = [self.routingLabel].concat(commonLabels, labels);
+
     for(var i=0, label; label=labels[i]; i++)
       pc.createDataChannel(label);
 
@@ -536,21 +553,27 @@ function WebP2P(options)
       return;
     }
 
-    var peer = peersManager.get(dest);
-    if(peer)
-      callback(null, peer)
+    var pc = peersManager.get(dest);
+    if(pc)
+      callback(null, pc)
 
     else
     {
-      peer = createPeerConnection(dest, "offer", function(offer)
+      pc = createPeerConnection(dest, "offer", function(offer)
       {
         var message = messagepacker.offer(dest, offer, callback);
+
+        offers[dest] =
+        {
+          message: message,
+          peerConnection: pc
+        };
 
         handshakeManager.send(message);
         peersManager.send(message);
       });
 
-      initPeerConnection_Offer(peer, labels);
+      initPeerConnection_Offer(pc, labels);
     }
   };
 
@@ -570,7 +593,7 @@ function WebP2P(options)
 
     var dest = message.dest;
 
-    message = messagepacker.pack(message);
+    message = message.pack();
 
     // Search the peer between the ones currently connected
     for(var i=0, peer; peer=peersManager._connectors[i]; i++)
@@ -611,6 +634,48 @@ function WebP2P(options)
     // Offer & answer events
     //
 
+    /**
+     * Check if it's a request from a peer we are already connected or trying to
+     * connect to, so we can prevent to do crossed connections
+     *
+     * @param sessionID - ID of the other peer
+     *
+     * @returns {Boolean} - If we are already connected or trying to connect
+     */
+    function connectionProcessed(sessionID)
+    {
+      // Check if we are already connected to the requester peer
+      var peer = peersManager.get(sessionID);
+      if(peer)
+      {
+        // We are already connected to that peer, ignore the request
+        console.log("["+self.sessionID+"] Already connected to "+sessionID);
+        return true;
+      };
+
+      // Check if we are already trying to connect to that peer
+      var offer = offers[sessionID];
+      if(offer)
+      {
+        // We are already trying to connected to that peer, ignore the request
+        console.log("["+self.sessionID+"] Already offered connection to "+sessionID);
+
+        // We have higher precedence, ignore incoming connection request
+        if(self.sessionID < sessionID)
+          return true;  // Should send an error to the other end
+
+        // We have less precedence, cancel our connection request and prepare to
+        // incoming one
+        offer.message.cancel();
+        offer.peerConnection.close();
+
+        delete offers[sessionID];
+      };
+
+      // Connection request is a genuinely new one, process it as usual
+      return false;
+    };
+
     manager.on('offer', function(message, connector)
     {
       var from = message.from;
@@ -624,13 +689,16 @@ function WebP2P(options)
       {
         console.log("["+self.sessionID+"] Received connection request from "+from);
 
-        var id = message.id;
+        if(connectionProcessed(from))
+          return;
+
+        var request = message;
 
         // Search the peer between the list of currently connected ones,
         // or create it if it's not connected
         var pc = createPeerConnection(from, "answer", function(answer)
         {
-          var message = messagepacker.answer(from, id, answer);
+          var message = request.reply(from, answer);
 
           // Send back the connection request over the same connector, since
           // this should be the shortest path to connect both peers
@@ -658,12 +726,12 @@ function WebP2P(options)
       {
         console.log("["+self.sessionID+"] Received connection response from "+from);
 
-        var peer = peersManager.get(from);
+        var peer = offers[from];
         if(peer)
         {
-          peer.setRemoteDescription(new RTCSessionDescription(
+          peer.peerConnection.setRemoteDescription(new RTCSessionDescription(
           {
-            sdp: sdp,
+            sdp: message.sdp,
             type: 'answer'
           }),
           function()
@@ -671,8 +739,6 @@ function WebP2P(options)
             console.log("Successfuly generated RemoteDescription for "+from);
           },
           onerror);
-
-          connector.increaseConnections();
         }
         else
           console.warn("["+self.sessionID+"] Connection with peer '" + from + "' was not previously requested");
@@ -701,9 +767,22 @@ function WebP2P(options)
       {
         var message = messagepacker.offer(from, offer);
 
+        offers[from] =
+        {
+          message: message,
+          peerConnection: pc
+        };
+
         // Send back the connection request over the same connector, since this
         // should be the shortest path to connect both peers
         connector.send(message);
+      });
+
+      pc.addEventListener('signalingstatechange', function(event)
+      {
+        // Add PeerConnection object to available ones when gets open
+        if(pc.signalingState == 'stable')
+          connector.increaseConnections();
       });
 
       initPeerConnection_Offer(pc);
@@ -733,7 +812,7 @@ WebP2P.prototype.constructor = WebP2P;
 
 
 module.exports = WebP2P;
-},{"./MessagePacker":1,"./PeerConnection_channels.shim":2,"./managers/HandshakeManager":10,"./managers/PeersManager":12,"events":13}],4:[function(require,module,exports){
+},{"./MessagePacker":1,"./PeerConnection_channels.shim":2,"./managers/HandshakeManager":10,"./managers/PeersManager":12,"events":13,"wrtc":14}],4:[function(require,module,exports){
 var HandshakeConnector = require("./core/HandshakeConnector");
 
 var PUBNUB = require("pubnub");
@@ -807,7 +886,7 @@ Connector_PubNub.prototype.max_chars       = 1800;
 
 
 module.exports = Connector_PubNub;
-},{"./core/HandshakeConnector":7,"pubnub":14}],5:[function(require,module,exports){
+},{"./core/HandshakeConnector":7,"pubnub":15}],5:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
 
@@ -1304,13 +1383,19 @@ function PeersManager(messagepacker, routingLabel)
   {
     var connector = new Connector_DataChannel(channel);
 
-    this._initConnector(connector);
+    self._initConnector(connector);
 
     return connector;
   };
 
 
   var peers = {};
+
+  this.__defineGetter__("peers", function()
+  {
+    return peers;
+  });
+
 
   this.add = function(sessionID, peerConnection)
   {
@@ -1329,9 +1414,9 @@ function PeersManager(messagepacker, routingLabel)
       {
         createConnector(channel);
         break;
-      }
+      };
 
-    // Add the PeerConnection to the list of enabled ones
+    // Add PeerConnection to the list of enabled ones
     peers[sessionID] = peerConnection;
   };
 
@@ -1648,6 +1733,15 @@ function isUndefined(arg) {
 }
 
 },{}],14:[function(require,module,exports){
+var RTCIceCandidate       = window.mozRTCIceCandidate       || window.webkitRTCIceCandidate       || window.RTCIceCandidate;
+var RTCPeerConnection     = window.mozRTCPeerConnection     || window.webkitRTCPeerConnection     || window.RTCPeerConnection;
+var RTCSessionDescription = window.mozRTCSessionDescription || window.webkitRTCSessionDescription || window.RTCSessionDescription;
+
+
+exports.RTCIceCandidate       = RTCIceCandidate;
+exports.RTCPeerConnection     = RTCPeerConnection;
+exports.RTCSessionDescription = RTCSessionDescription;
+},{}],15:[function(require,module,exports){
 // Version: 3.5.48
 (function(){
 var j=!0,t=null,u=!1;function x(){return function(){}}
