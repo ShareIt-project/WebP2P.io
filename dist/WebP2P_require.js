@@ -597,7 +597,7 @@ function WebP2P(options)
 
     // Search the peer between the ones currently connected
     for(var i=0, peer; peer=peersManager._connectors[i]; i++)
-      if(peer.sessionID === dest)
+      if(peer.sessionID == dest)
       {
         peer.send(message);
         return;
@@ -1135,18 +1135,15 @@ function HandshakeManager(messagepacker, handshake_servers)
     for(; index < configs.length; index++)
     {
       var connector = createConnector(configs[index]);
-      if(connector)
+          connector.on('close', function()
       {
-        connector.on('close', function()
-        {
-          // Handshake connector has been closed, try to get an alternative one
-          index++;
-          handshake();
-        });
+        // Handshake connector has been closed, try to get an alternative one
+        index++;
+        handshake();
+      });
 
-        // Connector successfully created
-        return;
-      };
+      // Connector successfully created
+      return;
     };
 
     // All configured handshake servers has been consumed
@@ -1412,7 +1409,9 @@ function PeersManager(messagepacker, routingLabel)
     for(var i=0, channel; channel=channels[i]; i++)
       if(channel.label == routingLabel)
       {
-        createConnector(channel);
+        var connector = createConnector(channel);
+            connector.sessionID = sessionID;
+
         break;
       };
 

@@ -13,7 +13,7 @@
   ],
   "main": "lib/index.js",
   "scripts": {
-    "test": "node_modules/.bin/nodeunit test"
+    "test": "node_modules/.bin/qunit -c WebP2P:lib/index.js -t test/test.js -l"
   },
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
     "pubnub": "latest",
     "pusher": "latest",
     "uuid": "~1.4.1",
-    "wrtc": "git@github.com:ShareIt-project/node-webrtc.git"
+    "wrtc": "~0.0.7"
   },
   "devDependencies": {
     "browserify": "~3.4.1",
@@ -45,10 +45,10 @@
     "grunt-contrib-nodeunit": "~0.2.2",
     "grunt-jsdoc": "~0.4.2",
     "minifyify": "~1.1.2",
-    "nodeunit": "~0.8.2"
+    "nodeunit": "~0.8.2",
+    "qunit": "~0.5.18"
   },
-  "browser":
-  {
+  "browser": {
     "pubnub": "./shim/pubnub.min.js"
   }
 }
