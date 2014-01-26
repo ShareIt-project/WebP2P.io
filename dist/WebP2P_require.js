@@ -335,6 +335,7 @@ function applyChannelsShim(pc)
 
 
 module.exports = applyChannelsShim;
+
 },{}],3:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
@@ -489,7 +490,7 @@ function WebP2P(options)
       pc.setLocalDescription(offer,
       function()
       {
-        console.log("Offer LocalDescription created and set");
+        console.log('['+self.sessionID+'] Offer LocalDescription created and set');
       },
       onerror);
     },
@@ -514,7 +515,7 @@ function WebP2P(options)
         pc.setLocalDescription(answer,
         function()
         {
-          console.log("Answer LocalDescription created and set");
+          console.log('['+self.sessionID+'] Answer LocalDescription created and set');
         },
         onerror);
       },
@@ -812,6 +813,7 @@ WebP2P.prototype.constructor = WebP2P;
 
 
 module.exports = WebP2P;
+
 },{"./MessagePacker":1,"./PeerConnection_channels.shim":2,"./managers/HandshakeManager":10,"./managers/PeersManager":12,"events":13,"wrtc":14}],4:[function(require,module,exports){
 var HandshakeConnector = require("./core/HandshakeConnector");
 
