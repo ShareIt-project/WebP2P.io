@@ -46,7 +46,8 @@
     "grunt-jsdoc": "~0.4.2",
     "minifyify": "~1.1.2",
     "nodeunit": "~0.8.2",
-    "qunit": "~0.5.18"
+    "qunit": "~0.5.18",
+    "qunitjs": "~1.13.0"
   },
   "browser": {
     "pubnub": "./shim/pubnub.min.js"

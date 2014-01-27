@@ -46,12 +46,12 @@ var options2 =
 };
 
 
-asyncTest("Connect two peers to PubNub at the same time", function()
+test("Connect two peers to PubNub at the same time", function()
 {
   var pendingTests = 2;
 
   expect(pendingTests);
-  stop();
+  stop(pendingTests);
 
   var conn1 = new WebP2P(options1);
   var conn2 = new WebP2P(options2);
@@ -100,12 +100,13 @@ asyncTest("Connect two peers to PubNub at the same time", function()
   });
 });
 
-asyncTest("Interconnect two peers", function()
+
+test("Interconnect two peers", function()
 {
   var pendingTests = 2;
 
-  expect(4);
-  stop();
+  expect(2*pendingTests);
+  stop(pendingTests);
 
   var conn1 = new WebP2P(options1);
   var conn2 = new WebP2P(options2);
@@ -127,9 +128,9 @@ asyncTest("Interconnect two peers", function()
   {
     ok(true, "Conn1 PeerConnection: "+peerconnection.sessionID);
 
-    var peers = conn1.peers;
+    var peers = Object.keys(conn1.peers);
 
-    notDeepEqual(peers, {}, "Conn1 peers: "+JSON.stringify(peers));
+    equal(peers.length, 1, "Conn1 peers: "+peers);
 
     tearDown();
   });
@@ -147,9 +148,9 @@ asyncTest("Interconnect two peers", function()
   {
     ok(true, "Conn2 PeerConnection: "+peerconnection.sessionID);
 
-    var peers = conn2.peers;
+    var peers = Object.keys(conn2.peers);
 
-    notDeepEqual(peers, {}, "Conn2 peers: "+JSON.stringify(peers));
+    equal(peers.length, 1, "Conn2 peers: "+peers);
 
     tearDown();
   });
@@ -159,6 +160,93 @@ asyncTest("Interconnect two peers", function()
     ok(false, "Conn2 error: "+error);
 
     tearDown();
+  });
+});
+
+
+test("Disconnect a peer from handshake channel after connecting to other peer",
+function()
+{
+  expect(6);
+  stop(2);
+
+  // Conn 1
+
+  var options1 =
+  {
+    handshake_servers:
+    [
+      {
+        type: "PubNub",
+        config_init:
+        {
+          publish_key  : "pub-6ee5d4df-fe10-4990-bbc7-c1b0525f5d2b",
+          subscribe_key: "sub-e5919840-3564-11e2-b8d0-c7df1d04ae4a",
+          ssl          : true
+        },
+        config_mess:
+        {
+          channel: "ShareIt"
+        },
+        max_connections: 1
+      }
+    ],
+    uid: "Peer 1"
+  };
+
+  var conn1 = new WebP2P(options1);
+
+  conn1.on('error', function(error)
+  {
+    ok(false, "Conn1 error: "+error);
+
+    conn1.close();
+    start();
+  });
+
+  conn1.on('handshakeManager.connected', function()
+  {
+    ok(true, "Conn1 handshakeManager.connect. SessionID: "+conn1.sessionID);
+
+    conn1.on('handshakeManager.disconnected', function()
+    {
+      ok(true, 'Conn1 handshakeManager.disconnected');
+
+      var peers = Object.keys(conn1.peers);
+
+      equal(peers.length, 1, "Conn1 peers: "+peers);
+
+      var status = conn1.status;
+      equal(status, 'connected', 'Conn1 status: '+status);
+
+      conn1.close();
+      start();
+    });
+
+
+    // Conn 2
+
+    var conn2 = new WebP2P(options2);
+
+    conn2.on('peerconnection', function(peerconnection)
+    {
+      ok(true, "Conn2 PeerConnection: "+peerconnection.sessionID);
+
+      var peers = Object.keys(conn2.peers);
+
+      equal(peers.length, 1, "Conn2 peers: "+peers);
+
+      conn2.close();
+      start();
+    });
+
+    conn2.on('error', function(error)
+    {
+      ok(false, "Conn2 error: "+error);
+
+      conn2.close();
+      start();
+    });
   });
 });
 
