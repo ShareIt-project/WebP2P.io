@@ -393,12 +393,12 @@ function WebP2P(options)
   var handshakeManager = new HandshakeManager(messagepacker, handshake_servers);
   var peersManager     = new PeersManager(messagepacker, self.routingLabel);
 
-  this.__defineGetter__("status", function()
+  this.__defineGetter__('status', function()
   {
     if(peersManager.status == 'connected')
-      return 'connected'
+      return 'connected';
 
-    return handshakeManager.status
+    return handshakeManager.status;
   });
 
   this.__defineGetter__("peers", function()
@@ -452,10 +452,8 @@ function WebP2P(options)
       // Add PeerConnection object to available ones when gets open
       if(pc.signalingState == 'stable')
       {
-        peersManager.add(sessionID, pc);
         delete offers[sessionID];
-
-        self.emit('peerconnection', pc);
+        peersManager.add(sessionID, pc);
       };
     });
 
@@ -547,12 +545,18 @@ function WebP2P(options)
    */
   this.connectTo = function(dest, labels, callback)
   {
-    // Don't connect to uurself
-    if(dest == self.sessionID)
+    if(labels instanceof Function)
     {
-      callback(new Error("Connecting to ourself"));
-      return;
-    }
+      if(callback)
+        throw new SyntaxError("Nothing can be defined after the callback");
+
+      callback = labels;
+      labels = undefined;
+    };
+
+    // Don't connect to ourself
+    if(dest == self.sessionID)
+      return callback(new Error("Connecting to ourself"));
 
     var pc = peersManager.get(dest);
     if(pc)
@@ -599,10 +603,7 @@ function WebP2P(options)
     // Search the peer between the ones currently connected
     for(var i=0, peer; peer=peersManager._connectors[i]; i++)
       if(peer.sessionID == dest)
-      {
-        peer.send(message);
-        return;
-      };
+        return peer.send(message);
 
     // Peer was not found, forward message to all the connectors
     peersManager.send(message, connector);
@@ -610,13 +611,27 @@ function WebP2P(options)
   };
 
 
+  handshakeManager.on('connected', function()
+  {
+    self.emit('handshakeManager.connected');
+  });
+  handshakeManager.on('disconnected', function()
+  {
+    self.emit('handshakeManager.disconnected');
+  });
+
+  peersManager.on('peerconnection', function(peerConnection)
+  {
+    self.emit('peerconnection', peerConnection);
+  });
+
   function initManagerEvents(manager)
   {
     //
     // Basic events
     //
 
-    manager.on('connected', function(connector)
+    manager.on('connected', function()
     {
       if(handshakeManager.status != peersManager.status)
         self.emit('connected');
@@ -824,9 +839,9 @@ var PUBNUB = require("pubnub");
  * Handshake connector for PubNub
  * @param {Object} configuration Configuration object.
  */
-function Connector_PubNub(config_init, config_mess)
+function Connector_PubNub(config_init, config_mess, max_connections)
 {
-  HandshakeConnector.call(this);
+  HandshakeConnector.call(this, max_connections);
 
   var self = this;
 
@@ -882,12 +897,13 @@ function Connector_PubNub(config_init, config_mess)
 Connector_PubNub.prototype.__proto__   = HandshakeConnector.prototype;
 Connector_PubNub.prototype.constructor = Connector_PubNub;
 
-//Class constants
+// Class constants
 Connector_PubNub.prototype.max_connections = 50;
-Connector_PubNub.prototype.max_chars       = 1800;
+Object.defineProperty(Connector_PubNub.prototype, 'max_chars', {value: 1800});
 
 
 module.exports = Connector_PubNub;
+
 },{"./core/HandshakeConnector":7,"pubnub":15}],5:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
@@ -983,12 +999,15 @@ module.exports = Connector_DataChannel;
 var Connector = require("./Connector");
 
 
-function HandshakeConnector()
+function HandshakeConnector(max_connections)
 {
   Connector.call(this);
 
   var self = this;
 
+
+  if(max_connections != undefined)
+    this.max_connections = Math.min(max_connections, this.max_connections);
 
   /**
    * Check if we should connect this new peer or ignore it to increase entropy
@@ -1025,6 +1044,7 @@ HandshakeConnector.prototype.max_connections = Number.POSITIVE_INFINITY;
 
 
 module.exports = HandshakeConnector;
+
 },{"./Connector":5}],8:[function(require,module,exports){
 const ERROR_NETWORK_UNKNOWN = {id: 0, msg: 'Unable to fetch handshake servers configuration'};
 const ERROR_NETWORK_OFFLINE = {id: 1, msg: "There's no available network"};
@@ -1085,16 +1105,17 @@ function HandshakeManager(messagepacker, handshake_servers)
 
   function createConnector(config)
   {
-    var type        = config.type;
-    var config_init = config.config_init;
-    var config_mess = config.config_mess;
+    var type            = config.type;
+    var config_init     = config.config_init;
+    var config_mess     = config.config_mess;
+    var max_connections = config.max_connections;
 
     // Check if connector constructor is from a valid handshake server
     var connectorConstructor = handshakeConnectorConstructors[type];
     if(!connectorConstructor)
       throw Error("Invalid handshake server type '" + type + "'");
 
-    var connector = new connectorConstructor(config_init, config_mess);
+    var connector = new connectorConstructor(config_init, config_mess, max_connections);
 
     self._initConnector(connector);
 
@@ -1164,7 +1185,8 @@ function HandshakeManager(messagepacker, handshake_servers)
       return;
     };
 
-    if(connectorConstructor.prototype.max_connections == Number.POSITIVE_INFINITY)
+    if(connectorConstructor.prototype.max_connections == Number.POSITIVE_INFINITY
+    && !config.max_connections)
     {
       configs_infinity.push(config)
 
@@ -1255,6 +1277,7 @@ HandshakeManager.prototype.constructor = HandshakeManager;
 
 
 module.exports = HandshakeManager;
+
 },{"../connectors/PubNub":4,"../errors":8,"./Manager":11}],11:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
@@ -1335,10 +1358,10 @@ function Manager(messagepacker)
    */
   this.send = function(message, incomingConnector)
   {
-    for(var i=0, peer; peer=this._connectors[i]; i++)
+    for(var i=0, connector; connector=this._connectors[i]; i++)
     {
       // Don't send the message to the same connector where we received it
-      if(peer === incomingConnector)
+      if(connector === incomingConnector)
         continue;
 
       peer.send(message);
@@ -1351,8 +1374,8 @@ function Manager(messagepacker)
    */
   this.close = function()
   {
-    for(var i=0, peer; peer=this._connectors[i]; i++)
-      peer.close();
+    for(var i=0, connector; connector=this._connectors[i]; i++)
+      connector.close();
   };
 };
 Manager.prototype.__proto__   = EventEmitter.prototype;
@@ -1360,6 +1383,7 @@ Manager.prototype.constructor = Manager;
 
 
 module.exports = Manager;
+
 },{"events":13}],12:[function(require,module,exports){
 var Manager = require('./Manager');
 
@@ -1405,20 +1429,39 @@ function PeersManager(messagepacker, routingLabel)
         delete peers[sessionID];
     });
 
-    // Routing DataChannel, just init routing functionality on it
-    var channels = peerConnection.getDataChannels();
-
-    for(var i=0, channel; channel=channels[i]; i++)
+    function initRoutingChannel(channel)
+    {
       if(channel.label == routingLabel)
       {
         var connector = createConnector(channel);
             connector.sessionID = sessionID;
 
-        break;
-      };
+        // Add PeerConnection to the list of enabled ones
+        peers[sessionID] = peerConnection;
 
-    // Add PeerConnection to the list of enabled ones
-    peers[sessionID] = peerConnection;
+        self.emit('peerconnection', peerConnection);
+
+        // Notify that the routing channel has been initialized
+        return true;
+      };
+    };
+
+    function initRoutingChannel_listener(event)
+    {
+      if(initRoutingChannel(event.channel))
+        peerConnection.removeEventListener('datachannel', initRoutingChannel_listener);
+    };
+
+    // Routing DataChannel, just init routing functionality on it
+    var channels = peerConnection.getDataChannels();
+    if(channels)
+      for(var i=0, channel; channel=channels[i]; i++)
+        if(initRoutingChannel(channel))
+          return;
+
+    // Channels were not still created, wait until they are done
+    else
+      peerConnection.addEventListener('datachannel', initRoutingChannel_listener);
   };
 
   this.get = function(sessionID)
@@ -1431,6 +1474,7 @@ PeersManager.prototype.constructor = PeersManager;
 
 
 module.exports = PeersManager;
+
 },{"../connectors/core/DataChannel":6,"./Manager":11}],13:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
