@@ -393,12 +393,12 @@ function WebP2P(options)
   var handshakeManager = new HandshakeManager(messagepacker, handshake_servers);
   var peersManager     = new PeersManager(messagepacker, self.routingLabel);
 
-  this.__defineGetter__("status", function()
+  this.__defineGetter__('status', function()
   {
     if(peersManager.status == 'connected')
-      return 'connected'
+      return 'connected';
 
-    return handshakeManager.status
+    return handshakeManager.status;
   });
 
   this.__defineGetter__("peers", function()
@@ -452,8 +452,8 @@ function WebP2P(options)
       // Add PeerConnection object to available ones when gets open
       if(pc.signalingState == 'stable')
       {
-        peersManager.add(sessionID, pc);
         delete offers[sessionID];
+        peersManager.add(sessionID, pc);
 
         self.emit('peerconnection', pc);
       };
@@ -599,10 +599,7 @@ function WebP2P(options)
     // Search the peer between the ones currently connected
     for(var i=0, peer; peer=peersManager._connectors[i]; i++)
       if(peer.sessionID == dest)
-      {
-        peer.send(message);
-        return;
-      };
+        return peer.send(message);
 
     // Peer was not found, forward message to all the connectors
     peersManager.send(message, connector);
@@ -610,13 +607,31 @@ function WebP2P(options)
   };
 
 
+  handshakeManager.on('connected', function()
+  {
+    self.emit('handshakeManager.connected');
+  });
+  handshakeManager.on('disconnected', function()
+  {
+    self.emit('handshakeManager.disconnected');
+  });
+
+  peersManager.on('connected', function()
+  {
+    self.emit('peersManager.connected');
+  });
+  peersManager.on('disconnected', function()
+  {
+    self.emit('peersManager.disconnected');
+  });
+
   function initManagerEvents(manager)
   {
     //
     // Basic events
     //
 
-    manager.on('connected', function(connector)
+    manager.on('connected', function()
     {
       if(handshakeManager.status != peersManager.status)
         self.emit('connected');
@@ -824,9 +839,9 @@ var PUBNUB = require("pubnub");
  * Handshake connector for PubNub
  * @param {Object} configuration Configuration object.
  */
-function Connector_PubNub(config_init, config_mess)
+function Connector_PubNub(config_init, config_mess, max_connections)
 {
-  HandshakeConnector.call(this);
+  HandshakeConnector.call(this, max_connections);
 
   var self = this;
 
@@ -882,12 +897,13 @@ function Connector_PubNub(config_init, config_mess)
 Connector_PubNub.prototype.__proto__   = HandshakeConnector.prototype;
 Connector_PubNub.prototype.constructor = Connector_PubNub;
 
-//Class constants
+// Class constants
 Connector_PubNub.prototype.max_connections = 50;
-Connector_PubNub.prototype.max_chars       = 1800;
+Object.defineProperty(Connector_PubNub.prototype, 'max_chars', {value: 1800});
 
 
 module.exports = Connector_PubNub;
+
 },{"./core/HandshakeConnector":7,"pubnub":15}],5:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
@@ -983,12 +999,15 @@ module.exports = Connector_DataChannel;
 var Connector = require("./Connector");
 
 
-function HandshakeConnector()
+function HandshakeConnector(max_connections)
 {
   Connector.call(this);
 
   var self = this;
 
+
+  if(max_connections != undefined)
+    this.max_connections = Math.min(max_connections, this.max_connections);
 
   /**
    * Check if we should connect this new peer or ignore it to increase entropy
@@ -1085,16 +1104,17 @@ function HandshakeManager(messagepacker, handshake_servers)
 
   function createConnector(config)
   {
-    var type        = config.type;
-    var config_init = config.config_init;
-    var config_mess = config.config_mess;
+    var type            = config.type;
+    var config_init     = config.config_init;
+    var config_mess     = config.config_mess;
+    var max_connections = config.max_connections;
 
     // Check if connector constructor is from a valid handshake server
     var connectorConstructor = handshakeConnectorConstructors[type];
     if(!connectorConstructor)
       throw Error("Invalid handshake server type '" + type + "'");
 
-    var connector = new connectorConstructor(config_init, config_mess);
+    var connector = new connectorConstructor(config_init, config_mess, max_connections);
 
     self._initConnector(connector);
 
@@ -1164,7 +1184,8 @@ function HandshakeManager(messagepacker, handshake_servers)
       return;
     };
 
-    if(connectorConstructor.prototype.max_connections == Number.POSITIVE_INFINITY)
+    if(connectorConstructor.prototype.max_connections == Number.POSITIVE_INFINITY
+    && !config.max_connections)
     {
       configs_infinity.push(config)
 
@@ -1335,13 +1356,13 @@ function Manager(messagepacker)
    */
   this.send = function(message, incomingConnector)
   {
-    for(var i=0, peer; peer=this._connectors[i]; i++)
+    for(var i=0, connector; connector=this._connectors[i]; i++)
     {
       // Don't send the message to the same connector where we received it
-      if(peer === incomingConnector)
+      if(connector === incomingConnector)
         continue;
 
-      peer.send(message);
+      connector.send(message);
     };
   };
 
@@ -1351,8 +1372,8 @@ function Manager(messagepacker)
    */
   this.close = function()
   {
-    for(var i=0, peer; peer=this._connectors[i]; i++)
-      peer.close();
+    for(var i=0, connector; connector=this._connectors[i]; i++)
+      connector.close();
   };
 };
 Manager.prototype.__proto__   = EventEmitter.prototype;
