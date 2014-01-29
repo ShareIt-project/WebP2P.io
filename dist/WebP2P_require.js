@@ -547,6 +547,15 @@ function WebP2P(options)
    */
   this.connectTo = function(dest, labels, callback)
   {
+    if(labels instanceof Function)
+    {
+      if(callback)
+        throw new SyntaxError("Nothing can be defined after the callback");
+
+      callback = labels;
+      labels = undefined;
+    };
+
     // Don't connect to uurself
     if(dest == self.sessionID)
     {
@@ -562,7 +571,10 @@ function WebP2P(options)
     {
       pc = createPeerConnection(dest, "offer", function(offer)
       {
-        var message = messagepacker.offer(dest, offer, callback);
+        var message = messagepacker.offer(dest, offer, function(error)
+        {
+          callback(error, pc);
+        });
 
         offers[dest] =
         {
@@ -609,20 +621,20 @@ function WebP2P(options)
 
   handshakeManager.on('connected', function()
   {
-    self.emit('handshakeManager.connected');
+    self.emit('handshakeManager.connected', handshakeManager);
   });
   handshakeManager.on('disconnected', function()
   {
-    self.emit('handshakeManager.disconnected');
+    self.emit('handshakeManager.disconnected', handshakeManager);
   });
 
   peersManager.on('connected', function()
   {
-    self.emit('peersManager.connected');
+    self.emit('peersManager.connected', peersManager);
   });
   peersManager.on('disconnected', function()
   {
-    self.emit('peersManager.disconnected');
+    self.emit('peersManager.disconnected', peersManager);
   });
 
   function initManagerEvents(manager)
@@ -796,7 +808,8 @@ function WebP2P(options)
 
       pc.addEventListener('signalingstatechange', function(event)
       {
-        // Add PeerConnection object to available ones when gets open
+        // If PeerConnection object gets open, increase number of connections
+        // fetch over this connector so it can decide if it could close
         if(pc.signalingState == 'stable')
           connector.increaseConnections();
       });
@@ -861,7 +874,11 @@ function Connector_PubNub(config_init, config_mess, max_connections)
     connect:    self._open,
     message:    self._message,
     disconnect: self._close,
-    error:      self._error
+
+    error: function(response)
+    {
+      self._error(new Error(response ? response.error : 'Undefined error'))
+    }
   });
 
 
@@ -1417,6 +1434,17 @@ function PeersManager(messagepacker, routingLabel)
   });
 
 
+  function initDataChannel(channel, sessionID)
+  {
+    if(channel.label == routingLabel)
+    {
+      var connector = createConnector(channel);
+          connector.sessionID = sessionID;
+
+      return connector;
+    };
+  };
+
   this.add = function(sessionID, peerConnection)
   {
     peerConnection.addEventListener('signalingstatechange', function(event)
@@ -1429,14 +1457,32 @@ function PeersManager(messagepacker, routingLabel)
     // Routing DataChannel, just init routing functionality on it
     var channels = peerConnection.getDataChannels();
 
-    for(var i=0, channel; channel=channels[i]; i++)
-      if(channel.label == routingLabel)
+    if(channels.length)
+    {
+      for(var i=0, channel; channel=channels[i]; i++)
+        if(initDataChannel(channel, sessionID))
+          return;
+    }
+    else
+    {
+      function initDataChannel_listener(event)
       {
-        var connector = createConnector(channel);
-            connector.sessionID = sessionID;
+        var channel = event.channel;
 
-        break;
+        var connector = initDataChannel(channel, sessionID);
+        if(connector)
+        {
+          event.target.removeEventListener('datachannel', initDataChannel_listener);
+
+          // Force to exec the 'open' event on the connector if the datachannel
+          // was already open when the 'datachannel' event was dispatched
+          if(channel.readyState == 'open')
+            connector.emit('open');
+        }
       };
+
+      peerConnection.addEventListener('datachannel', initDataChannel_listener);
+    };
 
     // Add PeerConnection to the list of enabled ones
     peers[sessionID] = peerConnection;
