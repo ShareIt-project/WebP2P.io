@@ -417,7 +417,7 @@ function WebP2P(options)
 
   /**
    * Create a new RTCPeerConnection
-   * @param {UUID} id Identifier of the other peer so later can be accessed.
+   * @param {UUID} sessionID Identifier of the other peer so later can be accessed.
    *
    * @return {RTCPeerConnection}
    */
@@ -452,8 +452,17 @@ function WebP2P(options)
       // Add PeerConnection object to available ones when gets open
       if(pc.signalingState == 'stable')
       {
-        delete offers[sessionID];
         peersManager.add(sessionID, pc);
+
+        var request = offers[sessionID];
+        if(request)
+        {
+          delete offers[sessionID];
+
+          var callback = request.callback;
+          if(callback)
+             callback(null, pc);
+        };
 
         self.emit('peerconnection', pc);
       };
@@ -573,11 +582,13 @@ function WebP2P(options)
       {
         var message = messagepacker.offer(dest, offer, function(error)
         {
-          callback(error, pc);
+          if(error)
+            callback(error);
         });
 
         offers[dest] =
         {
+          callback: callback,
           message: message,
           peerConnection: pc
         };
@@ -599,10 +610,7 @@ function WebP2P(options)
   {
     // Don't forward the message if TTL has been achieved
     if(--message.ttl <= 0)
-    {
-      console.warning("TTL achieved: "+message);
-      return;
-    };
+      return console.warn("TTL achieved:",message);
 
     var dest = message.dest;
 
@@ -1461,7 +1469,7 @@ function PeersManager(messagepacker, routingLabel)
     {
       for(var i=0, channel; channel=channels[i]; i++)
         if(initDataChannel(channel, sessionID))
-          return;
+          break;
     }
     else
     {

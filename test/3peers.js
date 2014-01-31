@@ -455,7 +455,8 @@ function()
       {
         if(error) return ok(false, error);
 
-        ok(true, 'Conn3 connected to Conn1: '+peer.sessionID);
+        equal(conn1.sessionID, peer.sessionID,
+              'Conn3 connected to Conn1: '+peer.sessionID);
 
         var peers = Object.keys(conn3.peers);
         equal(peers.length, 2, "Conn3 peers: "+peers);
