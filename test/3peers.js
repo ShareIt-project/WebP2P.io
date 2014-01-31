@@ -229,7 +229,7 @@ test("Exchange data between three peers", function()
           channel.addEventListener('message', function(event)
           {
             var message = event.data;
-            equal(message, 'ping', 'Received message: '+event.data);
+            equal(message, 'ping', 'Received message: '+message);
 
             this.send('pong');
 
@@ -248,7 +248,7 @@ test("Exchange data between three peers", function()
           channel.addEventListener('message', function(event)
           {
             var message = event.data;
-            equal(message, 'pong', 'Received message: '+event.data);
+            equal(message, 'pong', 'Received message: '+message);
 
             tearDown();
           });
@@ -292,175 +292,5 @@ test("Exchange data between three peers", function()
   {
     ok(false, "Conn3 error: "+error);
     tearDown();
-  });
-});
-
-
-asyncTest("Connect two peers using a third one as intermediary",
-function()
-{
-  expect(27);
-
-  handshake_servers[0].max_connections = 1;
-
-  var options1 =
-  {
-    handshake_servers: handshake_servers,
-    uid: "Peer 1"
-  };
-
-  var options2 =
-  {
-    handshake_servers: handshake_servers,
-    uid: "Peer 2"
-  };
-
-  var conn1, conn2, conn3;
-
-
-  // Conn 1
-
-  conn1 = new WebP2P(options1);
-
-  conn1.on('error', function(error)
-  {
-    ok(false, "Conn1 error: "+error);
-
-    conn1.close();
-    start();
-  });
-
-  conn1.on('peerconnection', function(peerconnection)
-  {
-    ok(true, "Conn1 PeerConnection: "+peerconnection.sessionID);
-
-    if(conn3 && conn3.sessionID == peerconnection.sessionID)
-    {
-      ok(true, 'Conn1 connected to Conn3');
-
-      var peers = Object.keys(conn1.peers);
-      equal(peers.length, 2, "Conn1 peers: "+peers);
-    };
-  });
-
-  conn1.on('handshakeManager.connected', function()
-  {
-    ok(true, "Conn1 handshakeManager.connected. SessionID: "+conn1.sessionID);
-
-
-    // Conn 2
-
-    conn2 = new WebP2P(options2);
-
-    conn2.on('error', function(error)
-    {
-      ok(false, "Conn2 error: "+error);
-
-      conn1.close();
-      conn2.close();
-      start();
-    });
-
-    conn2.on('peerconnection', function(peerconnection)
-    {
-      ok(true, "Conn2 PeerConnection: "+peerconnection.sessionID);
-    });
-
-    conn2.on('handshakeManager.connected', function()
-    {
-      ok(true, "Conn2 handshakeManager.connected. SessionID: "+conn2.sessionID);
-    });
-
-    conn2.on('handshakeManager.disconnected', function()
-    {
-      ok(true, 'Conn2 handshakeManager.disconnected');
-    });
-
-    conn2.on('peersManager.connected', function(_peersManager)
-    {
-      ok(true, 'Conn2 peersManager.connected');
-
-      var peers = Object.keys(conn2.peers);
-      equal(peers.length, 1, "Conn2 peers: "+peers);
-
-      var _connectors = _peersManager._connectors;
-      equal(_connectors.length, 1, "Conn2 _connectors: "+_connectors.length);
-      console.log(_connectors);
-    });
-  });
-
-  conn1.on('handshakeManager.disconnected', function()
-  {
-    ok(true, 'Conn1 handshakeManager.disconnected');
-  });
-
-  conn1.on('peersManager.connected', function(_peersManager)
-  {
-    ok(true, 'Conn1 peersManager.connected');
-
-    var peers = Object.keys(conn1.peers);
-    equal(peers.length, 1, "Conn1 peers: "+peers);
-
-    var _connectors = _peersManager._connectors;
-    equal(_connectors.length, 1, "Conn1 _connectors: "+_connectors.length);
-    console.log(_connectors);
-
-
-    // Conn 3
-
-    conn3 = new WebP2P(options3);
-
-    conn3.on('error', function(error)
-    {
-      ok(false, "Conn3 error: "+error.message);
-      console.error(error);
-
-      conn1.close();
-      conn2.close();
-      conn3.close();
-      start();
-    });
-
-    conn3.on('peerconnection', function(peerconnection)
-    {
-      ok(true, "Conn3 PeerConnection: "+peerconnection.sessionID);
-
-      if(conn1.sessionID == peerconnection.sessionID)
-      {
-//        conn1.close();
-//        conn2.close();
-//        conn3.close();
-        start();
-      }
-    });
-
-    conn3.on('handshakeManager.connected', function()
-    {
-      ok(true, "Conn3 handshakeManager.connected. SessionID: "+conn3.sessionID);
-    });
-
-    conn3.on('peersManager.connected', function(_peersManager)
-    {
-      ok(true, 'Conn3 peersManager.connected');
-
-      var peers = Object.keys(conn3.peers);
-      equal(peers.length, 1, "Conn3 peers: "+peers);
-
-      var _connectors = _peersManager._connectors;
-      equal(_connectors.length, 1, "Conn3 _connectors: "+_connectors.length);
-      console.log(_connectors);
-
-
-      conn3.connectTo(conn1.sessionID, function(error, peer)
-      {
-        if(error) return ok(false, error);
-
-        equal(conn1.sessionID, peer.sessionID,
-              'Conn3 connected to Conn1: '+peer.sessionID);
-
-        var peers = Object.keys(conn3.peers);
-        equal(peers.length, 2, "Conn3 peers: "+peers);
-      });
-    });
   });
 });
