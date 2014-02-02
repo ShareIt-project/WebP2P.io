@@ -22,26 +22,26 @@ var handshake_servers =
 var options1 =
 {
   handshake_servers: handshake_servers,
-  uid: "Peer 1"
+  sessionID: "Peer 1"
 };
 
 var options2 =
 {
   handshake_servers: handshake_servers,
-  uid: "Peer 2"
+  sessionID: "Peer 2"
 };
 
 var options3 =
 {
   handshake_servers: handshake_servers,
-  uid: "Peer 3"
+  sessionID: "Peer 3"
 };
 
 
 asyncTest("Connect two peers using a third one as intermediary",
 function()
 {
-  expect(27);
+  expect(24);
 
   var conn1, conn2, conn3;
 
@@ -197,7 +197,7 @@ function()
 asyncTest("Exchange data between two peers connected using a another one as intermediary",
 function()
 {
-  expect(18);
+  expect(15);
 
   options1.commonLabels = ['test'];
   options2.commonLabels = ['test'];
