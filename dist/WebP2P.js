@@ -360,15 +360,6 @@ function WebP2P(options)
   var self = this;
 
 
-  /**
-   * UUID generator
-   */
-  var UUIDv4 = function b(a)
-  {
-    return a ? (a ^ Math.random() * 16 >> a / 4).toString(16) : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, b);
-  };
-
-
   var options = options || {};
 
   // Internal options
@@ -581,10 +572,10 @@ function WebP2P(options)
       {
         var message = messagepacker.offer(dest, offer, function(error, message)
         {
-          console.debug('['+self.sessionID+'] Received offer for connectTo from '+message.from);
-
           if(error)
-            callback(error);
+            return callback(error);
+
+          console.debug('['+self.sessionID+'] Received offer for connectTo from '+message.from);
         });
 
         offers[dest] =
@@ -1321,7 +1312,6 @@ function Manager(messagepacker)
   });
 
 
-  var Connector_DataChannel = require('../connectors/core/DataChannel');
   this._initConnector = function(connector)
   {
     connector.on('open', function()
@@ -1412,7 +1402,7 @@ Manager.prototype.constructor = Manager;
 
 
 module.exports = Manager;
-},{"../connectors/core/DataChannel":6,"events":13}],12:[function(require,module,exports){
+},{"events":13}],12:[function(require,module,exports){
 var Manager = require('./Manager');
 
 var Connector_DataChannel = require('../connectors/core/DataChannel');
