@@ -155,7 +155,7 @@ function()
           console.log(_connectors);
 
 
-          conns[3].connectTo(conns[0].sessionID, function(error, peerconnection)
+          conns[3].connectTo(conns[0].sessionID, function(error, peerconnection, channels)
           {
             if(error) return ok(false, error);
 
@@ -197,7 +197,6 @@ function()
               }
             };
 
-            var channels = peerconnection.getDataChannels();
             if(channels.length)
               for(var i=0, channel; channel=channels[i]; i++)
                 initDataChannel(channel);
@@ -212,7 +211,7 @@ function()
     });
   });
 
-  conns[0].on('peerconnection', function(peerconnection)
+  conns[0].on('peerconnection', function(peerconnection, channels)
   {
     ok(true, conns[0].sessionID+' peerconnection: '+peerconnection.sessionID);
 
@@ -239,7 +238,6 @@ function()
           });
       };
 
-      var channels = peerconnection.getDataChannels();
       if(channels.length)
         for(var i=0, channel; channel=channels[i]; i++)
           initDataChannel(channel);

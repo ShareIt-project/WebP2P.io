@@ -227,13 +227,18 @@ function MessagePacker(sessionID)
 
   this.offer = function(dest, sdp, callback)
   {
-    var message = this.pack(
+    var message =
     {
       type: "offer",
       dest: dest,
       sdp:  sdp
-    });
+    };
 
+    // If we have not set a callback, it's an answer for a presence message.
+    // Set ttl = 1 so the offer doesn't propagate beyond the handshake channel.
+    if(!callback) message.ttl = 1;
+
+    message = this.pack(message);
     message.cancel = function(){};
 
     // Store callback if defined to be executed when received the response
@@ -282,61 +287,6 @@ function MessagePacker(sessionID)
 
 module.exports = MessagePacker;
 },{}],2:[function(require,module,exports){
-/**
- * Add support to get a list of channels on a PeerConnection object
- */
-function applyChannelsShim(pc)
-{
-  if(pc.getDataChannels != undefined) return;
-
-  var channels = [];
-
-  pc.getDataChannels = function()
-  {
-    return channels;
-  };
-
-  function initChannel(channel)
-  {
-    channels.push(channel);
-
-    channel.addEventListener('close', function(event)
-    {
-      channels.splice(channels.indexOf(channel), 1);
-    });
-  };
-
-  // Add DataChannels created by remote PeerConnection object
-  var dispatchEvent = pc.dispatchEvent;
-  pc.dispatchEvent = function(event)
-  {
-    if(event.type == 'datachannel')
-    {
-      var channel = event.channel;
-
-      initChannel(channel);
-    };
-
-    // Dispatch events
-    dispatchEvent.call(this, event);
-  };
-
-  // Add DataChannels created by local PeerConnection object
-  var createDataChannel = pc.createDataChannel;
-  pc.createDataChannel = function(label, dataChannelDict)
-  {
-    var channel = createDataChannel.call(this, label, dataChannelDict);
-
-    initChannel(channel);
-
-    return channel;
-  };
-};
-
-
-module.exports = applyChannelsShim;
-
-},{}],3:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
 var RTCPeerConnection = require('wrtc').RTCPeerConnection;
@@ -346,8 +296,6 @@ var HandshakeManager = require('./managers/HandshakeManager');
 var PeersManager     = require('./managers/PeersManager');
 
 var MessagePacker = require('./MessagePacker');
-
-var applyChannelsShim = require("./PeerConnection_channels.shim");
 
 
 /**
@@ -419,8 +367,6 @@ function WebP2P(options)
       {optional: [{DtlsSrtpKeyAgreement: true}]}
     );
 
-    applyChannelsShim(pc);
-
     pc.addEventListener('icecandidate', function(event)
     {
       // There's a candidate, ignore it
@@ -442,7 +388,9 @@ function WebP2P(options)
       // Add PeerConnection object to available ones when gets open
       if(pc.signalingState == 'stable')
       {
-        peersManager.add(sessionID, pc);
+        var channels = pc._channels || [];
+
+        peersManager.add(sessionID, pc, channels);
 
         var request = offers[sessionID];
         if(request)
@@ -451,10 +399,10 @@ function WebP2P(options)
 
           var callback = request.callback;
           if(callback)
-             callback(null, pc);
+             callback(null, pc, channels);
         };
 
-        self.emit('peerconnection', pc);
+        self.emit('peerconnection', pc, channels);
       };
     });
 
@@ -470,8 +418,21 @@ function WebP2P(options)
     // Set channels for this PeerConnection object
     labels = [self.routingLabel].concat(commonLabels, labels);
 
+    var channels = [];
+
     for(var i=0, label; label=labels[i]; i++)
-      pc.createDataChannel(label);
+    {
+      var channel = pc.createDataChannel(label);
+
+      channels.push(channel);
+
+      channel.addEventListener('close', function(event)
+      {
+        channels.splice(channels.indexOf(channel), 1);
+      });
+    };
+
+    pc._channels = channels;
 
     // Send offer
     var mediaConstraints =
@@ -842,7 +803,7 @@ WebP2P.prototype.constructor = WebP2P;
 
 module.exports = WebP2P;
 
-},{"./MessagePacker":1,"./PeerConnection_channels.shim":2,"./managers/HandshakeManager":10,"./managers/PeersManager":12,"events":13,"uuid":16,"wrtc":17}],4:[function(require,module,exports){
+},{"./MessagePacker":1,"./managers/HandshakeManager":9,"./managers/PeersManager":11,"events":12,"uuid":15,"wrtc":16}],3:[function(require,module,exports){
 var HandshakeConnector = require("./core/HandshakeConnector");
 
 var PUBNUB = require("pubnub");
@@ -921,7 +882,7 @@ Object.defineProperty(Connector_PubNub.prototype, 'max_chars', {value: 1800});
 
 module.exports = Connector_PubNub;
 
-},{"./core/HandshakeConnector":7,"pubnub":18}],5:[function(require,module,exports){
+},{"./core/HandshakeConnector":6,"pubnub":17}],4:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
 
@@ -969,7 +930,7 @@ Connector.prototype.send = function(message)
 
 
 module.exports = Connector;
-},{"events":13}],6:[function(require,module,exports){
+},{"events":12}],5:[function(require,module,exports){
 var Connector = require("./Connector");
 
 
@@ -1012,7 +973,7 @@ Connector_DataChannel.prototype.constructor = Connector_DataChannel;
 
 
 module.exports = Connector_DataChannel;
-},{"./Connector":5}],7:[function(require,module,exports){
+},{"./Connector":4}],6:[function(require,module,exports){
 var Connector = require("./Connector");
 
 
@@ -1061,7 +1022,7 @@ HandshakeConnector.prototype.max_connections = Number.POSITIVE_INFINITY;
 
 
 module.exports = HandshakeConnector;
-},{"./Connector":5}],8:[function(require,module,exports){
+},{"./Connector":4}],7:[function(require,module,exports){
 const ERROR_NETWORK_UNKNOWN = {id: 0, msg: 'Unable to fetch handshake servers configuration'};
 const ERROR_NETWORK_OFFLINE = {id: 1, msg: "There's no available network"};
 const ERROR_REQUEST_FAILURE = {id: 2, msg: 'Unable to fetch handshake servers configuration'};
@@ -1075,7 +1036,7 @@ exports.ERROR_NETWORK_OFFLINE = ERROR_NETWORK_OFFLINE;
 exports.ERROR_REQUEST_FAILURE = ERROR_REQUEST_FAILURE;
 exports.ERROR_REQUEST_EMPTY   = ERROR_REQUEST_EMPTY;
 exports.ERROR_NO_PEERS        = ERROR_NO_PEERS;
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /**
  * New node file
  */
@@ -1085,7 +1046,7 @@ var WebP2P             = require('./WebP2P');
 
 module.exports = WebP2P;
 module.exports.HandshakeConnector = HandshakeConnector;
-},{"./WebP2P":3,"./connectors/core/HandshakeConnector":7}],10:[function(require,module,exports){
+},{"./WebP2P":2,"./connectors/core/HandshakeConnector":6}],9:[function(require,module,exports){
 var Manager = require('./Manager');
 
 var errors = require('../errors');
@@ -1293,7 +1254,7 @@ HandshakeManager.prototype.constructor = HandshakeManager;
 
 
 module.exports = HandshakeManager;
-},{"../connectors/PubNub":4,"../errors":8,"./Manager":11}],11:[function(require,module,exports){
+},{"../connectors/PubNub":3,"../errors":7,"./Manager":10}],10:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
 
@@ -1402,7 +1363,7 @@ Manager.prototype.constructor = Manager;
 
 
 module.exports = Manager;
-},{"events":13}],12:[function(require,module,exports){
+},{"events":12}],11:[function(require,module,exports){
 var Manager = require('./Manager');
 
 var Connector_DataChannel = require('../connectors/core/DataChannel');
@@ -1449,7 +1410,7 @@ function PeersManager(messagepacker, routingLabel)
     };
   };
 
-  this.add = function(sessionID, peerConnection)
+  this.add = function(sessionID, peerConnection, channels)
   {
     peerConnection.addEventListener('signalingstatechange', function(event)
     {
@@ -1458,15 +1419,16 @@ function PeersManager(messagepacker, routingLabel)
         delete peers[sessionID];
     });
 
-    // Routing DataChannel, just init routing functionality on it
-    var channels = peerConnection.getDataChannels();
-
+    // Connection initiator
     if(channels.length)
     {
+      // Only init the routing functionality on the routing channel
       for(var i=0, channel; channel=channels[i]; i++)
         if(initDataChannel(channel, sessionID))
           break;
     }
+
+    // Connection receiver
     else
     {
       function initDataChannel_listener(event)
@@ -1502,7 +1464,7 @@ PeersManager.prototype.constructor = PeersManager;
 
 
 module.exports = PeersManager;
-},{"../connectors/core/DataChannel":6,"./Manager":11}],13:[function(require,module,exports){
+},{"../connectors/core/DataChannel":5,"./Manager":10}],12:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1804,7 +1766,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"PcZj9L":[function(require,module,exports){
 var base64 = require('base64-js')
 var ieee754 = require('ieee754')
@@ -3162,7 +3124,7 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
 },{}]},{},[])
 ;;module.exports=require("native-buffer-browserify").Buffer
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};
 var rng;
 
@@ -3195,7 +3157,7 @@ if (!rng) {
 module.exports = rng;
 
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer");//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -3384,7 +3346,7 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":15,"__browserify_Buffer":14}],17:[function(require,module,exports){
+},{"./rng":14,"__browserify_Buffer":13}],16:[function(require,module,exports){
 var RTCIceCandidate       = window.mozRTCIceCandidate       || window.webkitRTCIceCandidate       || window.RTCIceCandidate;
 var RTCPeerConnection     = window.mozRTCPeerConnection     || window.webkitRTCPeerConnection     || window.RTCPeerConnection;
 var RTCSessionDescription = window.mozRTCSessionDescription || window.webkitRTCSessionDescription || window.RTCSessionDescription;
@@ -3393,7 +3355,7 @@ var RTCSessionDescription = window.mozRTCSessionDescription || window.webkitRTCS
 exports.RTCIceCandidate       = RTCIceCandidate;
 exports.RTCPeerConnection     = RTCPeerConnection;
 exports.RTCSessionDescription = RTCSessionDescription;
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Version: 3.5.48
 (function(){
 var j=!0,t=null,u=!1;function x(){return function(){}}
@@ -3433,4 +3395,4 @@ x();b.binaryType="";b.extensions="";b.bufferedAmount=0;b.trasnmitting=u;b.buffer
 Ma.prototype.send=function(a){var c=this;c.e.publish({channel:c.e.i.channel,message:a,callback:function(a){c.onsend({data:a})}})};
 })();
 
-},{}]},{},[9])
+},{}]},{},[8])

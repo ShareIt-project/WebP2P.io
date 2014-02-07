@@ -381,7 +381,7 @@ function()
           console.log(_connectors);
 
 
-          conn4.connectTo(conn1.sessionID, function(error, peerconnection)
+          conn4.connectTo(conn1.sessionID, function(error, peerconnection, channels)
           {
             if(error) return ok(false, error);
 
@@ -426,7 +426,6 @@ function()
               }
             };
 
-            var channels = peerconnection.getDataChannels();
             if(channels.length)
               for(var i=0, channel; channel=channels[i]; i++)
                 initDataChannel(channel);
@@ -441,7 +440,7 @@ function()
     });
   });
 
-  conn1.on('peerconnection', function(peerconnection)
+  conn1.on('peerconnection', function(peerconnection, channels)
   {
     ok(true, "Conn1 PeerConnection: "+peerconnection.sessionID);
 
@@ -468,7 +467,6 @@ function()
           });
       };
 
-      var channels = peerconnection.getDataChannels();
       if(channels.length)
         for(var i=0, channel; channel=channels[i]; i++)
           initDataChannel(channel);

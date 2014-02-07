@@ -215,11 +215,10 @@ test("Exchange data between three peers", function()
   };
 
 
-  function initPeerConnection(peerconnection)
+  function initPeerConnection(peerconnection, channels)
   {
 //    console.log('PeerConnection', peerconnection);
 
-    var channels = peerconnection.getDataChannels();
     if(channels.length)
     {
 //      console.log(channels);

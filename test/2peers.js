@@ -316,11 +316,10 @@ test("Exchange data between two peers", function()
 
   // Conn 1
 
-  conn1.on('peerconnection', function(peerconnection)
+  conn1.on('peerconnection', function(peerconnection, channels)
   {
     ok(true, "Conn1 PeerConnection: "+peerconnection.sessionID);
 
-    var channels = peerconnection.getDataChannels();
     if(channels.length)
     {
       console.log("Conn1 channels",channels);
@@ -350,11 +349,10 @@ test("Exchange data between two peers", function()
 
   // Conn 2
 
-  conn2.on('peerconnection', function(peerconnection)
+  conn2.on('peerconnection', function(peerconnection, channels)
   {
     ok(true, "Conn2 PeerConnection: "+peerconnection.sessionID);
 
-    var channels = peerconnection.getDataChannels();
     if(channels.length)
     {
       console.log("Conn2 channels",channels);
