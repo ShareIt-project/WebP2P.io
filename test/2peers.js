@@ -167,7 +167,7 @@ test("Interconnect two peers", function()
 test("Disconnect a peer from handshake channel after connecting to other peer",
 function()
 {
-  expect(6);
+  expect(8);
   stop(2);
 
   // Conn 1
@@ -217,10 +217,16 @@ function()
       equal(peers.length, 1, "Conn1 peers: "+peers);
 
       var status = conn1.status;
-      equal(status, 'connected', 'Conn1 status: '+status);
+      equal(status, 'disconnected', 'Conn1 by HandshakeManager. status: '+status);
 
-      conn1.close();
-      start();
+      conn1.on('peersManager.connected', function()
+      {
+        var status = conn1.status;
+        equal(status, 'connected', 'Conn1 by PeersManager. status: '+status);
+
+        conn1.close();
+        start();
+      });
     });
 
 
@@ -235,6 +241,9 @@ function()
       var peers = Object.keys(conn2.peers);
 
       equal(peers.length, 1, "Conn2 peers: "+peers);
+
+      var status = conn2.status;
+      equal(status, 'connected', 'Conn2 status: '+status);
 
       conn2.close();
       start();
