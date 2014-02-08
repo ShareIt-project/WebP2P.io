@@ -516,12 +516,9 @@ function WebP2P(options)
       labels = undefined;
     };
 
-    // Don't connect to uurself
+    // Don't connect to ourself
     if(dest == self.sessionID)
-    {
-      callback(new Error("Connecting to ourself"));
-      return;
-    }
+      return callback(new Error("Connecting to ourself"));
 
     var pc = peersManager.get(dest);
     if(pc)
@@ -1437,14 +1434,7 @@ function PeersManager(messagepacker, routingLabel)
 
         var connector = initDataChannel(channel, sessionID);
         if(connector)
-        {
           event.target.removeEventListener('datachannel', initDataChannel_listener);
-
-//          // Force to exec the 'open' event on the connector if the datachannel
-//          // was already open when the 'datachannel' event was dispatched
-//          if(channel.readyState == 'open')
-//            connector.emit('open');
-        }
       };
 
       peerConnection.addEventListener('datachannel', initDataChannel_listener);
@@ -1464,6 +1454,7 @@ PeersManager.prototype.constructor = PeersManager;
 
 
 module.exports = PeersManager;
+
 },{"../connectors/core/DataChannel":5,"./Manager":10}],12:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
