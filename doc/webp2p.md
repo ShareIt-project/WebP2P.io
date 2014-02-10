@@ -1,56 +1,9 @@
-WebP2P.io: a signaling protocol for WebRTC 
-
-2014, Jesús Leganés Combarro "piranna"
-piranna@gmail.com
-
-This document specifies a signaling protocol for WebRTC applications, mainly
-focused on P2P architectures. It allows discovering and connection to other
-peers, and routing of connection data over this ad-hoc created mesh network
-while being anonimous, offering encrypted communications and allowing
-authentication of other trusted peers.
-
 The protocol is mainly focused on WebRTC DataChannels, Javascript and
 ArrayBuffers, but it could be implemented over other technology that allow
 manipulation and transmission of binary data.
 
 
-# Definitions
- * sessionID: session public-key of a peer. A new one is generated randomly for
-   each session and it's the only one that's transmitted on the wire
- * userID: user public-key of a peer. This is created only one time and identify
-   and authenticate the peer between sessions
- * Handshake server: third-party channel that allow to interconnect two peers
-   externally to the P2P network and bootstrap into this. It can be any medium
-   that allow a one-to-many communication (Pub-Sub) so currently connected peers
-   can be able to listen to new ones and send to them connection requests.
- * HandshakeManager: 
-
-
-# Constants
-
-## MTU - Max Transmission Units
- * PubNub: 1800 bytes
- * DataChannels: 1280 bytes (assumed by Chrome)
-
-Max SCTP payload: 1192 to 1320 (https://groups.google.com/d/msg/discuss-webrtc/LZsm-jbP0zA/Tim9ODhWsI8J)
-
-
-## Length of a public-key
- * 1024 bits = 128 bytes
- * 2048 bits = 256 bytes
-
-
 # Messages
-
-## Presence message
- * ttl:    [1 byte] = 0
- * from:   [sessionID] = session public-key
-
-Total message size: 1+256 = **257 bytes**
-
-If 'ttl' is zero and 'data' field length is equals to a sessionID length, then
-'data' field is in fact the 'from' field containing the sender sessionID in
-clear so other peers can be able to send it a connection requests.
 
 
 ## Regular messages

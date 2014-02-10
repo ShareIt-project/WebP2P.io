@@ -2,13 +2,17 @@ INTERNET DRAFT                          Jesús Leganés Combarro "piranna"
 Document: draft-piranna-webp2p-01                          (independent)
 
 
-                            webp2p
+                                 webp2p
 
 Abstract
 
     This draft describes a protocol by which two machines can discover
-    and interconnect using WebRTC to create a P2P network, being able to
-    use for handshaking a PubSub service or third peers on the network.
+    and interconnect themselves using WebRTC to create a P2P network,
+    being able to use for handshaking a third party server independently
+    of its protocol or other intermediary peers already connected on the
+    network. This protocol is based on public-key encrypted messages and
+    allow to do the connections anonymously and at the same time to
+    authenticate trusted peers.
 
 Status of this Memo
 
@@ -23,58 +27,67 @@ Table of Contents
 
     1. Introduction....................................................1
     2. Terminology.....................................................2
-    3. Messages........................................................2
-      3.1 Serialization and communication scheme.......................2
-      3.2 Presence.....................................................3
-      3.3 Handshaking..................................................4
-        3.3.1 Offer....................................................4
-        3.3.2 Answer...................................................5
-    4. References......................................................5
-    5. Authors' addresses..............................................5
+    3. Encryption scheme...............................................3
+    4. Messages........................................................3
+      4.1 Presence.....................................................3
+        4.1.1 Presence message format..................................4
+      4.2 Handshaking..................................................5
+        4.2.1 Offer....................................................5
+        4.2.2 Answer...................................................5
+    5. References......................................................6
+    6. Authors' addresses..............................................6
 
 1.  Introduction
 
     This specification describes a protocol to create and interconnect
     several machines on a P2P network using WebRTC DataChannel objects.
-    It could be also be used as a WebSockets subprotocol or over any
-    other bi-directional transport layer like BoSH using a server that
-    can connect the peers between them for example in a connections's
-    pool, specially required during the initial handshake. It is binary
-    and message oriented. The actions the interface exposes are:
+    It could also be used over any other bidirectional, message oriented
+    and binary capable transport layer like BoSH or as a WebSockets
+    sub-protocol. To do the initial bootstrapping of the network it is
+    required an external service to connect the peers between them,
+    being this protocol agnostic about the mechanism used by it (for
+    example a peers's pool or a PubSub system), being the only require
+    that it can send anonymous one-to-many messages between the peers.
 
-        * presence: notify our presence on a pool of connections so that
-          other older peers can send to us request to create a direct
-          connection. This message is not required when using other
-          peers for the handshake.
 
-        * offer: ask to a peer to create a direct connection. This
-          message has the minimal info to create it, if more data is
-          need to be exchanged to create the full connection as required
-          by the user, this will be later exchanged in-wire using
-          'candidate' messages in a [Trickle-ICE] way.
+
+
+
 
 
 
 piranna                                                         [Page 1]
- 
-Internet-Draft              webp2p                              Jan 2014
+
+Internet-Draft                   webp2p                    February 2014
 
+    The actions the interface exposes are:
+
+        * presence: announce our presence so other older peers can send
+          us a request to create a connection. This message is only used
+          on handshake servers and it's not required when using other
+          intermediary peers for the initial connection handshake.
+
+        * offer: ask to a peer to create a connection. This message has
+          the minimal information to create it, if more data is need to
+          be exchanged to create the connection as required by the user,
+          this will be send later in-wire using 'candidate' messages.
 
         * answer: response to a previous offer message. As with the
-          'offer' message, this one has the minimal info to create the
-          connection and if more data is need to be exchanged, it will
-          be later send using 'candidate' messages.
+          'offer' message, this one has the minimal information to
+          create the connection and if more data is need to be exchanged
+          it will be send later in-wire using 'candidate' messages.
 
-        * authenticate: send a signed message so receiver can test if he
-          know and can trust on that peer. This message is send by both
-          peers to each other only one time as the first message once
-          the connection between the two peers has been stablished.
+        * authenticate: send a signed message so receiver can check if
+          it knows and can trust to that peer. This message is send by
+          both peers to each other only one time as the first message
+          once the connection between them has been established.
 
-        * candidate: message send in-wire to exchange pending data
-          required to extablish the connection as required by the user
+        * candidate: message send in-wire to exchange pending data from
+          'offer' and 'answer' messages required to establish the
+          connection as required by the user.
 
         * error: response to a previous failed request message, for
-          example an 'offer' one.
+          example an 'offer' or a 'candidate' one.
 
     The exact details of these three actions are described in this
     specification.
@@ -92,119 +105,140 @@ Internet-Draft              webp2p                              Jan 2014
     implement the general requirement when such failure would result in
     interoperability failure.
 
-    "UID" is an unique ID that identify the peer on all the network,
-    both selected by the user (so it can be easily reacheable) or
-    assigned automatically. In that last case, for annonimity it's
-    recommended to use the UUID scheme [UUID], version 4 (random).
-
     "Handshake server" is a third party service external to the P2P
     network used to help on the initial bootstrapping of the peers. It
-    can be used any transport layer that allow one-to-one communications
-    and to send presence notifications (or one-to-many communications
-    instead), desirelly in an anonimous way. Examples of this are PubNub
-    servers, XMPP, PuSH protocol or private timelines on microblogging
-    sites.
-
-
-
-
-
-
-
+    can use any message oriented transport layer that allow one-to-many
+    communications in an anonymous way. Examples of this (but not
+    limited to) are anonymous XMPP servers, private timelines on
+    microblogging sites, or mDNS/ZeroConf, UPnP and PubSub protocols.
 
 
 
 piranna                                                         [Page 2]
 
-Internet-Draft               webp2p                           March 2013
+Internet-Draft                   webp2p                    February 2014
 
+    "SessionID" is an unique ID that identify the peer on all the
+    network. It correspond to a per-session randomly created public-key,
+    but it can also be statically set by the user to be easily
+    reacheable. Being a public-key, other peers use it to encrypt the
+    messages when sending them to that peer.
 
-3. Messages
+    "UserID" is an unique ID that is based on a persistent randomly
+    created public-key and so it identify the peer between sessions. It
+    is used to authenticate and trust the peer against others, and due
+    to this it's never transmitted on the wire.
 
-3.1. Serialization and communication scheme
+3. Encryption scheme
 
-    Communication is done using a simplified version of JSON-RPC, using
-    arrays to store the command in string format on the first position,
-    and the arguments of that command in their most natural format
-    (boolean, integer, string, object...) on the other ones. The array
-    is stringified using the JSON format previously to be send. Ending
-    'falsy' arguments (0, null, undefined, void...) are not added to the
-    arguments list to earn bandwidth and should be filled ad-hoc by the
-    receiver. Once the command is serialized, it would be like in the
-    next example:
+    Sessions made use of RSA 2048, leading to a length of SessionIDs of
+    256 bytes.
 
-    ["command.name", true, "arg 2", 3.0, 4, [1,2,3,4,5], "6th argument"]
+4. Messages
 
-    On the receiver end, the JSON string would be parsed and an array
-    with this items in the same order they were sended will be created.
+    Communication is message based using a binary format with fixed
+    length fields except the last one in some of them (specified later),
+    where it's length is correspond to the pending bytes until the end
+    of the message. To be able to send them inside a unique IP package
+    both using a handshake server or a DataChannel connection, the
+    messages max length will not be greater that the [SCTP payload],
+    being this of a size of 1192 bytes.
 
-    Communication is done in a totally asynchronous way, not waiting for
-    an answer and processing all the messages in the order they are
-    being received, no matter if a response was being waited from a
-    previous request or not.
+    Communication is done in an asynchronous way, not waiting for a
+    response and processing all the messages in the order they are being
+    received since this can arrive at any moment.
 
-3.2. Presence
+    First byte of the message correspond to the 'ttl' (Time-to-life)
+    field of the message, stored as a unsigned char. Only values greater
+    than zero are valid ones, being the zero a exceptional case for the
+    'presence' message (defined later). All the bytes after the first
+    one up to the end of the message correspond to the encrypted data
+    field (defined later) if other thing is not specified.
+
+4.1. Presence
 
     Presence message is used to notify our presence when connecting to a
     handshake server so other (older) peers connected to it can send to
-    us connection offers, so we can integrate on the P2P network. It's
-    just the command 'presence' with the UID of the new peer as the only
-    one argument, like:
+    us a connection offer, and due to this it SHOULD NOT be used when
+    using intermediary peers to interconnect two of them already on the
+    P2P network. After sending the presence message, the peer keeps
+    waiting listening for the arrival of presence messages from new
+    peers, choosing to send them a connection offer or not according to
+    the number of newer peers it got connected thanks to this handshake
+    server. This number is related to each handshake server limits.
 
-    ["presence","550e8400-e29b-41d4-a716-446655440000"]
-
-    After sending the presence message, the peer keeps waiting listening
-    for the arrival of presence messages from new peers, choosing to
-    send them a connection offer or not according to the number of newer
-    peers it got connected thanks to this handshake server.
-
-    When it got connected to a predefined number of newer peers (a
-    "critic mass") it disconnect itself and start using exclusively the
-    P2P network to discover new peers, allowing to new peers to use the
-    handshake server and increasing network arity.
-
-    The method to choose if the peer should connect to the newer peer or
-    not is left to the developer, but the next three algorythms are
-    proposed:
-
-        * connect to all newer peers. This allow to quickly increase the
-          number of connections with newer peers, but all of them would
-          be in a reduced slice of time.
-
-        * connect randomly: this allow a greater time arity of the
-          network, but would spend a lot of time to get the critic mass
-          and disconnect.
-
-        * connect on increasing intervals: increase progresively the
-          number of "leap" peers when connecting to them, both randomly
-          or numerically. This would spend a lot of time to get the full
-          critic mass, but also will assure that we got a big enought
-          number of peers just after connecting to the handshake server.
-
-    After disconnecting from the handshake server, it's left to the
-    developer if it should connect to a new one (if available) or not.
-
-
-
-
-
-
-
-
-
-
-
-
-
+    When detecting that a new peer has connected to a handshake server,
+    the algorithm to choose if a peer should connect to this new peer or
+    not is left to the developer and should adjust it to the limits of
+    the particular handshake server used, but the next three algorithms
+    are proposed:
 
 piranna                                                         [Page 3]
 
-Internet-Draft              webp2p                            March 2013
+Internet-Draft                   webp2p                    February 2014
+
+        * connect to all newer peers. This allow to quickly increase the
+          number of connections with newer peers, but all of them would
+          be located in a reduced slice of time.
+
+        * connect randomly: this allow a greater arity distribution of
+          the network over time, but would be slower to get a peers
+          critic mass on that handshake server and disconnect from it.
+
+        * connect on increasing intervals: increase progressively the
+          number of "leap" peers when connecting to them, both randomly
+          or numerically. This would spend a lot of time to get the full
+          critic mass, but also will assure that we got a big enought
+          number of peers just after connecting to the handshake server
+          and also distribute them homogeneity.
+
+    When the peer got connected to that predefined number of newer peers
+    (a "critic mass") over a particular handshake server, it disconnect
+    itself from it and start using preferentially the P2P network to
+    connect to other peers, allowing to other new peers to use the
+    handshake server and increasing the network arity.
+
+    After disconnecting from the handshake server, it's left to the
+    developer or user decision if the peer should connect to a new
+    handshake server (if available) after it gets disconnected from one
+    of them or not. Also, it could be defined to connect to several of
+    them at the same time. It's recommended that if possible, don't
+    disconnect from handshake servers and protocols without usage limits
+    like the ones working on a LAN network.
+
+4.1.1. Presence message format
+
+    The message is identified by having zero as 'ttl' as an exceptional
+    value (otherwise an invalid one) and the encrypted data field length
+    equal to the length of a SessionID, doing in that case the
+    functionality of 'from' field and having the newly connected peer
+    SessionID in clear stored in raw binary format. This is later used
+    by the other peers to encrypt their connection requests in the
+    'offer' messages.
+
+     * ttl:  [1 byte] = 0
+     * from: [256 bytes] = sessionID (session public-key)
+
+    Total message size: 1+256 = 257 bytes
+
+          +-------+
+        0 | ttl=0 |
+          |-------|
+    1-257 | from  |
+          +-------+
 
 
-3.3. Handshaking
 
-3.3.1. Offer
+
+
+
+piranna                                                         [Page 4]
+
+Internet-Draft                   webp2p                    February 2014
+
+4.2. Handshaking
+
+4.2.1. Offer
 
     When a peer want to connect to another one, both on the initial
     handshake with a new peer after being notified of its presence or to
@@ -244,30 +278,22 @@ Internet-Draft              webp2p                            March 2013
     is created to hold the connection with the requested peer if we
     don't have it already, and apply to it the SDP from the message.
 
-
-
-
-
-
-
-
-
-
-
-
-
-piranna                                                         [Page 4]
-
-Internet-Draft              webp2p                            March 2013
-
-
-3.3.2. Answer
+4.2.2. Answer
 
     After processing the offer message, a new 'answer' message is
     generated. This message has the origination (the UID of the peer
     that send the answer message) as the first parameter, the answer SDP
     and the offer route, so it can be runned backward looking the peer
     that sended the offer message. An example message would be:
+
+
+
+
+
+
+piranna                                                         [Page 5]
+
+Internet-Draft                   webp2p                    February 2014
 
     ["answer",
      "1a66b984-89d3-11e2-8bc3-4f265af2680c",
@@ -293,21 +319,16 @@ Internet-Draft              webp2p                            March 2013
     for routing purposses to increase the network arity. This newly
     created DataChannels can be used for application specific usage too.
 
-4. References
+5. References
+
+    [SCTP payload]
+        https://groups.google.com/d/msg/discuss-webrtc/LZsm-jbP0zA/Tim9ODhWsI8J
 
     [WORDS]
         Bradner, S., "Key words for use in RFCs to Indicate Requirement
         Levels", BCP 14, RFC 2119, March 1997.
 
-    [JSON]
-        D. Crockford, "The application/json Media Type for JavaScript
-        Object Notation (JSON)", RFC 4627, July 2006.
-
-    [UUID]
-        P. Leach, "A Universally Unique IDentifier (UUID) URN Namespace"
-        RFC 4122, July 2005.
-
-5. Authors' addresses
+6. Authors' addresses
 
     Jesús Leganés Combarro "piranna"
     (independent)
@@ -315,4 +336,18 @@ Internet-Draft              webp2p                            March 2013
     Email: piranna@gmail.com
 
 
-piranna                                                         [Page 5]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+piranna                                                         [Page 6]
