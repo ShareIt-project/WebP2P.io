@@ -1,3 +1,12 @@
+if(typeof require === 'function')
+{
+  if(typeof QUnit === 'undefined')
+    QUnit = require('qunit-cli');
+
+  var WebP2P = require('../lib/index.js');
+};
+
+
 QUnit.module("1 peer");
 
 
@@ -8,22 +17,22 @@ QUnit.module("1 peer");
 //  ok(true, "Passed!");
 //});
 
-test("No options", function()
+QUnit.test("No options", function()
 {
   new WebP2P();
 
-  ok(true, "Passed!");
+  QUnit.ok(true, "Passed!");
 });
 
 /*
-test("No handshake servers defined", function()
+QUnit.test("No handshake servers defined", function()
 {
   var options =
   {
     handshake_servers: []
   }
 
-  throws(function()
+  QUnit.throws(function()
   {
     new WebP2P(options);
   },
@@ -31,9 +40,9 @@ test("No handshake servers defined", function()
 });
 */
 
-asyncTest("Connect to PubNub", function()
+QUnit.asyncTest("Connect to PubNub", function()
 {
-  expect(2);
+  QUnit.expect(2);
 
   var options =
   {
@@ -59,24 +68,24 @@ asyncTest("Connect to PubNub", function()
 
   conn.on('connected', function()
   {
-    ok(true, "SessionID: "+conn.sessionID);
+    QUnit.ok(true, "SessionID: "+conn.sessionID);
 
     conn.close();
   });
 
   conn.on('disconnected', function()
   {
-    ok(true, "Disconnected");
+    QUnit.ok(true, "Disconnected");
 
-    start();
+    QUnit.start();
   });
 
   conn.on('error', function(error)
   {
-    ok(false, "Error: "+error);
+    QUnit.ok(false, "Error: "+error);
 
     conn.close();
 
-    start();
+    QUnit.start();
   });
 });
