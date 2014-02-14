@@ -25,17 +25,39 @@ Copyright Notice
 
 Table of Contents
 
-    1. Introduction....................................................1
+    1. Introduction....................................................2
     2. Terminology.....................................................2
     3. Encryption scheme...............................................3
     4. Messages........................................................3
-      4.1 Presence.....................................................3
-        4.1.1 Presence message format..................................4
-      4.2 Handshaking..................................................5
+      4.1 Handshake servers only.......................................4
+        4.1.1 Presence.................................................4
+          4.1.1.1 Message format.......................................4
+      4.2 Handshake server and inter-peers messages....................5
         4.2.1 Offer....................................................5
+          4.2.1.1 Message format.......................................4
         4.2.2 Answer...................................................5
-    5. References......................................................6
-    6. Authors' addresses..............................................6
+          4.2.2.1 Message format.......................................4
+        4.2.3 Error....................................................5
+          4.2.3.1 Message format.......................................4
+      4.3 Inter-peers only.............................................7
+        4.3.1 Authenticate.............................................7
+          4.3.1.1 Message format.......................................7
+        4.3.2 Candidate................................................7
+          4.3.2.1 Message format.......................................7
+    5. References......................................................7
+    6. Authors' addresses..............................................8
+
+
+
+
+
+
+
+
+
+piranna                                                         [Page 1]
+
+Internet-Draft                   webp2p                    February 2014
 
 1.  Introduction
 
@@ -48,17 +70,6 @@ Table of Contents
     being this protocol agnostic about the mechanism used by it (for
     example a peers's pool or a PubSub system), being the only require
     that it can send anonymous one-to-many messages between the peers.
-
-
-
-
-
-
-
-
-piranna                                                         [Page 1]
-
-Internet-Draft                   webp2p                    February 2014
 
     The actions the interface exposes are:
 
@@ -98,6 +109,15 @@ Internet-Draft                   webp2p                    February 2014
     "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
     document are to be interpreted as described in RFC 2119 [WORDS].
 
+
+
+
+
+
+piranna                                                         [Page 2]
+
+Internet-Draft                   webp2p                    February 2014
+
     "SHOULD" and "SHOULD NOT" are appropriate when valid exceptions to a
     general requirement are known to exist or appear to exist, and it is
     infeasible or impractical to enumerate all of them.  However, they
@@ -112,12 +132,6 @@ Internet-Draft                   webp2p                    February 2014
     limited to) are anonymous XMPP servers, private timelines on
     microblogging sites, or mDNS/ZeroConf, UPnP and PubSub protocols.
 
-
-
-piranna                                                         [Page 2]
-
-Internet-Draft                   webp2p                    February 2014
-
     "SessionID" is an unique ID that identify the peer on all the
     network. It correspond to a per-session randomly created public-key,
     but it can also be statically set by the user to be easily
@@ -131,8 +145,8 @@ Internet-Draft                   webp2p                    February 2014
 
 3. Encryption scheme
 
-    Sessions made use of RSA 2048, leading to a length of SessionIDs of
-    256 bytes.
+    Sessions made use of RSA 2048, leading to a length of SessionID
+    fields of 256 bytes.
 
 4. Messages
 
@@ -148,18 +162,46 @@ Internet-Draft                   webp2p                    February 2014
     response and processing all the messages in the order they are being
     received since this can arrive at any moment.
 
-    First byte of the message correspond to the 'ttl' (Time-to-life)
-    field of the message, stored as a unsigned char. Only values greater
-    than zero are valid ones, being the zero a exceptional case for the
-    'presence' message (defined later). All the bytes after the first
-    one up to the end of the message correspond to the encrypted data
-    field (defined later) if other thing is not specified.
+    Each message is composed by three fields: 'ttl' (Time-to-life) and
+    'method' on the first byte of the message using one nibble (4 bits)
+    each one, and 'data' using the remaining space:
 
-4.1. Presence
+        * ttl: it uses the high half of the first byte of the message
+          and it's stored unsigned. Only values greater than zero are
+          valid ttl values, being the zero a special case used to flag
+          messages where the 'data' field is send on clear, and due to
+          that they MUST NOT be forwarded, for example 'presence' or
+          'candidate' messages.
+
+piranna                                                         [Page 3]
+
+Internet-Draft                   webp2p                    February 2014
+
+        * method: it uses the low half of the first byte of the message
+          and it's stored signed. Positive values indicate the
+          associated functionality. Currently they are used from 0 to 4
+          ('presence', 'offer', 'answer', 'authenticate' & 'candidate'),
+          being the values from 5 to 7 reserved for future use. Negative
+          values are used to indicate response error messages.
+
+        * data: it store the per-message specific data. If 'ttl' field
+          of the message is different of zero, this data is encrypted
+          with the receiver session public-key (SessionID).
+
+4.1. Handshake servers only
+
+            | Presence         |
+    |-------|==================|
+    | 0     | ttl=0 | method=0 |
+    |-------|------------------|
+    | 1-256 | from (256)       |
+    |-------|==================|
+
+4.1.1. Presence
 
     Presence message is used to notify our presence when connecting to a
     handshake server so other (older) peers connected to it can send to
-    us a connection offer, and due to this it SHOULD NOT be used when
+    us a connection offer, and due to this it MUST NOT be used when
     using intermediary peers to interconnect two of them already on the
     P2P network. After sending the presence message, the peer keeps
     waiting listening for the arrival of presence messages from new
@@ -172,10 +214,6 @@ Internet-Draft                   webp2p                    February 2014
     not is left to the developer and should adjust it to the limits of
     the particular handshake server used, but the next three algorithms
     are proposed:
-
-piranna                                                         [Page 3]
-
-Internet-Draft                   webp2p                    February 2014
 
         * connect to all newer peers. This allow to quickly increase the
           number of connections with newer peers, but all of them would
@@ -192,6 +230,12 @@ Internet-Draft                   webp2p                    February 2014
           number of peers just after connecting to the handshake server
           and also distribute them homogeneity.
 
+
+
+piranna                                                         [Page 4]
+
+Internet-Draft                   webp2p                    February 2014
+
     When the peer got connected to that predefined number of newer peers
     (a "critic mass") over a particular handshake server, it disconnect
     itself from it and start using preferentially the P2P network to
@@ -206,39 +250,39 @@ Internet-Draft                   webp2p                    February 2014
     disconnect from handshake servers and protocols without usage limits
     like the ones working on a LAN network.
 
-4.1.1. Presence message format
+4.1.1.1. Message format
 
-    The message is identified by having zero as 'ttl' as an exceptional
-    value (otherwise an invalid one) and the encrypted data field length
-    equal to the length of a SessionID, doing in that case the
-    functionality of 'from' field and having the newly connected peer
-    SessionID in clear stored in raw binary format. This is later used
-    by the other peers to encrypt their connection requests in the
-    'offer' messages.
+    The message is identified by having zero as 'ttl' as a special value
+    (otherwise it is an invalid one) meaning the 'data' field is send on
+    clear, the 'method' field set to zero, and the 'data' field length
+    equal to the length of a SessionID as a doule check, containing in
+    that case the SessionID of the the newly connected peer stored in
+    raw binary format, and doing the functionality of a 'from' field.
+    This field data is later used as a public-key by the other peers to
+    encrypt their connection requests in the 'offer' messages.
 
-     * ttl:  [1 byte] = 0
-     * from: [256 bytes] = sessionID (session public-key)
+     * ttl:    [4 bits] = 0
+     * method: [4 bits] = 0
+     * from:   [256 bytes] = sessionID (session public-key)
 
     Total message size: 1+256 = 257 bytes
 
-          +-------+
-        0 | ttl=0 |
-          |-------|
-    1-257 | from  |
-          +-------+
+4.2. Handshake server and inter-peers messages
 
-
-
-
-
-
-piranna                                                         [Page 4]
-
-Internet-Draft                   webp2p                    February 2014
-
-4.2. Handshaking
+               | Offer          | Answer         | Error          |
+    |----------|================|================|================|
+    | 0        | ttl | method=1 | ttl | method=2 | ttl | method<0 |
+    |----------|================|================|================|
+    | 1        | id (1)         | id (1)         | id (1)         |
+    |----------|----------------|----------------|----------------|
+    | 2-257    | from (256)     | sdp (<=1190)   | data (<=1190)  |
+    |----------|----------------|                |                |
+    | 258-1191 | sdp (<=934)    |                |                |
+    |----------|================|================|================|
 
 4.2.1. Offer
+
+    Offer message is
 
     When a peer want to connect to another one, both on the initial
     handshake with a new peer after being notified of its presence or to
@@ -246,6 +290,10 @@ Internet-Draft                   webp2p                    February 2014
     UID as first argument, the offer SDP as second one and an array as
     third one having a list of the peers where the message have been
     routed, being empty on first instance. An example message would be:
+
+piranna                                                         [Page 5]
+
+Internet-Draft                   webp2p                    February 2014
 
     ["offer",
      "550e8400-e29b-41d4-a716-446655440000",
@@ -278,6 +326,8 @@ Internet-Draft                   webp2p                    February 2014
     is created to hold the connection with the requested peer if we
     don't have it already, and apply to it the SDP from the message.
 
+4.2.1.1. Message format
+
 4.2.2. Answer
 
     After processing the offer message, a new 'answer' message is
@@ -286,20 +336,23 @@ Internet-Draft                   webp2p                    February 2014
     and the offer route, so it can be runned backward looking the peer
     that sended the offer message. An example message would be:
 
-
-
-
-
-
-piranna                                                         [Page 5]
-
-Internet-Draft                   webp2p                    February 2014
-
     ["answer",
      "1a66b984-89d3-11e2-8bc3-4f265af2680c",
      <answer SDP string>,
      ["550e8400-e29b-41d4-a716-446655440000",
       "1b70093e-89d3-11e2-90c8-2f82ef7d7182"]]
+
+
+
+
+
+
+
+
+
+piranna                                                         [Page 6]
+
+Internet-Draft                   webp2p                    February 2014
 
     When a peer receive an answer message it check if it was sended back
     to us or the route array got empty and we don't know where to send
@@ -319,6 +372,29 @@ Internet-Draft                   webp2p                    February 2014
     for routing purposses to increase the network arity. This newly
     created DataChannels can be used for application specific usage too.
 
+4.2.2.1. Message format
+
+4.2.3. Error
+
+4.2.3.1. Message format
+
+4.3. Inter-peers only
+
+               | Authenticate     | Candidate        |
+    |----------|==================|==================|
+    | 0        | ttl=0 | method=3 | ttl=0 | method=4 |
+    |----------|------------------|------------------|
+    | 1-8      | timestamp (8)    | sdp (<=1191)     |
+    |----------|------------------|                  |
+    | 9-264    | signature (256)  |                  |
+    |----------|==================|                  |
+    | 265-1191 |                  |                  |
+    |----------|                  |==================|
+
+4.3.1. Authenticate
+
+4.3.2. Candidate
+
 5. References
 
     [SCTP payload]
@@ -327,6 +403,15 @@ Internet-Draft                   webp2p                    February 2014
     [WORDS]
         Bradner, S., "Key words for use in RFCs to Indicate Requirement
         Levels", BCP 14, RFC 2119, March 1997.
+
+
+
+
+
+
+piranna                                                         [Page 7]
+
+Internet-Draft                   webp2p                    February 2014
 
 6. Authors' addresses
 
@@ -350,4 +435,38 @@ Internet-Draft                   webp2p                    February 2014
 
 
 
-piranna                                                         [Page 6]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+piranna                                                         [Page 8]
+
