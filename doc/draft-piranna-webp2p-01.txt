@@ -37,7 +37,7 @@ Table of Contents
         5.2.1 Offer....................................................7
           5.2.1.1 Message format.......................................7
         5.2.2 Answer...................................................8
-          5.2.2.1 Message format.......................................9
+          5.2.2.1 Message format.......................................8
         5.2.3 Error....................................................9
           5.2.3.1 Message format.......................................9
       5.3 Inter-peers only.............................................9
@@ -342,10 +342,10 @@ Internet-Draft                   webp2p                    February 2014
     message IDs counter reach the maximum value that this field can host
     it will start over from the beginning.
 
-
-
-
-
+    When a connection message reaches a peer, this one checks if it's
+    the receiver by trying to decrypt the message 'data' field with its
+    session private-key. In case it was not possible, it assume was not
+    the receiver of the message and forward it.
 
 
 
@@ -353,6 +353,14 @@ Internet-Draft                   webp2p                    February 2014
 piranna                                                         [Page 6]
 
 Internet-Draft                   webp2p                    February 2014
+
+    To forward a message, the peer first decreases the message 'ttl'
+    field and if it's zero then the message is discarded by reaching the
+    max TTL value. If not, then it sends the message to all the peers
+    and handshake servers it is connected except the one where it
+    received the message to prevent loops. It's RECOMMENDED that the
+    peer store the messages for one or two minutes to check new ones
+    against them and discard messages already forwarded.
 
 5.2.1. Offer
 
@@ -368,31 +376,29 @@ Internet-Draft                   webp2p                    February 2014
     server (a response to a 'presence' message) it is send directly over
     the handshake server connection where we got notified about it. In
     case that's a connection initiated by the application, the 'offer'
-    message is send broadcasted over all the current connections. When
-    the 'offer' message reaches a peer, this one checks if it's the
-    receiver by trying to decrypt the message 'data' field with its
-    session private-key. In case it was not possible, it assume was not
-    the receiver of the message and forward it.
-
-    To forward a message, the peer first decreases the message 'ttl'
-    field and if it's zero then the message is discarded by reaching the
-    max TTL value. If not, then it sends the message to all the peers
-    and handshake servers it is connected except the one where it
-    received the message to prevent loops. It's RECOMMENDED that the
-    peer store the messages for one or two minutes to check new ones
-    against them and discard messages already forwarded.
+    message is send broadcasted over all the current connections.
 
     When the 'offer' message reaches the desired peer, this peer checks
     the 'from' field to see if it has already a connection with that
     peer (so it can discard the message, probably a duplicated one), or
     if it has already send a connection request to the sender. In that
-    case, the peer compare the its sessionID with the one of the message
-    sender to see what connection request process, having preference the
-    one initiated by the peer with lower sessionID. If it's that peer,
-    then the connection request message is discarded in benefict of the
-    one that it send before; if the lower sessionID is the one from the
-    sender, then our previous connection request gets aborted and
-    process to create the response for the received one.
+    case, the peer compare its sessionID with the one of the message
+    sender to process just one of the two connection requests, having
+    preference the one initiated by the peer with lower sessionID. If
+    it's the own peer, then the connection request message is discarded
+    in benefict of the connection request that it send before; if the
+    lower sessionID is the one from the sender, then our previous
+    connection request gets aborted and it process to create the
+    response message for the received connection request.
+
+    It the peer accepted the incoming connection request, then the peer
+    proccess the data on the 'sdp' field to finish the establishment of
+    the connection and the in-wire signaling channel between both peers,
+    send an 'answer' message to the requester peer with the SDP answer
+    and the info to establish the in-wire signaling channel, and wait
+    until it is open to send the 'authentication' message and the
+    remaining candidates on 'candidate' messages to finish to set the
+    connection as the user configured it.
 
 5.2.1.1. Message format
 
@@ -401,12 +407,6 @@ Internet-Draft                   webp2p                    February 2014
     to a 'presence' message to prevent it being forwarded outside the
     handshake channel where it was send, and it is identified by a
     'method' field with a value of 1.
-
-
-
-
-
-
 
 
 piranna                                                         [Page 7]
@@ -429,54 +429,70 @@ Internet-Draft                   webp2p                    February 2014
      * method: [4 bits] = 1
 
      Encrypted data field:
-     * id:     [1 byte]      = 0..255
-     * from:   [256 bytes]   = sessionID (session public-key)
-     * sdp:    [<=934 bytes] = SDP offer & signaling channel candidates
+     * id:   [1 byte]      = 0..255
+     * from: [256 bytes]   = sessionID (session public-key)
+     * sdp:  [<=934 bytes] = SDP offer & signaling channel candidates
 
     Total message size: 1+1+256+sdp = 258+sdp bytes
 
 5.2.2. Answer
 
-    After processing the offer message, a new 'answer' message is
-    generated. This message has the origination (the UID of the peer
-    that send the answer message) as the first parameter, the answer SDP
-    and the offer route, so it can be runned backward looking the peer
-    that sended the offer message. An example message would be:
+    Answer messages are send back to the requester peer as response to
+    a previous connection requests so the connection can be established
+    between both peers.
 
-    ["answer",
-     "1a66b984-89d3-11e2-8bc3-4f265af2680c",
-     <answer SDP string>,
-     ["550e8400-e29b-41d4-a716-446655440000",
-      "1b70093e-89d3-11e2-90c8-2f82ef7d7182"]]
+    When the 'answer' message reaches the requester peer, it checks the
+    'id' field and try to link the 'answer' message with a previous
+    connection request. In case that was not possible (due to an already
+    processed connection so this message is a duplicated one, or because
+    the user cancelled the connection request) then this message is
+    discarded. In case there was a connection request for this 'answer'
+    message, then the peer proccess the data on the 'sdp' field to
+    finish the establishment of the connection and the in-wire signaling
+    channel between both peers, and wait until it is open to send the
+    'authentication' message and the remaining candidates on 'candidate'
+    messages to finish to set the connection as the user configured it.
 
-    When a peer receive an answer message it check if it was sended back
-    to us or the route array got empty and we don't know where to send
-    it, so it's ignored. After that, we check if it was send to us
-    (looking if the first UID on the route array if ours) so connection
-    can be stablished with the SDP that's attached on the message, or we
-    can re-send it back running over the route array. In that case, run
-    over all the UIDs on the route array looking for possibly newly
-    connected peers while the offer/answer dance was being done that
-    would allow some shortcuts on the route sending back the answer
-    message, and send to them it. In case no connected peer was found on
-    the route (maybe they got disconnected), then send the message by
-    broadcast so the message can look the path to the offering peer.
+5.2.2.1. Message format
 
-    When a connection is stablished between two PeerConnection objects,
-    is suggested that both ends create new DataChannels that can be used
-    for routing purposses to increase the network arity. This newly
-    created DataChannels can be used for application specific usage too.
+    The message has a 'ttl' field no bigger than its initial max value
+    (defined as 5 by this spec), and it is identified by a 'method'
+    field with a value of 2.
+
+    In the encrypted 'data' field, there's a message 'id' field between
+    0 and 255 equal to the message 'id' of the request offer. Finally,
+    it has a variable length 'sdp' field storing the answer [SDP] with
+    the minimal required info to establish the connection and the
+    connection in-wire signaling channel, that fills the remaining
+    message length.
+
 
 
 piranna                                                         [Page 8]
 
 Internet-Draft                   webp2p                    February 2014
 
-5.2.2.1. Message format
+     * ttl:    [4 bits] = 5..1
+     * method: [4 bits] = 2
+
+     Encrypted data field:
+     * id:  [1 byte]       = 0..255 (same of the 'offer' message)
+     * sdp: [<=1190 bytes] = SDP answer & signaling channel candidates
+
+    Total message size: 1+1+sdp = 2+sdp bytes
 
 5.2.3. Error
 
 5.2.3.1. Message format
+
+     * ttl:    [4 bits] = 5..1
+     * method: [4 bits] = 0x8..0xF
+
+     Encrypted data field:
+     * id:   [1 byte]       = 0..255 (same of the 'offer' message)
+     * data: [<=1190 bytes] = error specific data
+
+    Total message size: 1+1+data = 2+data bytes
 
 5.3. Inter-peers only
 
@@ -510,21 +526,5 @@ Internet-Draft                   webp2p                    February 2014
     (independent)
 
     Email: piranna@gmail.com
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 piranna                                                         [Page 9]
