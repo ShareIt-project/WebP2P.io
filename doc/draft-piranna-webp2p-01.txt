@@ -45,8 +45,8 @@ Table of Contents
           5.3.1.1 Message format.......................................9
         5.3.2 Candidate................................................9
           5.3.2.1 Message format.......................................9
-    6. References......................................................9
-    7. Authors' addresses..............................................9
+    6. References.....................................................10
+    7. Authors' addresses.............................................10
 
 
 
@@ -313,11 +313,11 @@ Internet-Draft                   webp2p                    February 2014
     to this, the 'offer' and 'answer' messages only include on their
     'sdp' field their SDP offer or answer info, and the candidates info
     needed to create the in-wire signaling DataChannel. Other candidates
-    can be included on the 'offer' and 'answer' messages if the total
-    message size is not bigger than the allowed SCTP payload. Pending
-    candidates required to finish to establish the connection as it was
-    requested by the user MUST be send later using the in-wire signaling
-    channel.
+    can be appended on the 'offer' and 'answer' messages 'sdp' field if
+    the total message size is not bigger than the allowed SCTP payload.
+    Pending candidates required to finish to establish the connection as
+    it was requested by the user MUST be send later using the in-wire
+    signaling channel.
 
     Message 'ttl' field set a limit on the number or retransmissions or
     forwarding of the messages, being 5 (five) the initial max value. It
@@ -509,7 +509,29 @@ Internet-Draft                   webp2p                    February 2014
 
 5.3.1. Authenticate
 
+5.3.1.1. Message format
+
+     * ttl:       [4 bits]    = 0
+     * method:    [4 bits]    = 3
+     * timestamp: [8 bytes]   = epoch timestamp
+     * signature: [256 bytes] = timestamp signed with userID private-key
+
+    Total message size: 1+8+256 = 265 bytes
+
 5.3.2. Candidate
+
+5.3.2.1. Message format
+
+     * ttl:    [4 bits]       = 0
+     * method: [4 bits]       = 4
+     * sdp:    [<=1191 bytes] = signaling channel candidates
+
+
+piranna                                                         [Page 9]
+
+Internet-Draft                   webp2p                    February 2014
+
+    Total message size: 1+sdp bytes
 
 6. References
 
@@ -527,4 +549,41 @@ Internet-Draft                   webp2p                    February 2014
 
     Email: piranna@gmail.com
 
-piranna                                                         [Page 9]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+piranna                                                        [Page 10]
