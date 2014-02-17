@@ -46,11 +46,6 @@ module.exports = function(grunt)
       }
     },
 
-    nodeunit:
-    {
-      all: ['test/**/*.js']
-    },
-
     browserify:
     {
       require:
@@ -119,7 +114,6 @@ module.exports = function(grunt)
 
   // Load plugins
   grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-contrib-nodeunit');
 
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-jsdoc');
@@ -180,5 +174,5 @@ module.exports = function(grunt)
 
   // Alias tasks
   grunt.registerTask('default', ['clean', 'browserify', 'minifyify', 'clean:browserify_sourcemap']);
-//  grunt.registerTask('default', ['nodeunit', 'clean', 'jsdoc', 'browserify', 'minifyify', 'clean:browserify_sourcemap']);
+//  grunt.registerTask('default', ['clean', 'jsdoc', 'browserify', 'minifyify', 'clean:browserify_sourcemap']);
 };
