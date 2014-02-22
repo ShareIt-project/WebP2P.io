@@ -28,26 +28,26 @@ Table of Contents
     1. Introduction....................................................2
     2. Terminology.....................................................2
     3. Cycle of life...................................................3
-    4. Encryption scheme...............................................3
-    5. Messages........................................................3
-      5.1 Handshake servers only.......................................4
-        5.1.1 Presence.................................................4
-          5.1.1.1 Message format.......................................5
-      5.2 Connection messages..........................................5
-        5.2.1 Offer....................................................7
-          5.2.1.1 Message format.......................................7
-        5.2.2 Answer...................................................8
-          5.2.2.1 Message format.......................................8
-        5.2.3 Error....................................................9
-          5.2.3.1 Message format.......................................9
-      5.3 Inter-peers only.............................................9
-        5.3.1 Authenticate.............................................9
-          5.3.1.1 Message format.......................................9
-        5.3.2 Candidate................................................9
-          5.3.2.1 Message format.......................................9
-    6. References.....................................................10
-    7. Authors' addresses.............................................10
-
+    4. Messages........................................................3
+      4.1 Handshake servers only.......................................4
+        4.1.1 Presence.................................................4
+          4.1.1.1 Message format.......................................5
+      4.2 Connection messages..........................................5
+        4.2.1 Encryption scheme........................................7
+        4.2.2 Offer....................................................7
+          4.2.2.1 Message format.......................................7
+        4.2.3 Answer...................................................8
+          4.2.3.1 Message format.......................................8
+        4.2.4 Error....................................................9
+          4.2.4.1 Message format.......................................9
+      4.3 Inter-peers only.............................................9
+        4.3.1 Authenticate............................................10
+          4.3.1.1 Signature scheme....................................10
+          4.3.1.2 Message format......................................10
+        4.3.2 Candidate...............................................10
+          4.3.2.1 Message format......................................10
+    5. References.....................................................11
+    6. Authors' addresses.............................................11
 
 
 
@@ -145,16 +145,9 @@ Internet-Draft                   webp2p                    February 2014
 
 3. Cycle of life
 
+    
 
-
-4. Encryption scheme
-
-    Sessions made use of RSA 2048, leading to a length of SessionID
-    fields of 256 bytes.
-
-
-
-5. Messages
+4. Messages
 
     Communication is message based using a binary format with fixed
     length fields except the last one in some of them (specified later),
@@ -172,11 +165,6 @@ Internet-Draft                   webp2p                    February 2014
     'method' on the first byte of the message using one nibble (4 bits)
     each one, and 'data' using the remaining space:
 
-
-piranna                                                         [Page 3]
-
-Internet-Draft                   webp2p                    February 2014
-
         * ttl: it uses the high half of the first byte of the message
           and it's stored unsigned. It's used to limit the number of
           retransmissions of a message, and only values greater than
@@ -184,6 +172,10 @@ Internet-Draft                   webp2p                    February 2014
           used to flag messages where the 'data' field is send on clear,
           and due to that they MUST NOT be forwarded, for example
           'presence' or 'candidate' messages.
+
+piranna                                                         [Page 3]
+
+Internet-Draft                   webp2p                    February 2014
 
         * method: it uses the low half of the first byte of the message
           and it's stored signed. Positive values indicate the function
@@ -196,7 +188,7 @@ Internet-Draft                   webp2p                    February 2014
           of the message is different of zero, this data is encrypted
           with the receiver session public-key (SessionID).
 
-5.1. Handshake servers only
+4.1. Handshake servers only
 
             | Presence         |
     |-------|==================|
@@ -205,7 +197,7 @@ Internet-Draft                   webp2p                    February 2014
     | 1-256 | from (256)       |
     |-------|==================|
 
-5.1.1. Presence
+4.1.1. Presence
 
     Presence message is used to notify our presence when connecting to a
     handshake server so other (older) peers connected to it can send to
@@ -231,17 +223,18 @@ Internet-Draft                   webp2p                    February 2014
           the network over time, but would be slower to get a peers
           critic mass on that handshake server and disconnect from it.
 
-
-piranna                                                         [Page 4]
-
-Internet-Draft                   webp2p                    February 2014
-
         * connect on increasing intervals: increase progressively the
           number of "leap" peers when connecting to them, both randomly
           or numerically. This would spend a lot of time to get the full
           critic mass, but also will assure that we got a big enought
           number of peers just after connecting to the handshake server
           and also distribute them homogeneity.
+
+
+
+piranna                                                         [Page 4]
+
+Internet-Draft                   webp2p                    February 2014
 
     When the peer got connected to that predefined number of newer peers
     (a "critic mass") over a particular handshake server, it disconnect
@@ -257,7 +250,7 @@ Internet-Draft                   webp2p                    February 2014
     disconnect from handshake servers and protocols without usage limits
     like the ones working on a LAN network.
 
-5.1.1.1. Message format
+4.1.1.1. Message format
 
     The message is identified by having zero as 'ttl' as a special value
     (otherwise it is an invalid one) meaning the 'data' field is send on
@@ -274,7 +267,7 @@ Internet-Draft                   webp2p                    February 2014
 
     Total message size: 1+256 = 257 bytes
 
-5.2. Connection messages
+4.2. Connection messages
 
                | Offer          | Answer         | Error          |
     |----------|================|================|================|
@@ -287,14 +280,6 @@ Internet-Draft                   webp2p                    February 2014
     | 258-1191 | sdp (<=934)    |                |                |
     |----------|================|================|================|
 
-
-
-
-
-piranna                                                         [Page 5]
-
-Internet-Draft                   webp2p                    February 2014
-
     Connection messages are used to establish a new connection between
     two peers and follow a request-response scheme. They can be send
     both through handshake servers or using other intermediary peers,
@@ -303,6 +288,12 @@ Internet-Draft                   webp2p                    February 2014
     with the 'webp2p' label) used for signaling between both peers and
     to forward connection messages from other peers over the P2P mesh
     network.
+
+
+
+piranna                                                         [Page 5]
+
+Internet-Draft                   webp2p                    February 2014
 
     Connection messages are designed to fit in a [SCTP payload], being
     this of a size of 1192 bytes, so thay can be send over a single
@@ -347,13 +338,6 @@ Internet-Draft                   webp2p                    February 2014
     session private-key. In case it was not possible, it assume was not
     the receiver of the message and forward it.
 
-
-
-
-piranna                                                         [Page 6]
-
-Internet-Draft                   webp2p                    February 2014
-
     To forward a message, the peer first decreases the message 'ttl'
     field and if it's zero then the message is discarded by reaching the
     max TTL value. If not, then it sends the message to all the peers
@@ -362,7 +346,22 @@ Internet-Draft                   webp2p                    February 2014
     peer store the messages for one or two minutes to check new ones
     against them and discard messages already forwarded.
 
-5.2.1. Offer
+
+
+
+
+piranna                                                         [Page 6]
+
+Internet-Draft                   webp2p                    February 2014
+
+4.2.1 Encryption scheme
+
+    Sessions made use of RSA 2048, leading to a length of SessionID
+    fields of 256 bytes.
+
+
+
+4.2.2. Offer
 
     Offer message is used to request a connection with another peer,
     both using a handshake server or over the P2P network using other
@@ -400,13 +399,14 @@ Internet-Draft                   webp2p                    February 2014
     remaining candidates on 'candidate' messages to finish to set the
     connection as the user configured it.
 
-5.2.1.1. Message format
+4.2.2.1. Message format
 
     The message has a 'ttl' field no bigger than its initial max value
     (defined as 5 by this spec), or equal to 1 if the offer is send due
     to a 'presence' message to prevent it being forwarded outside the
     handshake channel where it was send, and it is identified by a
     'method' field with a value of 1.
+
 
 
 piranna                                                         [Page 7]
@@ -435,7 +435,7 @@ Internet-Draft                   webp2p                    February 2014
 
     Total message size: 1+1+256+sdp = 258+sdp bytes
 
-5.2.2. Answer
+4.2.3. Answer
 
     Answer messages are send back to the requester peer as response to
     a previous connection requests so the connection can be established
@@ -453,7 +453,7 @@ Internet-Draft                   webp2p                    February 2014
     'authentication' message and the remaining candidates on 'candidate'
     messages to finish to set the connection as the user configured it.
 
-5.2.2.1. Message format
+4.2.3.1. Message format
 
     The message has a 'ttl' field no bigger than its initial max value
     (defined as 5 by this spec), and it is identified by a 'method'
@@ -481,9 +481,22 @@ Internet-Draft                   webp2p                    February 2014
 
     Total message size: 1+1+sdp = 2+sdp bytes
 
-5.2.3. Error
+4.2.4. Error
 
-5.2.3.1. Message format
+    Error messages are send when it was not possible to process a
+    request, for example because we have already one open. Specific
+    error messages are left for a future revision of this specification.
+
+4.2.4.1. Message format
+
+    Error messages format is equal to the 'answer' messages one, being
+    the only differences the 'method' field with a specific value for
+    each kind of error, and having a 'data' field instead of a 'sdp'
+    field.
+
+    Errors are identified by using negative values for each kind of
+    error on the 'method' field. Format of the 'data' field is
+    specific for each kind of error.
 
      * ttl:    [4 bits] = 5..1
      * method: [4 bits] = 0x8..0xF
@@ -494,46 +507,93 @@ Internet-Draft                   webp2p                    February 2014
 
     Total message size: 1+1+data = 2+data bytes
 
-5.3. Inter-peers only
+4.3. Inter-peers only
 
                | Authenticate     | Candidate        |
     |----------|==================|==================|
     | 0        | ttl=0 | method=3 | ttl=0 | method=4 |
     |----------|------------------|------------------|
-    | 1-8      | timestamp (8)    | sdp (<=1191)     |
-    |----------|------------------|                  |
-    | 9-264    | signature (256)  |                  |
+    | 1-256    | signature (256)  | sdp (<=1191)     |
     |----------|==================|                  |
-    | 265-1191 |                  |                  |
+    | 257-1191 |                  |                  |
     |----------|                  |==================|
 
-5.3.1. Authenticate
+    Inter-peer messages are used to finish to establish the connection
+    between two peers. They are send using encrypted direct connections
+    between both peers, for example using WebRTC DataChannels, being
+    each one the only receiver of the messages send by the other peer.
+    Due to this, messages doesn't need to have encrypted data and MUST
+    NOT be forwarded.
 
-5.3.1.1. Message format
-
-     * ttl:       [4 bits]    = 0
-     * method:    [4 bits]    = 3
-     * timestamp: [8 bytes]   = epoch timestamp
-     * signature: [256 bytes] = timestamp signed with userID private-key
-
-    Total message size: 1+8+256 = 265 bytes
-
-5.3.2. Candidate
-
-5.3.2.1. Message format
-
-     * ttl:    [4 bits]       = 0
-     * method: [4 bits]       = 4
-     * sdp:    [<=1191 bytes] = signaling channel candidates
 
 
 piranna                                                         [Page 9]
 
 Internet-Draft                   webp2p                    February 2014
 
+4.3.1. Authenticate
+
+    Authenticate messages are used so a peer can confirm its identity to
+    the other peer, so this last one can decide if it can trust on this
+    peer or not. It's send only one time as the first message after
+    establishing a basic connection
+
+    After authenticating (or not) the peer, it's up to the application
+    how to proceed. For example, it can be able to enable extra
+    functionality with that peer (probably related to exchange of
+    sensitive data), or maybe plainly close the connection if the
+    authentication of the peer was unsuccessful.
+
+4.3.1.1. Signature scheme
+
+    The signature scheme is inspired on [Digest access authentication].
+    The 'signature' message field hold the signature of the previously
+    send SDP offer or answer (depending if the peer was the requester or
+    the receiver of the request, respectively). This signature is done
+    using the peer's user private-key, so the receiver peer can check it
+    against a collection of user public-keys (userIDs) that have been
+    registered previously.
+
+4.3.1.2. Message format
+
+    The message has a 'ttl' field equal to zero (0) as a flag to
+    indicate it MUST NOT be forwarded, a 'method' field equal to three
+    (3), and a 'signature' field holding the signature to be checked.
+
+     * ttl:       [4 bits]    = 0
+     * method:    [4 bits]    = 3
+     * signature: [256 bytes] = timestamp signed with userID private-key
+
+    Total message size: 1+256 = 257 bytes
+
+4.3.2. Candidate
+
+    
+
+4.3.2.1. Message format
+
+    
+
+     * ttl:    [4 bits]       = 0
+     * method: [4 bits]       = 4
+     * sdp:    [<=1191 bytes] = signaling channel candidates
+
     Total message size: 1+sdp bytes
 
-6. References
+
+
+
+
+
+
+piranna                                                        [Page 10]
+
+Internet-Draft                   webp2p                    February 2014
+
+5. References
+
+    [Digest access authentication]
+        http://tools.ietf.org/html/rfc2617
 
     [SCTP payload]
         https://groups.google.com/d/msg/discuss-webrtc/LZsm-jbP0zA/Tim9ODhWsI8J
@@ -542,7 +602,7 @@ Internet-Draft                   webp2p                    February 2014
         Bradner, S., "Key words for use in RFCs to Indicate Requirement
         Levels", BCP 14, RFC 2119, March 1997.
 
-7. Authors' addresses
+6. Authors' addresses
 
     Jesús Leganés Combarro "piranna"
     (independent)
@@ -585,5 +645,4 @@ Internet-Draft                   webp2p                    February 2014
 
 
 
-
-piranna                                                        [Page 10]
+piranna                                                        [Page 11]
