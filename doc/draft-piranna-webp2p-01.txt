@@ -27,27 +27,27 @@ Table of Contents
 
     1. Introduction....................................................2
     2. Terminology.....................................................2
-    3. Cycle of life...................................................3
-    4. Messages........................................................3
-      4.1 Handshake servers only.......................................4
-        4.1.1 Presence.................................................4
-          4.1.1.1 Message format.......................................5
-      4.2 Connection messages..........................................5
-        4.2.1 Encryption scheme........................................7
-        4.2.2 Offer....................................................7
-          4.2.2.1 Message format.......................................7
-        4.2.3 Answer...................................................8
-          4.2.3.1 Message format.......................................8
-        4.2.4 Error....................................................9
-          4.2.4.1 Message format.......................................9
-      4.3 Inter-peers only.............................................9
-        4.3.1 Authenticate............................................10
-          4.3.1.1 Signature scheme....................................10
-          4.3.1.2 Message format......................................10
-        4.3.2 Candidate...............................................10
-          4.3.2.1 Message format......................................10
-    5. References.....................................................11
-    6. Authors' addresses.............................................11
+    3. Sequence diagrams...............................................3
+    4. Messages........................................................5
+      4.1 Handshake servers only.......................................5
+        4.1.1 Presence.................................................6
+          4.1.1.1 Message format.......................................7
+      4.2 Connection messages..........................................7
+        4.2.1 Encryption scheme........................................8
+        4.2.2 Offer....................................................8
+          4.2.2.1 Message format.......................................9
+        4.2.3 Answer..................................................10
+          4.2.3.1 Message format......................................10
+        4.2.4 Error...................................................10
+          4.2.4.1 Message format......................................11
+      4.3 Inter-peers only............................................11
+        4.3.1 Authenticate............................................11
+          4.3.1.1 Signature scheme....................................12
+          4.3.1.2 Message format......................................12
+        4.3.2 Candidate...............................................12
+          4.3.2.1 Message format......................................12
+    5. References.....................................................12
+    6. Authors' addresses.............................................13
 
 
 
@@ -143,9 +143,98 @@ Internet-Draft                   webp2p                    February 2014
     is used to authenticate and trust the peer against others, and due
     to this it's never transmitted on the wire.
 
-3. Cycle of life
+3. Sequence diagrams
 
-    
+    P2P network don't exists. Alice connect to one handshake server and
+    announce her presence. Since there's no one connected, she keeps
+    listening for new peers.
+
+     ,-.                                                                
+     `-'                                                                
+     /|\                                                     ,---------.
+      |                                                      |Handshake|
+     / \                                                     | server  |
+    Alice                                                    `----+----'
+      |                                                           |     
+      |presence-------------------------------------------------->|     
+      |                                                           |     
+    Alice                                                    ,----+----.
+     ,-.                                                     |Handshake|
+     `-'                                                     | server  |
+     /|\                                                     `---------'
+      |                                                                 
+     / \                                                                
+
+    Now Bob connect to the same handshake server and announce his
+    presence. Alice was listening, so she sends him a connection request
+    and he response it.
+
+    Later they authenticate them selves and interchange the remainint
+    SDP candidates, finishing to establish the P2P connection.
+
+
+piranna                                                         [Page 3]
+
+Internet-Draft                   webp2p                    February 2014
+
+     ,-.            ,-.                                                 
+     `-'            `-'                                                 
+     /|\            /|\                                      ,---------.
+      |              |                                       |Handshake|
+     / \            / \                                      | server  |
+    Alice           Bob                                      `----+----'
+      |              |                                            |     
+      |              |presence----------------------------------->|     
+      |< - - - - - - - - - - - - - - - - - - - - - - - - -presence|     
+      |              |                                            |     
+      |offer----------------------------------------------------->|     
+      |              |< - - - - - - - - - - - - - - - - - - -offer|     
+      |              |                                            |     
+      |              |answer------------------------------------->|     
+      |< - - - - - - - - - - - - - - - - - - - - - - - - - -answer|     
+      |              |                                            |     
+      |<authenticate>|                                            |     
+      |<-candidate-->|                                            |     
+      |              |                                            |     
+    Alice           Bob                                      ,----+----.
+     ,-.            ,-.                                      |Handshake|
+     `-'            `-'                                      | server  |
+     /|\            /|\                                      `---------'
+      |              |                                                  
+     / \            / \                                                 
+
+    After some time, Bob got to be connected to Charlotte, and now she
+    want to connect to Alice. They both interchange the offer and answer
+    messages through Bob, without requiring any handshake server at all.
+
+     ,-.     ,-.     ,-.                                                
+     `-'     `-'     `-'                                                
+     /|\     /|\     /|\                                     ,---------.
+      |       |       |                                      |Handshake|
+     / \     / \     / \                                     | server  |
+    Alice    Bob  Charlotte                                  `----+----'
+      |       |       |                                           |     
+      |<-offer|<-offer|                                           |     
+      |answer>|answer>|                                           |     
+      |       |       |                                           |     
+      |<authenticate >|                                           |     
+      |<--candidate-->|                                           |     
+      |       |       |                                           |     
+    Alice    Bob  Charlotte                                  ,----+----.
+     ,-.     ,-.     ,-.                                     |Handshake|
+     `-'     `-'     `-'                                     | server  |
+     /|\     /|\     /|\                                     `---------'
+      |       |       |                                                 
+     / \     / \     / \                                                
+
+
+
+
+
+
+piranna                                                         [Page 4]
+
+Internet-Draft                   webp2p                    February 2014
 
 4. Messages
 
@@ -173,10 +262,6 @@ Internet-Draft                   webp2p                    February 2014
           and due to that they MUST NOT be forwarded, for example
           'presence' or 'candidate' messages.
 
-piranna                                                         [Page 3]
-
-Internet-Draft                   webp2p                    February 2014
-
         * method: it uses the low half of the first byte of the message
           and it's stored signed. Positive values indicate the function
           associated to the message. Currently they are used from 0 to 4
@@ -196,6 +281,19 @@ Internet-Draft                   webp2p                    February 2014
     |-------|------------------|
     | 1-256 | from (256)       |
     |-------|==================|
+
+
+
+
+
+
+
+
+
+
+piranna                                                         [Page 5]
+
+Internet-Draft                   webp2p                    February 2014
 
 4.1.1. Presence
 
@@ -230,12 +328,6 @@ Internet-Draft                   webp2p                    February 2014
           number of peers just after connecting to the handshake server
           and also distribute them homogeneity.
 
-
-
-piranna                                                         [Page 4]
-
-Internet-Draft                   webp2p                    February 2014
-
     When the peer got connected to that predefined number of newer peers
     (a "critic mass") over a particular handshake server, it disconnect
     itself from it and start using preferentially the P2P network to
@@ -249,6 +341,18 @@ Internet-Draft                   webp2p                    February 2014
     them at the same time. It's recommended that if possible, don't
     disconnect from handshake servers and protocols without usage limits
     like the ones working on a LAN network.
+
+
+
+
+
+
+
+
+
+piranna                                                         [Page 6]
+
+Internet-Draft                   webp2p                    February 2014
 
 4.1.1.1. Message format
 
@@ -289,12 +393,6 @@ Internet-Draft                   webp2p                    February 2014
     to forward connection messages from other peers over the P2P mesh
     network.
 
-
-
-piranna                                                         [Page 5]
-
-Internet-Draft                   webp2p                    February 2014
-
     Connection messages are designed to fit in a [SCTP payload], being
     this of a size of 1192 bytes, so thay can be send over a single
     WebRTC DataChannel packet. This requires that the messages send
@@ -309,6 +407,11 @@ Internet-Draft                   webp2p                    February 2014
     Pending candidates required to finish to establish the connection as
     it was requested by the user MUST be send later using the in-wire
     signaling channel.
+
+
+piranna                                                         [Page 7]
+
+Internet-Draft                   webp2p                    February 2014
 
     Message 'ttl' field set a limit on the number or retransmissions or
     forwarding of the messages, being 5 (five) the initial max value. It
@@ -346,14 +449,6 @@ Internet-Draft                   webp2p                    February 2014
     peer store the messages for one or two minutes to check new ones
     against them and discard messages already forwarded.
 
-
-
-
-
-piranna                                                         [Page 6]
-
-Internet-Draft                   webp2p                    February 2014
-
 4.2.1 Encryption scheme
 
     Sessions made use of RSA 2048, leading to a length of SessionID
@@ -369,6 +464,13 @@ Internet-Draft                   webp2p                    February 2014
     in the case of offer messages send over a handshake server, they can
     also be send after receiving a 'presence' message send by another
     newly connected peer.
+
+
+
+
+piranna                                                         [Page 8]
+
+Internet-Draft                   webp2p                    February 2014
 
     After checking that we don't really have a connection to that peer,
     in case the connection is for a new peer connected to a handshake
@@ -407,12 +509,6 @@ Internet-Draft                   webp2p                    February 2014
     handshake channel where it was send, and it is identified by a
     'method' field with a value of 1.
 
-
-
-piranna                                                         [Page 7]
-
-Internet-Draft                   webp2p                    February 2014
-
     In the encrypted 'data' field, there's a message 'id' field between
     0 and 255 used to identify the message responses. There's also a
     'from' field with the sender session public-key (its sessionID) so
@@ -427,6 +523,13 @@ Internet-Draft                   webp2p                    February 2014
 
      * ttl:    [4 bits] = 5..1 (1 as response to 'presence' messages)
      * method: [4 bits] = 1
+
+
+
+
+piranna                                                         [Page 9]
+
+Internet-Draft                   webp2p                    February 2014
 
      Encrypted data field:
      * id:   [1 byte]      = 0..255
@@ -466,12 +569,6 @@ Internet-Draft                   webp2p                    February 2014
     connection in-wire signaling channel, that fills the remaining
     message length.
 
-
-
-piranna                                                         [Page 8]
-
-Internet-Draft                   webp2p                    February 2014
-
      * ttl:    [4 bits] = 5..1
      * method: [4 bits] = 2
 
@@ -486,6 +583,12 @@ Internet-Draft                   webp2p                    February 2014
     Error messages are send when it was not possible to process a
     request, for example because we have already one open. Specific
     error messages are left for a future revision of this specification.
+
+
+
+piranna                                                        [Page 10]
+
+Internet-Draft                   webp2p                    February 2014
 
 4.2.4.1. Message format
 
@@ -525,12 +628,6 @@ Internet-Draft                   webp2p                    February 2014
     Due to this, messages doesn't need to have encrypted data and MUST
     NOT be forwarded.
 
-
-
-piranna                                                         [Page 9]
-
-Internet-Draft                   webp2p                    February 2014
-
 4.3.1. Authenticate
 
     Authenticate messages are used so a peer can confirm its identity to
@@ -543,6 +640,14 @@ Internet-Draft                   webp2p                    February 2014
     functionality with that peer (probably related to exchange of
     sensitive data), or maybe plainly close the connection if the
     authentication of the peer was unsuccessful.
+
+
+
+
+
+piranna                                                        [Page 11]
+
+Internet-Draft                   webp2p                    February 2014
 
 4.3.1.1. Signature scheme
 
@@ -568,27 +673,24 @@ Internet-Draft                   webp2p                    February 2014
 
 4.3.2. Candidate
 
-    
+    Candidate messages are used to exchange the pending SDP candidates
+    not send before on the 'offer' and 'answer' messages in order to
+    finish to establish the connection as the user requested. Several
+    SDP candidates can be combined in a 'candidate' message in order to
+    reduce bandwidth message always the total message size is not bigger
+    than the [SCTP payload].
 
 4.3.2.1. Message format
 
-    
+    The message has a 'ttl' field equal to zero (0) as a flag to
+    indicate it MUST NOT be forwarded, a 'method' field equal to four
+    (4), and a 'sdp' field holding the SDP candidates.
 
      * ttl:    [4 bits]       = 0
      * method: [4 bits]       = 4
      * sdp:    [<=1191 bytes] = signaling channel candidates
 
     Total message size: 1+sdp bytes
-
-
-
-
-
-
-
-piranna                                                        [Page 10]
-
-Internet-Draft                   webp2p                    February 2014
 
 5. References
 
@@ -601,6 +703,10 @@ Internet-Draft                   webp2p                    February 2014
     [WORDS]
         Bradner, S., "Key words for use in RFCs to Indicate Requirement
         Levels", BCP 14, RFC 2119, March 1997.
+
+piranna                                                        [Page 12]
+
+Internet-Draft                   webp2p                    February 2014
 
 6. Authors' addresses
 
@@ -645,4 +751,16 @@ Internet-Draft                   webp2p                    February 2014
 
 
 
-piranna                                                        [Page 11]
+
+
+
+
+
+
+
+
+
+
+
+
+piranna                                                        [Page 13]
