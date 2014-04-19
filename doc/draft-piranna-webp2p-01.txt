@@ -11,8 +11,8 @@ Abstract
     being able to use for handshaking a third party server independently
     of its protocol or other intermediary peers already connected on the
     network. This protocol is based on public-key encrypted messages and
-    allow to do the connections anonymously and at the same time to
-    authenticate trusted peers.
+    allow at the same time to do anonymous connections and authenticate
+    trusted peers.
 
 Status of this Memo
 
@@ -26,34 +26,34 @@ Copyright Notice
 Table of Contents
 
     1. Introduction....................................................2
-    2. Terminology.....................................................2
+    2. Terminology.....................................................3
     3. Sequence diagrams...............................................3
     4. Messages........................................................5
-      4.1 Handshake servers only.......................................5
+      4.1 Handshake servers only.......................................6
         4.1.1 Presence.................................................6
           4.1.1.1 Message format.......................................7
       4.2 Connection messages..........................................7
         4.2.1 Encryption scheme........................................8
-        4.2.2 Offer....................................................8
-          4.2.2.1 Message format.......................................9
-        4.2.3 Answer..................................................10
+        4.2.2 Request..................................................9
+          4.2.2.1 Message format...................................... 9
+        4.2.3 Response................................................10
           4.2.3.1 Message format......................................10
-        4.2.4 Error...................................................10
+        4.2.4 Error...................................................11
           4.2.4.1 Message format......................................11
       4.3 Inter-peers only............................................11
-        4.3.1 Authenticate............................................11
+        4.3.1 Authenticate............................................12
           4.3.1.1 Signature scheme....................................12
           4.3.1.2 Message format......................................12
-        4.3.2 Candidate...............................................12
-          4.3.2.1 Message format......................................12
-    5. References.....................................................12
-    6. Authors' addresses.............................................13
-
-
-
-
-
-
+        4.3.2 Offer    ...............................................13
+          4.3.2.1 Message format......................................13
+        4.3.3 Answer   ...............................................13
+          4.3.3.1 Message format......................................13
+        4.3.4 Candidate...............................................13
+          4.3.4.1 Message format......................................14
+        4.3.5 Error    ...............................................14
+          4.3.5.1 Message format......................................14
+    5. References.....................................................14
+    6. Authors' addresses.............................................14
 
 piranna                                                         [Page 1]
 
@@ -61,54 +61,54 @@ Internet-Draft                   webp2p                    February 2014
 
 1.  Introduction
 
-    This specification describes a protocol to create and interconnect
-    several machines on a P2P network using WebRTC DataChannel objects.
-    It could also be used over any other bidirectional, message oriented
-    and binary capable transport layer like BoSH or as a WebSockets
-    sub-protocol. To do the initial bootstrapping of the network it is
-    required an external service to connect the peers between them,
-    being this protocol agnostic about the mechanism used by it (for
-    example a peers's pool or a PubSub system), being the only require
-    that it can send anonymous one-to-many messages between the peers.
+    This specification describes a protocol to interconnect several
+    machines on a P2P mesh network using a dedicated WebRTC DataChannel
+    object as signaling channel. To do the initial bootstrapping of the
+    network it is required an external server to connect the peers
+    between them, being this protocol agnostic about the mechanism used
+    by it (for example a PubSub system, a XMPP server or a dedicated
+    peers's pool), being the only requirement that it can send anonymous
+    one-to-many messages between the peers in any way.
+
+    The protocol is mainly focused for WebRTC and has some influences on
+    its architecture and nomenclatures, but it could also be implemented
+    on top of any other bidirectional, message oriented binary transport
+    layer like BoSH or as a WebSockets sub-protocol.
 
     The actions the interface exposes are:
 
         * presence: announce our presence so other older peers can send
-          us a request to create a connection. This message is only used
-          on handshake servers and it's not required when using other
-          intermediary peers for the initial connection handshake.
+          us a 'request' message to create a connection. This message is
+          only used on handshake servers and it's not required when
+          using other intermediary peers to create the connections.
 
-        * offer: ask to a peer to create a connection. This message has
-          the minimal information to create it, if more data is need to
-          be exchanged to create the connection as required by the user,
-          this will be send later in-wire using 'candidate' messages.
+        * request: ask to a peer to create a connection. This message
+          has the minimal information to create a PeerConnection object
+          with a dedicated signaling DataChannel. Later it is updated
+          according to the user needs using the dedicated signaling
+          channel to exchange the configuration info between both peers.
 
-        * answer: response to a previous offer message. As with the
-          'offer' message, this one has the minimal information to
-          create the connection and if more data is need to be exchanged
-          it will be send later in-wire using 'candidate' messages.
+        * response: response to a previous connect request. As with the
+          'request' message, this one has the minimal information to
+          create the basic connection and the in-wire signaling channel.
 
         * authenticate: send a signed message so receiver can check if
           it knows and can trust to that peer. This message is send by
-          both peers to each other only one time as the first message
-          once the connection between them has been established.
+          both peers as the first message once the in-wire signaling
+          channel has been created.
 
-        * candidate: message send in-wire to exchange pending data from
-          'offer' and 'answer' messages required to establish the
-          connection as required by the user.
+        * offer: request to update a connection. This message contains
+          the info regarding to what streams and DataChannel should have
+          the connection. It's send by the peer that initiated the
+          connection (sended the 'request' message).
 
-        * error: response to a previous failed request message, for
-          example an 'offer' or a 'candidate' one.
+        * answer: response to a previous offer message.
 
-    The exact details of these three actions are described in this
-    specification.
+        * candidate: message send in-wire to exchange the data details
+          of the connections specified on previous 'offer' and 'answer'
+          messages as required by the user.
 
-2. Terminology
-
-    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-    "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
-    document are to be interpreted as described in RFC 2119 [WORDS].
-
+        * error: response message to a previous failed operation.
 
 
 
@@ -118,6 +118,14 @@ piranna                                                         [Page 2]
 
 Internet-Draft                   webp2p                    February 2014
 
+    The exact details of these three actions are described in this
+    specification.
+
+2. Terminology
+
+    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+    "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+    document are to be interpreted as described in RFC 2119 [WORDS].
     "SHOULD" and "SHOULD NOT" are appropriate when valid exceptions to a
     general requirement are known to exist or appear to exist, and it is
     infeasible or impractical to enumerate all of them.  However, they
@@ -165,17 +173,17 @@ Internet-Draft                   webp2p                    February 2014
       |                                                                 
      / \                                                                
 
-    Now Bob connect to the same handshake server and announce his
-    presence. Alice was listening, so she sends him a connection request
-    and he response it.
-
-    Later they authenticate them selves and interchange the remainint
-    SDP candidates, finishing to establish the P2P connection.
-
-
 piranna                                                         [Page 3]
 
 Internet-Draft                   webp2p                    February 2014
+
+    Now Bob connect to the same handshake server and announce his
+    presence. Alice was listening, so she sends him a connection request
+    and he response it, and the in-wire signaling channel gets created.
+
+    Later, they authenticate themselves over the signaling channel and
+    interchange the 'offer', 'answer' and 'candidate' messages,
+    finishing to establish the P2P connection.
 
      ,-.            ,-.                                                 
      `-'            `-'                                                 
@@ -187,13 +195,16 @@ Internet-Draft                   webp2p                    February 2014
       |              |presence----------------------------------->|     
       |< - - - - - - - - - - - - - - - - - - - - - - - - -presence|     
       |              |                                            |     
-      |offer----------------------------------------------------->|     
-      |              |< - - - - - - - - - - - - - - - - - - -offer|     
+      |request--------------------------------------------------->|     
+      |              |< - - - - - - - - - - - - - - - - - -request|     
       |              |                                            |     
-      |              |answer------------------------------------->|     
-      |< - - - - - - - - - - - - - - - - - - - - - - - - - -answer|     
+      |              |response----------------------------------->|     
+      |< - - - - - - - - - - - - - - - - - - - - - - - - -response|     
       |              |                                            |     
       |<authenticate>|                                            |     
+      |              |                                            |     
+      |offer-------->|                                            |     
+      |<- - - -answer|                                            |     
       |<-candidate-->|                                            |     
       |              |                                            |     
     Alice           Bob                                      ,----+----.
@@ -204,28 +215,17 @@ Internet-Draft                   webp2p                    February 2014
      / \            / \                                                 
 
     After some time, Bob got to be connected to Charlotte, and now she
-    want to connect to Alice. They both interchange the offer and answer
-    messages through Bob, without requiring any handshake server at all.
+    want to connect to Alice. They both interchange the 'request' and
+    'response' messages through Bob to create the in-wire signaling
+    channel without requiring any handshake server at all, and later
+    finish to create the P2P connection directly between themselves.
 
-     ,-.     ,-.     ,-.                                                
-     `-'     `-'     `-'                                                
-     /|\     /|\     /|\                                     ,---------.
-      |       |       |                                      |Handshake|
-     / \     / \     / \                                     | server  |
-    Alice    Bob  Charlotte                                  `----+----'
-      |       |       |                                           |     
-      |<-offer|<-offer|                                           |     
-      |answer>|answer>|                                           |     
-      |       |       |                                           |     
-      |<authenticate >|                                           |     
-      |<--candidate-->|                                           |     
-      |       |       |                                           |     
-    Alice    Bob  Charlotte                                  ,----+----.
-     ,-.     ,-.     ,-.                                     |Handshake|
-     `-'     `-'     `-'                                     | server  |
-     /|\     /|\     /|\                                     `---------'
-      |       |       |                                                 
-     / \     / \     / \                                                
+
+
+
+
+
+
 
 
 
@@ -236,38 +236,75 @@ piranna                                                         [Page 4]
 
 Internet-Draft                   webp2p                    February 2014
 
+     ,-.       ,-.       ,-.                                            
+     `-'       `-'       `-'                                            
+     /|\       /|\       /|\                                 ,---------.
+      |         |         |                                  |Handshake|
+     / \       / \       / \                                 | server  |
+    Alice      Bob    Charlotte                              `----+----'
+      |         |         |                                       |     
+      |<-request|<-request|                                       |     
+      |response>|response>|                                       |     
+      |         |         |                                       |     
+      |<--authenticate--->|                                       |     
+      |         |         |                                       |     
+      |<-------------offer|                                       |     
+      |answer - - - - - ->|                                       |     
+      |<----candidate---->|                                       |     
+      |         |         |                                       |     
+    Alice      Bob    Charlotte                              ,----+----.
+     ,-.       ,-.       ,-.                                 |Handshake|
+     `-'       `-'       `-'                                 | server  |
+     /|\       /|\       /|\                                 `---------'
+      |         |         |                                             
+     / \       / \       / \                                            
+
 4. Messages
 
-    Communication is message based using a binary format with fixed
-    length fields except the last one in some of them (specified later),
-    where it's length is correspond to the pending bytes until the end
-    of the message. To be able to send them inside a unique IP package
-    both using a handshake server or a DataChannel connection, the
-    messages max length will not be greater that the [SCTP payload],
-    being this of a size of 1192 bytes.
+    Communication use a binary, message based format with fixed length
+    fields, except the last one in some of them (specified later) where
+    it's length is implicit corresponding to the remaining bytes until
+    the end of the message.
 
-    Communication is done in an asynchronous way, not waiting for a
-    response and processing all the messages in the order they are being
-    received since these can arrive at any moment.
+    To be able to send the messages inside a unique IP package using a
+    handshake server or a DataChannel connection, the format is designed
+    so messages max length will not be greater than the size of the
+    [SCTP payload], being this of 1192 bytes. Messages that can only be
+    send over a DataChannel connection don't have this constraints, but
+    they are intended to be as small as possible.
 
-    Each message is composed by three fields: 'ttl' (Time-to-life) and
-    'method' on the first byte of the message using one nibble (4 bits)
-    each one, and 'data' using the remaining space:
+    Protocol is designed in a RPC-like asynchronous way. Each message is
+    composed by three fields: 'ttl' (Time-to-life) and 'method' on the
+    first byte of the message using one nibble (4 bits) each one, and a
+    'data' field using the remaining space:
 
         * ttl: it uses the high half of the first byte of the message
           and it's stored unsigned. It's used to limit the number of
           retransmissions of a message, and only values greater than
-          zero are considered valid ttl values. Zero is a special case
-          used to flag messages where the 'data' field is send on clear,
-          and due to that they MUST NOT be forwarded, for example
-          'presence' or 'candidate' messages.
+          zero are considered valid ttl values.
+
+          A 'ttl' of zero is a special value used to flag messages with
+          the 'data' field send on clear, or messages send directly
+          between peers using the signaling channel, so these message
+          MUST NOT be forwarded. This messages are 'presence' messages
+          send over a handshake server, and 'offer', 'answer' and
+          'candidate' messages send over an in-wire signaling channel.
+
+
+piranna                                                         [Page 5]
+
+Internet-Draft                   webp2p                    February 2014
 
         * method: it uses the low half of the first byte of the message
-          and it's stored signed. Positive values indicate the function
-          associated to the message. Currently they are used from 0 to 4
-          ('presence', 'offer', 'answer', 'authenticate' & 'candidate'),
-          being the values from 5 to 7 reserved for future use. Negative
-          values are used to indicate response error messages.
+          and it's stored signed.
+
+          Positive values indicate the function associated to the
+          message. Currently they are only used 0 and 1 for
+          forwardeables messages ('ttl' greater than zero), and 0 to 4
+          for non-forwardeables messages ('ttl' equal t0 zero), being
+          the values 2-7 and 5-7 reserved for future use.
+
+          Negative values are used to indicate error messages.
 
         * data: it store the per-message specific data. If 'ttl' field
           of the message is different of zero, this data is encrypted
@@ -282,24 +319,11 @@ Internet-Draft                   webp2p                    February 2014
     | 1-256 | from (256)       |
     |-------|==================|
 
-
-
-
-
-
-
-
-
-
-piranna                                                         [Page 5]
-
-Internet-Draft                   webp2p                    February 2014
-
 4.1.1. Presence
 
     Presence message is used to notify our presence when connecting to a
     handshake server so other (older) peers connected to it can send to
-    us a connection offer, and due to this it MUST NOT be used when
+    us a connection offer, and due to this it MUST NOT be send when
     using intermediary peers to interconnect two of them already on the
     P2P network. After sending the presence message, the peer keeps
     waiting listening for the arrival of presence messages from new
@@ -310,8 +334,7 @@ Internet-Draft                   webp2p                    February 2014
     When detecting that a new peer has connected to a handshake server,
     the algorithm to choose if a peer should connect to this new peer or
     not is left to the developer and should adjust it to the limits of
-    the particular handshake server used, but the next three algorithms
-    are proposed:
+    the particular handshake server used. Some proposed algorithms are:
 
         * connect to all newer peers. This allow to quickly increase the
           number of connections with newer peers, but all of them would
@@ -321,49 +344,40 @@ Internet-Draft                   webp2p                    February 2014
           the network over time, but would be slower to get a peers
           critic mass on that handshake server and disconnect from it.
 
-        * connect on increasing intervals: increase progressively the
-          number of "leap" peers when connecting to them, both randomly
-          or numerically. This would spend a lot of time to get the full
-          critic mass, but also will assure that we got a big enought
-          number of peers just after connecting to the handshake server
-          and also distribute them homogeneity.
-
-    When the peer got connected to that predefined number of newer peers
-    (a "critic mass") over a particular handshake server, it disconnect
-    itself from it and start using preferentially the P2P network to
-    connect to other peers, allowing to other new peers to use the
-    handshake server and increasing the network arity.
-
-    After disconnecting from the handshake server, it's left to the
-    developer or user decision if the peer should connect to a new
-    handshake server (if available) after it gets disconnected from one
-    of them or not. Also, it could be defined to connect to several of
-    them at the same time. It's recommended that if possible, don't
-    disconnect from handshake servers and protocols without usage limits
-    like the ones working on a LAN network.
-
-
-
-
-
-
-
-
+        * connect on increasing intervals: increase the number of "leap"
+          peers, both randomly or numerically. This would spend a lot of
+          time to get a critic mass, but also will assure that we got a
+          big enought number of peers just after connecting to the
+          handshake server and also create an homogeneous distribution.
 
 piranna                                                         [Page 6]
 
 Internet-Draft                   webp2p                    February 2014
 
+    When the peer got connected to the predefined number of newer peers
+    for a particular handshake server (a "critic mass"), it disconnect
+    itself and start using preferentially the P2P network to connect to
+    other peers, allowing to other new peers to use the handshake server
+    and increase the network arity.
+
+    After disconnecting from the handshake server, it's left to the
+    developer or user decision if the peer should connect to a new
+    handshake server (if available) after it gets disconnected from one
+    of them or not. Also, it could be defined to connect to several of
+    them at the same time. It's recommended that, if possible, don't
+    disconnect from handshake servers and protocols with no usage limits
+    like the ones working on a LAN network.
+
 4.1.1.1. Message format
 
-    The message is identified by having zero as 'ttl' as a special value
-    (otherwise it is an invalid one) meaning the 'data' field is send on
-    clear, the 'method' field set to zero, and the 'data' field length
-    equal to the length of a SessionID as a double check, containing in
-    that case the SessionID of the the newly connected peer stored in
-    raw binary format, and doing the functionality of a 'from' field.
-    This field data is later used as a public-key by the other peers to
-    encrypt their connection requests in the 'offer' messages.
+    The message is identified by having both the 'ttl' and the 'method'
+    fields set to zero. The 'data' field SHOULD also be checked to have
+    a length equal to a SessionID (session public-key).
+
+    The 'data' field contains the SessionID of the newly connected peer
+    stored in raw binary format, and takes the purposse of a 'from'
+    field. Its data is later used as public-key by the other peers to
+    encrypt the content of their 'requests' messages.
 
      * ttl:    [4 bits]    = 0
      * method: [4 bits]    = 0
@@ -373,9 +387,9 @@ Internet-Draft                   webp2p                    February 2014
 
 4.2. Connection messages
 
-               | Offer          | Answer         | Error          |
+               | Request        | Response       | Error          |
     |----------|================|================|================|
-    | 0        | ttl | method=1 | ttl | method=2 | ttl | method<0 |
+    | 0        | ttl | method=0 | ttl | method=1 | ttl | method<0 |
     |----------|================|================|================|
     | 1        | id (1)         | id (1)         | id (1)         |
     |----------|----------------|----------------|----------------|
@@ -386,55 +400,50 @@ Internet-Draft                   webp2p                    February 2014
 
     Connection messages are used to establish a new connection between
     two peers and follow a request-response scheme. They can be send
-    both through handshake servers or using other intermediary peers,
-    so due to that the message 'data' field MUST be send encrypted. The
-    connection also creates a WebRTC DataChannel (by default identified
-    with the 'webp2p' label) used for signaling between both peers and
-    to forward connection messages from other peers over the P2P mesh
-    network.
+    both through a handshake server or using other intermediary peers,
+    so due to that the message 'data' field MUST be send encrypted so it
+    can't be accessed by third parties. The connection also creates a
+    WebRTC DataChannel (by default identified with the 'webp2p' label)
+    used for signaling between both peers and to forward connection
+    messages from other peers over the P2P mesh network.
 
-    Connection messages are designed to fit in a [SCTP payload], being
-    this of a size of 1192 bytes, so thay can be send over a single
-    WebRTC DataChannel packet. This requires that the messages send
-    the minimal necessary info, delegating the non-essential data to
-    create the connection to be send later in-wire over the signaling
-    DataChannel created between both peers in a 'Trickle-ICE' way. Due
-    to this, the 'offer' and 'answer' messages only include on their
-    'sdp' field their SDP offer or answer info, and the candidates info
-    needed to create the in-wire signaling DataChannel. Other candidates
-    can be appended on the 'offer' and 'answer' messages 'sdp' field if
-    the total message size is not bigger than the allowed SCTP payload.
-    Pending candidates required to finish to establish the connection as
-    it was requested by the user MUST be send later using the in-wire
-    signaling channel.
 
 
 piranna                                                         [Page 7]
 
 Internet-Draft                   webp2p                    February 2014
 
+    Connection messages are designed to fit in a [SCTP payload], being
+    this of a size of 1192 bytes, so they can be send over a single
+    Ethernet packet. This requires that the messages send the minimal
+    necessary info, delegating the non-essential data to create the
+    connection to be send later over the in-wire signaling channel
+    created between both peers in a 'Trickle-ICE' way. Due to this, the
+    'request' and 'response' messages only include on their 'sdp' field
+    the SDP offer or answer info, having appended the candidates needed
+    to create the in-wire signaling DataChannel.
+
     Message 'ttl' field set a limit on the number or retransmissions or
     forwarding of the messages, being 5 (five) the initial max value. It
     MUST be decreased each time a message is forwarded to a consecutive
     peer down to zero, when it's not allowed to continue. Zero 'ttl' is
     a special case to flag that the 'data' field is send in clear, so
-    the message MUST not be forwarded since it could have sensitive data
+    the message MUST NOT be forwarded since it could have sensitive data
     that can be intercepted by third parties.
 
     The encryption of the 'data' field is done with the receiver peer
     session public-key (its SessionID) so only it can decipher the
     message. This is done to prevent third-parties to intercept the
-    message and access to sensitive data like peers IPs while
-    forwarding it.
+    message and access to sensitive data like peers IPs when forwarded.
 
-    Due to their request-response scheme, all the connection messages
-    has a message 'id' field inside the encrypted 'data' field. This is
-    used to identify the sequence of messages send to another particular
-    peer and correlate with their response when it's received. Each
-    sequence of send messages IDs is unique for each one of the peers to
-    whom the sender is connected so its size can be smaller. If one of
-    message IDs counter reach the maximum value that this field can host
-    it will start over from the beginning.
+    Due to their RPC-like architecture, all the connection messages have
+    a message 'id' field inside the encrypted 'data' field. This is used
+    to identify the sequence of messages send to another particular peer
+    and correlate with their response when it's received. Each sequence
+    of send messages IDs is unique for each one of the peers to whom the
+    sender is connected, so its size can just an unsigned byte. If one
+    of message IDs counter reach the maximum value that this field can
+    host it will start over from the beginning.
 
     When a connection message reaches a peer, this one checks if it's
     the receiver by trying to decrypt the message 'data' field with its
@@ -451,19 +460,10 @@ Internet-Draft                   webp2p                    February 2014
 
 4.2.1 Encryption scheme
 
-    Sessions made use of RSA 2048, leading to a length of SessionID
-    fields of 256 bytes.
-
-
-
-4.2.2. Offer
-
-    Offer message is used to request a connection with another peer,
-    both using a handshake server or over the P2P network using other
-    intermediary peers, maybe by initiative of the user application, or
-    in the case of offer messages send over a handshake server, they can
-    also be send after receiving a 'presence' message send by another
-    newly connected peer.
+    Encryption scheme is based on RSA public keys, ramdomly created for
+    each session. The public key is used for identification purposses on
+    the network during that session, so we name it SessionID. Using a
+    RSA 2048, this lead us to SessionID being a string of 256 bytes.
 
 
 
@@ -472,34 +472,50 @@ piranna                                                         [Page 8]
 
 Internet-Draft                   webp2p                    February 2014
 
-    After checking that we don't really have a connection to that peer,
+    When a new peer connect to a handshake server, it send a 'presence'
+    message with its SessionID/session public-key, so listening peers
+    can send back 'request' messages. This messages has their 'data'
+    field encrypted with the SessionID of the new peer, so only it can
+    be able to decrypt it with its session private-key. The 'data' field
+    has inside a 'from' field with the SessionID of the requester, that
+    it's used to encrypt the 'data' field of the 'response' message send
+    back so only the requester can be able to decrypt its content. After
+    that, a direct connection between both peers is established, that by
+    the WebRTC specification, it is protected by using DTLS encryption.
+
+4.2.2. Request
+
+    Request message is used to create a connection with another peer,
+    both using a handshake server or intermediary peers over the P2P
+    network, initiated by an action of the user or after receiving a
+    'presence' message send by another newly connected peer.
+
+    After checking that we don't have already a connection to that peer,
     in case the connection is for a new peer connected to a handshake
-    server (a response to a 'presence' message) it is send directly over
-    the handshake server connection where we got notified about it. In
-    case that's a connection initiated by the application, the 'offer'
-    message is send broadcasted over all the current connections.
+    server (a response to a 'presence' message), the 'request' message
+    is send over the handshake server connection where we got notified
+    about it. In case that's a connection initiated by the application,
+    the 'request' message is send broadcasted over all the current
+    connections of the peer.
 
-    When the 'offer' message reaches the desired peer, this peer checks
-    the 'from' field to see if it has already a connection with that
-    peer (so it can discard the message, probably a duplicated one), or
-    if it has already send a connection request to the sender. In that
-    case, the peer compare its sessionID with the one of the message
-    sender to process just one of the two connection requests, having
-    preference the one initiated by the peer with lower sessionID. If
-    it's the own peer, then the connection request message is discarded
-    in benefict of the connection request that it send before; if the
-    lower sessionID is the one from the sender, then our previous
-    connection request gets aborted and it process to create the
-    response message for the received connection request.
+    When the 'request' message reaches the desired peer, this peer
+    checks the 'from' field to see if it has already a connection with
+    that peer (so it can discard the message), or if it has already send
+    a connection request to the sender. In that case, the peer compare
+    its own sessionID with the one of the message sender to process just
+    one of the two connection requests, having preference the one
+    started by the peer with lower sessionID. If it's the own peer, then
+    the connection request message is discarded in benefict of the
+    connection request that it send before; if the lower sessionID is
+    the one from the sender, then our previous connection request gets
+    aborted and process to create the response message for the received
+    connection request, adding the configution of the previous one.
 
-    It the peer accepted the incoming connection request, then the peer
+    If the peer accepted the incoming connection request, then the peer
     proccess the data on the 'sdp' field to finish the establishment of
     the connection and the in-wire signaling channel between both peers,
-    send an 'answer' message to the requester peer with the SDP answer
-    and the info to establish the in-wire signaling channel, and wait
-    until it is open to send the 'authentication' message and the
-    remaining candidates on 'candidate' messages to finish to set the
-    connection as the user configured it.
+    send a 'response' message to the requester peer with the SDP answer,
+    and wait until it is open to send the 'authentication' message.
 
 4.2.2.1. Message format
 
@@ -507,29 +523,27 @@ Internet-Draft                   webp2p                    February 2014
     (defined as 5 by this spec), or equal to 1 if the offer is send due
     to a 'presence' message to prevent it being forwarded outside the
     handshake channel where it was send, and it is identified by a
-    'method' field with a value of 1.
-
-    In the encrypted 'data' field, there's a message 'id' field between
-    0 and 255 used to identify the message responses. There's also a
-    'from' field with the sender session public-key (its sessionID) so
-    the receiver of the 'offer' message can be able to identify who is
-    sending the connection request so it can send its response, and also
-    to encrypt the 'answer' or 'error' response message so only the
-    connection request sender can be able to receive the response.
-    Finally, the message 'data' field has a variable length 'sdp' field
-    storing the offer [SDP] with the minimal required info to establish
-    the connection and the connection in-wire signaling channel, that
-    fills the remaining message length.
-
-     * ttl:    [4 bits] = 5..1 (1 as response to 'presence' messages)
-     * method: [4 bits] = 1
-
+    'method' field with a value of 0.
 
 
 
 piranna                                                         [Page 9]
 
 Internet-Draft                   webp2p                    February 2014
+
+    In the encrypted 'data' field, there's a message 'id' field between
+    0 and 255 used to identify the message responses. There's also a
+    'from' field with the sender session public-key (its sessionID) so
+    the receiver of the 'request' message can be able to identify who is
+    sending the connection request, and also to encrypt the 'response'
+    or 'error' message so only the connection request sender can be able
+    to receive the response. Finally, the message 'data' field has a
+    variable length 'sdp' field storing the offer [SDP] with the minimal
+    required info to establish the connection and the connection in-wire
+    signaling channel, that fills the remaining message length.
+
+     * ttl:    [4 bits] = 5..1 (1 as response to 'presence' messages)
+     * method: [4 bits] = 0
 
      Encrypted data field:
      * id:   [1 byte]      = 0..255
@@ -538,39 +552,43 @@ Internet-Draft                   webp2p                    February 2014
 
     Total message size: 1+1+256+sdp = 258+sdp bytes
 
-4.2.3. Answer
+4.2.3. Response
 
-    Answer messages are send back to the requester peer as response to
-    a previous connection requests so the connection can be established
+    Response messages are send back to the requester peer as response to
+    a previous connection request so the connection can be established
     between both peers.
 
-    When the 'answer' message reaches the requester peer, it checks the
-    'id' field and try to link the 'answer' message with a previous
-    connection request. In case that was not possible (due to an already
+    When the 'response' message reaches the requester peer, it checks the
+    'id' field and try to link the 'response' message with a previous
+    'request' one. In case that was not possible (due to an already
     processed connection so this message is a duplicated one, or because
     the user cancelled the connection request) then this message is
-    discarded. In case there was a connection request for this 'answer'
+    discarded. In case there was a connection request for this 'response'
     message, then the peer proccess the data on the 'sdp' field to
     finish the establishment of the connection and the in-wire signaling
     channel between both peers, and wait until it is open to send the
-    'authentication' message and the remaining candidates on 'candidate'
-    messages to finish to set the connection as the user configured it.
+    'authentication' message.
 
 4.2.3.1. Message format
 
     The message has a 'ttl' field no bigger than its initial max value
     (defined as 5 by this spec), and it is identified by a 'method'
-    field with a value of 2.
+    field with a value of 1.
 
     In the encrypted 'data' field, there's a message 'id' field between
-    0 and 255 equal to the message 'id' of the request offer. Finally,
-    it has a variable length 'sdp' field storing the answer [SDP] with
-    the minimal required info to establish the connection and the
-    connection in-wire signaling channel, that fills the remaining
+    0 and 255 equal to the message 'id' of the 'request' message.
+    Finally, it has a variable length 'sdp' field storing the answer
+    [SDP] with the minimal required info to establish the connection and
+    the connection in-wire signaling channel, that fills the remaining
     message length.
 
      * ttl:    [4 bits] = 5..1
-     * method: [4 bits] = 2
+     * method: [4 bits] = 1
+
+
+piranna                                                        [Page 10]
+
+Internet-Draft                   webp2p                    February 2014
 
      Encrypted data field:
      * id:  [1 byte]       = 0..255 (same of the 'offer' message)
@@ -581,18 +599,13 @@ Internet-Draft                   webp2p                    February 2014
 4.2.4. Error
 
     Error messages are send when it was not possible to process a
-    request, for example because we have already one open. Specific
-    error messages are left for a future revision of this specification.
-
-
-
-piranna                                                        [Page 10]
-
-Internet-Draft                   webp2p                    February 2014
+    'request' message, for example because we have already one open.
+    Specific error messages are left for a future revision of this
+    specification.
 
 4.2.4.1. Message format
 
-    Error messages format is equal to the 'answer' messages one, being
+    Error messages format is equal to the 'response' messages one, being
     the only differences the 'method' field with a specific value for
     each kind of error, and having a 'data' field instead of a 'sdp'
     field.
@@ -612,21 +625,44 @@ Internet-Draft                   webp2p                    February 2014
 
 4.3. Inter-peers only
 
-               | Authenticate     | Candidate        |
-    |----------|==================|==================|
-    | 0        | ttl=0 | method=3 | ttl=0 | method=4 |
-    |----------|------------------|------------------|
-    | 1-256    | signature (256)  | sdp (<=1191)     |
-    |----------|==================|                  |
-    | 257-1191 |                  |                  |
-    |----------|                  |==================|
+             | Authenticate     |              | Error            |
+    |--------|==================|         |----|==================|
+    | 0      | ttl=0 | method=1 |         | 0  | ttl=0 | method<0 |
+    |--------|------------------|         |----|------------------|
+    | 1-256  | signature        |         | 1- | sdp              |
+    |--------|==================|         |----|==================|
 
-    Inter-peer messages are used to finish to establish the connection
-    between two peers. They are send using encrypted direct connections
-    between both peers, for example using WebRTC DataChannels, being
-    each one the only receiver of the messages send by the other peer.
-    Due to this, messages doesn't need to have encrypted data and MUST
-    NOT be forwarded.
+         | Offer            | Answer           | Candidate        |
+    |----|==================|==================|==================|
+    | 0  | ttl=0 | method=2 | ttl=0 | method=3 | ttl=0 | method=4 |
+    |----|------------------|------------------|------------------|
+    | 1- | sdp              | sdp              | sdp              |
+    |----|==================|==================|==================|
+
+
+
+
+
+
+
+piranna                                                        [Page 11]
+
+Internet-Draft                   webp2p                    February 2014
+
+    Inter-peer messages are used to define and update the connection
+    between both peers. They are send using an encrypted direct
+    connection, for example a dedicated WebRTC DataChannel, being each
+    one the only receiver of the messages send by the other peer and
+    MUST NOT be forwarded. They are identified by having a zero on the
+    'ttl' field, and the 'data' field is not required to be encrypted.
+
+    After the connection is established
+    and the signaling channel is created, the connection will be updated
+    using new offer, answer and candidate SDPs and sended over that
+    signaling channel. It's up to the implementation if that SDPs will
+    be send on independent messages, or they will be appended on the
+    'offer' and 'answer' messages 'sdp' field and send in fewer messages,
+    but it's RECOMMENDED that messages will be as small as possible.
 
 4.3.1. Authenticate
 
@@ -641,14 +677,6 @@ Internet-Draft                   webp2p                    February 2014
     sensitive data), or maybe plainly close the connection if the
     authentication of the peer was unsuccessful.
 
-
-
-
-
-piranna                                                        [Page 11]
-
-Internet-Draft                   webp2p                    February 2014
-
 4.3.1.1. Signature scheme
 
     The signature scheme is inspired on [Digest access authentication].
@@ -662,16 +690,25 @@ Internet-Draft                   webp2p                    February 2014
 4.3.1.2. Message format
 
     The message has a 'ttl' field equal to zero (0) as a flag to
-    indicate it MUST NOT be forwarded, a 'method' field equal to three
-    (3), and a 'signature' field holding the signature to be checked.
+    indicate it MUST NOT be forwarded, a 'method' field equal to one (1)
+    and a 'signature' field holding the signature to be checked.
 
      * ttl:       [4 bits]    = 0
-     * method:    [4 bits]    = 3
+     * method:    [4 bits]    = 1
      * signature: [256 bytes] = timestamp signed with userID private-key
 
     Total message size: 1+256 = 257 bytes
 
-4.3.2. Candidate
+
+
+
+
+
+piranna                                                        [Page 12]
+
+Internet-Draft                   webp2p                    February 2014
+
+4.3.2. Offer
 
     Candidate messages are used to exchange the pending SDP candidates
     not send before on the 'offer' and 'answer' messages in order to
@@ -681,6 +718,77 @@ Internet-Draft                   webp2p                    February 2014
     than the [SCTP payload].
 
 4.3.2.1. Message format
+
+    The message has a 'ttl' field equal to zero (0) as a flag to
+    indicate it MUST NOT be forwarded, a 'method' field equal to two
+    (2), and a 'sdp' field holding the SDP candidates.
+
+     * ttl:    [4 bits]       = 0
+     * method: [4 bits]       = 2
+     * sdp:    [<=1191 bytes] = signaling channel candidates
+
+    Total message size: 1+sdp bytes
+
+4.3.3. Answer
+
+    Candidate messages are used to exchange the pending SDP candidates
+    not send before on the 'offer' and 'answer' messages in order to
+    finish to establish the connection as the user requested. Several
+    SDP candidates can be combined in a 'candidate' message in order to
+    reduce bandwidth message always the total message size is not bigger
+    than the [SCTP payload].
+
+4.3.3.1. Message format
+
+    The message has a 'ttl' field equal to zero (0) as a flag to
+    indicate it MUST NOT be forwarded, a 'method' field equal to three
+    (3), and a 'sdp' field holding the SDP candidates.
+
+     * ttl:    [4 bits]       = 0
+     * method: [4 bits]       = 3
+     * sdp:    [<=1191 bytes] = signaling channel candidates
+
+    Total message size: 1+sdp bytes
+
+4.3.4. Candidate
+
+    Candidate messages are used to exchange the pending SDP candidates
+    not send before on the 'offer' and 'answer' messages in order to
+    finish to establish the connection as the user requested. Several
+    SDP candidates can be combined in a 'candidate' message in order to
+    reduce bandwidth message always the total message size is not bigger
+    than the [SCTP payload].
+
+
+
+
+
+piranna                                                        [Page 13]
+
+Internet-Draft                   webp2p                    February 2014
+
+4.3.4.1. Message format
+
+    The message has a 'ttl' field equal to zero (0) as a flag to
+    indicate it MUST NOT be forwarded, a 'method' field equal to four
+    (4), and a 'sdp' field holding the SDP candidates.
+
+     * ttl:    [4 bits]       = 0
+     * method: [4 bits]       = 4
+     * sdp:    [<=1191 bytes] = signaling channel candidates
+
+    Total message size: 1+sdp bytes
+
+4.3.5. Error
+
+    Candidate messages are used to exchange the pending SDP candidates
+    not send before on the 'offer' and 'answer' messages in order to
+    finish to establish the connection as the user requested. Several
+    SDP candidates can be combined in a 'candidate' message in order to
+    reduce bandwidth message always the total message size is not bigger
+    than the [SCTP payload].
+
+4.3.5.1. Message format
 
     The message has a 'ttl' field equal to zero (0) as a flag to
     indicate it MUST NOT be forwarded, a 'method' field equal to four
@@ -704,10 +812,6 @@ Internet-Draft                   webp2p                    February 2014
         Bradner, S., "Key words for use in RFCs to Indicate Requirement
         Levels", BCP 14, RFC 2119, March 1997.
 
-piranna                                                        [Page 12]
-
-Internet-Draft                   webp2p                    February 2014
-
 6. Authors' addresses
 
     Jesús Leganés Combarro "piranna"
@@ -718,49 +822,4 @@ Internet-Draft                   webp2p                    February 2014
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-piranna                                                        [Page 13]
+piranna                                                        [Page 14]
