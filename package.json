@@ -50,6 +50,6 @@
     "qunit-cli": "ShareIt-project/qunit-cli"
   },
   "browser": {
-    "pubnub": "./shim/pubnub.min.js"
+    "pubnub": "./shim/pubnub.js"
   }
 }
