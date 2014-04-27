@@ -29,6 +29,7 @@
     "WebRTC"
   ],
   "dependencies": {
+    "inherits": "^2.0.1",
     "node-xmpp": "~0.12.0",
     "process-events-shim": "~0.1.0",
     "pubnub": "latest",
