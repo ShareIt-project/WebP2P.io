@@ -219,14 +219,7 @@ function()
       var status = conn1.status;
       equal(status, 'disconnected', 'Conn1 by HandshakeManager. status: '+status);
 
-      conn1.on('peersManager.connected', function()
-      {
-        var status = conn1.status;
-        equal(status, 'connected', 'Conn1 by PeersManager. status: '+status);
-
-        conn1.close();
-        start();
-      });
+      start();
     });
 
 
@@ -237,6 +230,8 @@ function()
     conn2.on('peerconnection', function(peerconnection)
     {
       ok(true, "Conn2 PeerConnection: "+peerconnection.sessionID);
+
+      equal(peerconnection.sessionID, conn1.sessionID, 'conn1 SessionID');
 
       var peers = Object.keys(conn2.peers);
 

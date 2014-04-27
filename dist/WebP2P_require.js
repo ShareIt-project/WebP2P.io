@@ -1,5 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var RpcBuilder = require('RPC-Builder');
+var RpcBuilder = require('rpc-builder');
 
 var packer = require('./packer');
 
@@ -64,7 +64,7 @@ function MessagePacker(sessionID)
 
 module.exports = MessagePacker;
 
-},{"./packer":12,"RPC-Builder":14}],2:[function(require,module,exports){
+},{"./packer":12,"rpc-builder":19}],2:[function(require,module,exports){
 var process=require("__browserify_process");var EventEmitter = require("events").EventEmitter;
 
 var inherits          = require('inherits');
@@ -622,7 +622,7 @@ inherits(WebP2P, EventEmitter);
 
 module.exports = WebP2P;
 
-},{"./MessagePacker":1,"./managers/HandshakeManager":9,"./managers/PeersManager":11,"__browserify_process":21,"events":19,"inherits":22,"process-events-shim":23,"uuid":25,"wrtc":26}],3:[function(require,module,exports){
+},{"./MessagePacker":1,"./managers/HandshakeManager":9,"./managers/PeersManager":11,"__browserify_process":15,"events":13,"inherits":16,"process-events-shim":17,"uuid":24,"wrtc":25}],3:[function(require,module,exports){
 var inherits = require("inherits");
 
 var HandshakeConnector = require("./core/HandshakeConnector");
@@ -703,7 +703,7 @@ Object.defineProperty(Connector_PubNub.prototype, 'max_chars', {value: 1800});
 
 module.exports = Connector_PubNub;
 
-},{"./core/HandshakeConnector":6,"inherits":22,"pubnub":27}],4:[function(require,module,exports){
+},{"./core/HandshakeConnector":6,"inherits":16,"pubnub":26}],4:[function(require,module,exports){
 var inherits = require("inherits");
 
 var EventEmitter = require("events").EventEmitter;
@@ -754,7 +754,7 @@ Connector.prototype.send = function(message)
 
 module.exports = Connector;
 
-},{"events":19,"inherits":22}],5:[function(require,module,exports){
+},{"events":13,"inherits":16}],5:[function(require,module,exports){
 var inherits = require("inherits");
 
 var Connector = require("./Connector");
@@ -799,7 +799,7 @@ inherits(Connector_DataChannel, Connector);
 
 module.exports = Connector_DataChannel;
 
-},{"./Connector":4,"inherits":22}],6:[function(require,module,exports){
+},{"./Connector":4,"inherits":16}],6:[function(require,module,exports){
 var inherits = require("inherits");
 
 var Connector = require("./Connector");
@@ -851,7 +851,7 @@ HandshakeConnector.prototype.max_connections = Number.POSITIVE_INFINITY;
 
 module.exports = HandshakeConnector;
 
-},{"./Connector":4,"inherits":22}],7:[function(require,module,exports){
+},{"./Connector":4,"inherits":16}],7:[function(require,module,exports){
 const ERROR_NETWORK_UNKNOWN = {id: 0, msg: 'Unable to fetch handshake servers configuration'};
 const ERROR_NETWORK_OFFLINE = {id: 1, msg: "There's no available network"};
 const ERROR_REQUEST_FAILURE = {id: 2, msg: 'Unable to fetch handshake servers configuration'};
@@ -1079,7 +1079,7 @@ HandshakeManager.prototype.addConfigs_byUri = function(json_uri)
 
 module.exports = HandshakeManager;
 
-},{"../connectors/PubNub":3,"../errors":7,"./Manager":10,"inherits":22}],10:[function(require,module,exports){
+},{"../connectors/PubNub":3,"../errors":7,"./Manager":10,"inherits":16}],10:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
 var inherits = require('inherits');
@@ -1204,7 +1204,7 @@ Manager.prototype.send = function(message, incomingConnector)
 
 module.exports = Manager;
 
-},{"events":19,"inherits":22}],11:[function(require,module,exports){
+},{"events":13,"inherits":16}],11:[function(require,module,exports){
 var inherits = require('inherits');
 
 var Manager = require('./Manager');
@@ -1309,7 +1309,7 @@ inherits(PeersManager, Manager);
 
 module.exports = PeersManager;
 
-},{"../connectors/core/DataChannel":5,"./Manager":10,"inherits":22}],12:[function(require,module,exports){
+},{"../connectors/core/DataChannel":5,"./Manager":10,"inherits":16}],12:[function(require,module,exports){
 const ERROR    = 0;
 const PRESENCE = 1;
 const OFFER    = 2;
@@ -1444,600 +1444,6 @@ exports.unpack = unpack;
 exports.responseMethods = responseMethods;
 
 },{}],13:[function(require,module,exports){
-function Mapper()
-{
-  var sources = {};
-
-
-  this.get = function(id, source)
-  {
-    var ids = sources[source];
-    if(ids == undefined)
-      return undefined;
-
-    return ids[id];
-  };
-
-  this.remove = function(id, source)
-  {
-    var ids = sources[source];
-    if(ids == undefined)
-      return;
-
-    delete ids[id];
-
-    if(!Object.keys(ids).length)
-      delete sources[source];
-  };
-
-  this.set = function(value, id, source)
-  {
-    if(value == undefined)
-      return this.remove(id, source);
-
-    var ids = sources[source];
-    if(ids == undefined)
-      sources[source] = ids = {};
-
-    ids[id] = value;
-  };
-};
-
-
-Mapper.prototype.pop = function(id, source)
-{
-  var value = this.get(id, source);
-  if(value == undefined)
-    return undefined;
-
-  this.remove(id, source);
-
-  return value;
-};
-
-
-module.exports = Mapper;
-
-},{}],14:[function(require,module,exports){
-/*
- * (C) Copyright 2014 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
- * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- */
-
-var inherits = require('inherits');
-
-var packers = require('./packers');
-var Mapper = require('./Mapper');
-
-
-const BASE_TIMEOUT = 5000;
-
-
-function unifyResponseMethods(responseMethods)
-{
-  if(!responseMethods) return {};
-
-  for(var key in responseMethods)
-  {
-    var value = responseMethods[key];
-
-    if(typeof value == 'string')
-      responseMethods[key] =
-      {
-        response: value
-      }
-  };
-
-  return responseMethods;
-};
-
-
-/**
- * Representation of a RPC notification
- *
- * @class
- *
- * @constructor
- *
- * @param {String} method -method of the notification
- * @param params - parameters of the notification
- */
-function RpcNotification(method, params)
-{
-  Object.defineProperty(this, 'method', {value: method, enumerable: true});
-  Object.defineProperty(this, 'params', {value: params, enumerable: true});
-};
-
-
-/**
- * @class
- *
- * @constructor
- */
-function RpcBuilder(packer)
-{
-  if(!packer)
-    throw new SyntaxError('Packer is not defined');
-
-  if(!packer.pack || !packer.unpack)
-    throw new SyntaxError('Packer is invalid');
-
-  var responseMethods = unifyResponseMethods(packer.responseMethods);
-
-
-  var self = this;
-
-  var requestID = 0;
-
-  var requests  = new Mapper();
-  var responses = new Mapper();
-
-  var message2Key = {};
-
-
-  /**
-   * Store the response to prevent to process duplicate request later
-   */
-  function storeResponse(message, id, dest)
-  {
-    var response =
-    {
-      message: message,
-      /** Timeout to auto-clean old responses */
-      timeout: setTimeout(function()
-      {
-        responses.remove(id, dest);
-      },
-      BASE_TIMEOUT)
-    };
-
-    responses.set(response, id, dest);
-  };
-
-
-  /**
-   * Representation of a RPC request
-   *
-   * @class
-   * @extends RpcNotification
-   *
-   * @constructor
-   *
-   * @param {String} method -method of the notification
-   * @param params - parameters of the notification
-   * @param {Integer} id - identifier of the request
-   * @param [from] - source of the notification
-   */
-  function RpcRequest(method, params, id, from)
-  {
-    RpcNotification.call(this, method, params);
-
-    var response = responses.get(id, from);
-
-    /**
-     * @constant {Boolean} duplicated
-     */
-    Object.defineProperty(this, 'duplicated',
-    {
-      value: Boolean(response)
-    });
-
-    var responseMethod = responseMethods[method];
-
-    this.pack = function()
-    {
-      return packer.pack(this, id);
-    }
-
-    /**
-     * Generate a response to this request
-     *
-     * @param {Error} [error]
-     * @param {*} [result]
-     *
-     * @returns {string}
-     */
-    this.reply = function(error, result)
-    {
-      // Duplicated request, remove old response timeout
-      if(response)
-        clearTimeout(response.timeout);
-
-      if(from != undefined)
-      {
-        if(error)
-          error.dest = from;
-
-        if(result)
-          result.dest = from;
-      };
-
-      var message;
-
-      // Protocol indicates that responses has own request methods
-      if(responseMethod)
-      {
-        if(responseMethod.error == undefined && error)
-          message = packer.pack(
-          {
-            error: error
-          }, id);
-
-        else
-        {
-          responseMethod = error
-                         ? responseMethod.error
-                         : responseMethod.response;
-
-          message = packer.pack(
-          {
-            method: responseMethod,
-            params: error || result
-          }, id);
-        }
-      }
-
-      // New request or overriden one, create new response with provided data
-      else if(error || result)
-        message = packer.pack(
-        {
-          error:  error,
-          result: result
-        }, id);
-
-      // Duplicate & not-overriden request, re-send old response
-      else if(response)
-        message = response.message;
-
-      // New empty reply, response null value
-      else
-        message = packer.pack({result: null}, id);
-
-      // Store the response to prevent to process a duplicated request later
-      storeResponse(message, id, from);
-
-      // Return the stored response so it can be directly send back
-      return message;
-    }
-  };
-  inherits(RpcRequest, RpcNotification);
-
-
-  /**
-   * Allow to cancel a request and don't wait for a response
-   */
-  this.cancel = function(message)
-  {
-    var key = message2Key[message];
-    if(!key) return;
-
-    delete message2Key[message];
-
-    var request = requests.pop(key.id, key.dest);
-    if(!request) return;
-
-    clearTimeout(request.timeout);
-  };
-
-
-  /**
-   * Generates and encode a JsonRPC 2.0 message
-   *
-   * @param {String} method -method of the notification
-   * @param params - parameters of the notification
-   * @param [dest] - destination of the notification
-   * @param [callback] - function called when a response to this request is
-   *   received. If not defined, a notification will be send instead
-   *
-   * @returns {string} A raw JsonRPC 2.0 request or notification string
-   */
-  this.encode = function(method, params, dest, callback)
-  {
-    // Fix optional parameters
-    if(params instanceof Function)
-    {
-      if(dest != undefined)
-        throw new SyntaxError("There can't be parameters after callback");
-
-      callback = params;
-      dest     = undefined;
-      params   = undefined;
-    }
-
-    else if(dest instanceof Function)
-    {
-      if(callback != undefined)
-        throw new SyntaxError("There can't be parameters after callback");
-
-      callback = dest;
-      dest     = undefined;
-    };
-
-    // Encode message
-    var message =
-    {
-      method: method,
-      params: params
-    };
-
-    if(callback)
-    {
-      var id = requestID++;
-
-      message = packer.pack(message, id);
-
-      function dispatchCallback(error, result)
-      {
-        self.cancel(message);
-
-        callback(error, result);
-      };
-
-      var request =
-      {
-        message:  message,
-        callback: dispatchCallback,
-        responseMethods: responseMethods[method] || {},
-        timeout:  setTimeout(function()
-        {
-          var error = new Error('Request has timed out');
-              error.request = request.message;
-
-          dispatchCallback(error)
-        },
-        BASE_TIMEOUT)
-      };
-
-      message2Key[message] = {id: id, dest: dest};
-
-      requests.set(request, id, dest);
-    }
-    else
-      message = packer.pack(message);
-
-    // Return the packed message
-    return message;
-  };
-
-  /**
-   * Decode and process a JsonRPC 2.0 message
-   *
-   * @param {string} message - string with the content of the JsonRPC 2.0 message
-   *
-   * @returns {RpcNotification|RpcRequest|undefined} - the representation of the
-   *   notification or the request. If a response was processed, it will return
-   *   `undefined` to notify that it was processed
-   *
-   * @throws {TypeError} - Message is not defined
-   */
-  this.decode = function(message)
-  {
-    if(!message)
-      throw new TypeError("Message is not defined");
-
-    message = packer.unpack(message);
-
-    var id     = message.id;
-    var method = message.method;
-    var params = message.params || {};
-
-    var from = params.from;
-
-    // Notification
-    if(id == undefined)
-      return new RpcNotification(method, params);
-
-    // Request, or response with own method
-    if(method)
-    {
-      // Check for response with own method
-      var request = requests.get(id, from);
-      if(request)
-      {
-        var responseMethods = request.responseMethods;
-
-        if(method == responseMethods.error)
-        {
-          request.callback(params);
-
-          return requests.remove(id, from);
-        }
-
-        if(method == responseMethods.response)
-        {
-          request.callback(null, params);
-
-          return requests.remove(id, from);
-        }
-      }
-
-      // Request
-      message.pack = function()
-      {
-        return packer.pack(message, id);
-      };
-
-      return new RpcRequest(method, params, id, from);
-    }
-
-    // Response
-    var request = requests.get(id, from);
-    if(request == undefined)
-      return console.warn("No callback was defined for this message", message);
-
-    // Process response
-    request.callback(message.error, message.result);
-  };
-};
-
-
-RpcBuilder.RpcNotification = RpcNotification;
-
-
-module.exports = RpcBuilder;
-
-RpcBuilder.packers = packers;
-
-},{"./Mapper":13,"./packers":17,"inherits":18}],15:[function(require,module,exports){
-/**
- * JsonRPC 2.0 packer
- */
-
-/**
- * Pack a JsonRPC 2.0 message
- *
- * @param {Object} message - object to be packaged. It requires to have all the
- *   fields needed by the JsonRPC 2.0 message that it's going to be generated
- *
- * @return {String} - the stringified JsonRPC 2.0 message
- */
-function pack(message, id)
-{
-  var result =
-  {
-    jsonrpc: "2.0"
-  };
-
-  // Request
-  if(message.method)
-  {
-    result.method = message.method;
-
-    if(message.params)
-      result.params = message.params;
-
-    // Request is a notification
-    if(id != undefined)
-      result.id = id;
-  }
-
-  // Response
-  else if(id != undefined)
-  {
-    if(message.error)
-    {
-      if(message.result !== undefined)
-        throw new TypeError("Both result and error are defined");
-
-      result.error = message.error;
-    }
-    else if(message.result !== undefined)
-      result.result = message.result;
-    else
-      throw new TypeError("No result or error is defined");
-
-    result.id = id;
-  };
-
-  return JSON.stringify(result);
-};
-
-/**
- * Unpack a JsonRPC 2.0 message
- *
- * @param {String} message - string with the content of the JsonRPC 2.0 message
- *
- * @throws {TypeError} - Invalid JsonRPC version
- *
- * @return {Object} - object filled with the JsonRPC 2.0 message content
- */
-function unpack(message)
-{
-  if(typeof message == 'string' || message instanceof String)
-    message = JSON.parse(message);
-
-  // Check if it's a valid message
-
-  var version = message.jsonrpc;
-  if(version != "2.0")
-    throw new TypeError("Invalid JsonRPC version '"+version+"': "
-                       +JSON.stringify(message));
-
-  if(message.method == undefined)
-  {
-    if(message.id == undefined)
-      throw new TypeError("Invalid message: "+JSON.stringify(message));
-
-    var result_defined = message.result !== undefined;
-    var error_defined  = message.error  !== undefined;
-
-    // Check only result or error is defined, not both or none
-    if(result_defined && error_defined)
-      throw new TypeError("Both result and error are defined: "
-                         +JSON.stringify(message));
-
-    if(!result_defined && !error_defined)
-      throw new TypeError("No result or error is defined: "
-                         +JSON.stringify(message));
-  }
-
-  // Return unpacked message
-  return message;
-};
-
-
-exports.pack   = pack;
-exports.unpack = unpack;
-
-},{}],16:[function(require,module,exports){
-function pack(message)
-{
-  throw new TypeError("Not yet implemented");
-};
-
-function unpack(message)
-{
-  throw new TypeError("Not yet implemented");
-};
-
-
-exports.pack   = pack;
-exports.unpack = unpack;
-
-},{}],17:[function(require,module,exports){
-var JsonRPC = require('./JsonRPC');
-var XmlRPC  = require('./XmlRPC');
-
-
-exports.JsonRPC = JsonRPC;
-exports.XmlRPC  = XmlRPC;
-
-},{"./JsonRPC":15,"./XmlRPC":16}],18:[function(require,module,exports){
-if (typeof Object.create === 'function') {
-  // implementation from standard node.js 'util' module
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    ctor.prototype = Object.create(superCtor.prototype, {
-      constructor: {
-        value: ctor,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-  };
-} else {
-  // old school shim for old browsers
-  module.exports = function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor
-    var TempCtor = function () {}
-    TempCtor.prototype = superCtor.prototype
-    ctor.prototype = new TempCtor()
-    ctor.prototype.constructor = ctor
-  }
-}
-
-},{}],19:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2339,7 +1745,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],20:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"PcZj9L":[function(require,module,exports){
 var base64 = require('base64-js')
 var ieee754 = require('ieee754')
@@ -3697,7 +3103,7 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
 },{}]},{},[])
 ;;module.exports=require("native-buffer-browserify").Buffer
 
-},{}],21:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -3752,9 +3158,32 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],22:[function(require,module,exports){
-module.exports=require(18)
-},{}],23:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+        value: ctor,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor
+    var TempCtor = function () {}
+    TempCtor.prototype = superCtor.prototype
+    ctor.prototype = new TempCtor()
+    ctor.prototype.constructor = ctor
+  }
+}
+
+},{}],17:[function(require,module,exports){
 var process=require("__browserify_process"),global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};// Generated by CoffeeScript 1.6.2
 (function() {
   var EventEmitter, name, processLacksEventFunctions, value, _ref;
@@ -3814,7 +3243,576 @@ var process=require("__browserify_process"),global=typeof self !== "undefined" ?
 //@ sourceMappingURL=process-events-shim.map
 */
 
-},{"__browserify_process":21,"events":19}],24:[function(require,module,exports){
+},{"__browserify_process":15,"events":13}],18:[function(require,module,exports){
+function Mapper()
+{
+  var sources = {};
+
+
+  this.get = function(id, source)
+  {
+    var ids = sources[source];
+    if(ids == undefined)
+      return undefined;
+
+    return ids[id];
+  };
+
+  this.remove = function(id, source)
+  {
+    var ids = sources[source];
+    if(ids == undefined)
+      return;
+
+    delete ids[id];
+
+    if(!Object.keys(ids).length)
+      delete sources[source];
+  };
+
+  this.set = function(value, id, source)
+  {
+    if(value == undefined)
+      return this.remove(id, source);
+
+    var ids = sources[source];
+    if(ids == undefined)
+      sources[source] = ids = {};
+
+    ids[id] = value;
+  };
+};
+
+
+Mapper.prototype.pop = function(id, source)
+{
+  var value = this.get(id, source);
+  if(value == undefined)
+    return undefined;
+
+  this.remove(id, source);
+
+  return value;
+};
+
+
+module.exports = Mapper;
+
+},{}],19:[function(require,module,exports){
+/*
+ * (C) Copyright 2014 Kurento (http://kurento.org/)
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the GNU Lesser General Public License
+ * (LGPL) version 2.1 which accompanies this distribution, and is available at
+ * http://www.gnu.org/licenses/lgpl-2.1.html
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ */
+
+var inherits = require('inherits');
+
+var packers = require('./packers');
+var Mapper = require('./Mapper');
+
+
+const BASE_TIMEOUT = 5000;
+
+
+function unifyResponseMethods(responseMethods)
+{
+  if(!responseMethods) return {};
+
+  for(var key in responseMethods)
+  {
+    var value = responseMethods[key];
+
+    if(typeof value == 'string')
+      responseMethods[key] =
+      {
+        response: value
+      }
+  };
+
+  return responseMethods;
+};
+
+
+/**
+ * Representation of a RPC notification
+ *
+ * @class
+ *
+ * @constructor
+ *
+ * @param {String} method -method of the notification
+ * @param params - parameters of the notification
+ */
+function RpcNotification(method, params)
+{
+  Object.defineProperty(this, 'method', {value: method, enumerable: true});
+  Object.defineProperty(this, 'params', {value: params, enumerable: true});
+};
+
+
+/**
+ * @class
+ *
+ * @constructor
+ */
+function RpcBuilder(packer)
+{
+  if(!packer)
+    throw new SyntaxError('Packer is not defined');
+
+  if(!packer.pack || !packer.unpack)
+    throw new SyntaxError('Packer is invalid');
+
+  var responseMethods = unifyResponseMethods(packer.responseMethods);
+
+
+  var self = this;
+
+  var requestID = 0;
+
+  var requests  = new Mapper();
+  var responses = new Mapper();
+
+  var message2Key = {};
+
+
+  /**
+   * Store the response to prevent to process duplicate request later
+   */
+  function storeResponse(message, id, dest)
+  {
+    var response =
+    {
+      message: message,
+      /** Timeout to auto-clean old responses */
+      timeout: setTimeout(function()
+      {
+        responses.remove(id, dest);
+      },
+      BASE_TIMEOUT)
+    };
+
+    responses.set(response, id, dest);
+  };
+
+
+  /**
+   * Representation of a RPC request
+   *
+   * @class
+   * @extends RpcNotification
+   *
+   * @constructor
+   *
+   * @param {String} method -method of the notification
+   * @param params - parameters of the notification
+   * @param {Integer} id - identifier of the request
+   * @param [from] - source of the notification
+   */
+  function RpcRequest(method, params, id, from)
+  {
+    RpcNotification.call(this, method, params);
+
+    var response = responses.get(id, from);
+
+    /**
+     * @constant {Boolean} duplicated
+     */
+    Object.defineProperty(this, 'duplicated',
+    {
+      value: Boolean(response)
+    });
+
+    var responseMethod = responseMethods[method];
+
+    this.pack = function()
+    {
+      return packer.pack(this, id);
+    }
+
+    /**
+     * Generate a response to this request
+     *
+     * @param {Error} [error]
+     * @param {*} [result]
+     *
+     * @returns {string}
+     */
+    this.reply = function(error, result)
+    {
+      // Duplicated request, remove old response timeout
+      if(response)
+        clearTimeout(response.timeout);
+
+      if(from != undefined)
+      {
+        if(error)
+          error.dest = from;
+
+        if(result)
+          result.dest = from;
+      };
+
+      var message;
+
+      // Protocol indicates that responses has own request methods
+      if(responseMethod)
+      {
+        if(responseMethod.error == undefined && error)
+          message = packer.pack(
+          {
+            error: error
+          }, id);
+
+        else
+        {
+          responseMethod = error
+                         ? responseMethod.error
+                         : responseMethod.response;
+
+          message = packer.pack(
+          {
+            method: responseMethod,
+            params: error || result
+          }, id);
+        }
+      }
+
+      // New request or overriden one, create new response with provided data
+      else if(error || result)
+        message = packer.pack(
+        {
+          error:  error,
+          result: result
+        }, id);
+
+      // Duplicate & not-overriden request, re-send old response
+      else if(response)
+        message = response.message;
+
+      // New empty reply, response null value
+      else
+        message = packer.pack({result: null}, id);
+
+      // Store the response to prevent to process a duplicated request later
+      storeResponse(message, id, from);
+
+      // Return the stored response so it can be directly send back
+      return message;
+    }
+  };
+  inherits(RpcRequest, RpcNotification);
+
+
+  /**
+   * Allow to cancel a request and don't wait for a response
+   */
+  this.cancel = function(message)
+  {
+    var key = message2Key[message];
+    if(!key) return;
+
+    delete message2Key[message];
+
+    var request = requests.pop(key.id, key.dest);
+    if(!request) return;
+
+    clearTimeout(request.timeout);
+  };
+
+
+  /**
+   * Generates and encode a JsonRPC 2.0 message
+   *
+   * @param {String} method -method of the notification
+   * @param params - parameters of the notification
+   * @param [dest] - destination of the notification
+   * @param [callback] - function called when a response to this request is
+   *   received. If not defined, a notification will be send instead
+   *
+   * @returns {string} A raw JsonRPC 2.0 request or notification string
+   */
+  this.encode = function(method, params, dest, callback)
+  {
+    // Fix optional parameters
+    if(params instanceof Function)
+    {
+      if(dest != undefined)
+        throw new SyntaxError("There can't be parameters after callback");
+
+      callback = params;
+      dest     = undefined;
+      params   = undefined;
+    }
+
+    else if(dest instanceof Function)
+    {
+      if(callback != undefined)
+        throw new SyntaxError("There can't be parameters after callback");
+
+      callback = dest;
+      dest     = undefined;
+    };
+
+    // Encode message
+    var message =
+    {
+      method: method,
+      params: params
+    };
+
+    if(callback)
+    {
+      var id = requestID++;
+
+      message = packer.pack(message, id);
+
+      function dispatchCallback(error, result)
+      {
+        self.cancel(message);
+
+        callback(error, result);
+      };
+
+      var request =
+      {
+        message:  message,
+        callback: dispatchCallback,
+        responseMethods: responseMethods[method] || {},
+        timeout:  setTimeout(function()
+        {
+          var error = new Error('Request has timed out');
+              error.request = request.message;
+
+          dispatchCallback(error)
+        },
+        BASE_TIMEOUT)
+      };
+
+      message2Key[message] = {id: id, dest: dest};
+
+      requests.set(request, id, dest);
+    }
+    else
+      message = packer.pack(message);
+
+    // Return the packed message
+    return message;
+  };
+
+  /**
+   * Decode and process a JsonRPC 2.0 message
+   *
+   * @param {string} message - string with the content of the JsonRPC 2.0 message
+   *
+   * @returns {RpcNotification|RpcRequest|undefined} - the representation of the
+   *   notification or the request. If a response was processed, it will return
+   *   `undefined` to notify that it was processed
+   *
+   * @throws {TypeError} - Message is not defined
+   */
+  this.decode = function(message)
+  {
+    if(!message)
+      throw new TypeError("Message is not defined");
+
+    message = packer.unpack(message);
+
+    var id     = message.id;
+    var method = message.method;
+    var params = message.params || {};
+
+    var from = params.from;
+
+    // Notification
+    if(id == undefined)
+      return new RpcNotification(method, params);
+
+    // Request, or response with own method
+    if(method)
+    {
+      // Check for response with own method
+      var request = requests.get(id, from);
+      if(request)
+      {
+        var responseMethods = request.responseMethods;
+
+        if(method == responseMethods.error)
+        {
+          request.callback(params);
+
+          return requests.remove(id, from);
+        }
+
+        if(method == responseMethods.response)
+        {
+          request.callback(null, params);
+
+          return requests.remove(id, from);
+        }
+      }
+
+      // Request
+      message.pack = function()
+      {
+        return packer.pack(message, id);
+      };
+
+      return new RpcRequest(method, params, id, from);
+    }
+
+    // Response
+    var request = requests.get(id, from);
+    if(request == undefined)
+      return console.warn("No callback was defined for this message", message);
+
+    // Process response
+    request.callback(message.error, message.result);
+  };
+};
+
+
+RpcBuilder.RpcNotification = RpcNotification;
+
+
+module.exports = RpcBuilder;
+
+RpcBuilder.packers = packers;
+
+},{"./Mapper":18,"./packers":22,"inherits":16}],20:[function(require,module,exports){
+/**
+ * JsonRPC 2.0 packer
+ */
+
+/**
+ * Pack a JsonRPC 2.0 message
+ *
+ * @param {Object} message - object to be packaged. It requires to have all the
+ *   fields needed by the JsonRPC 2.0 message that it's going to be generated
+ *
+ * @return {String} - the stringified JsonRPC 2.0 message
+ */
+function pack(message, id)
+{
+  var result =
+  {
+    jsonrpc: "2.0"
+  };
+
+  // Request
+  if(message.method)
+  {
+    result.method = message.method;
+
+    if(message.params)
+      result.params = message.params;
+
+    // Request is a notification
+    if(id != undefined)
+      result.id = id;
+  }
+
+  // Response
+  else if(id != undefined)
+  {
+    if(message.error)
+    {
+      if(message.result !== undefined)
+        throw new TypeError("Both result and error are defined");
+
+      result.error = message.error;
+    }
+    else if(message.result !== undefined)
+      result.result = message.result;
+    else
+      throw new TypeError("No result or error is defined");
+
+    result.id = id;
+  };
+
+  return JSON.stringify(result);
+};
+
+/**
+ * Unpack a JsonRPC 2.0 message
+ *
+ * @param {String} message - string with the content of the JsonRPC 2.0 message
+ *
+ * @throws {TypeError} - Invalid JsonRPC version
+ *
+ * @return {Object} - object filled with the JsonRPC 2.0 message content
+ */
+function unpack(message)
+{
+  if(typeof message == 'string' || message instanceof String)
+    message = JSON.parse(message);
+
+  // Check if it's a valid message
+
+  var version = message.jsonrpc;
+  if(version != "2.0")
+    throw new TypeError("Invalid JsonRPC version '"+version+"': "
+                       +JSON.stringify(message));
+
+  if(message.method == undefined)
+  {
+    if(message.id == undefined)
+      throw new TypeError("Invalid message: "+JSON.stringify(message));
+
+    var result_defined = message.result !== undefined;
+    var error_defined  = message.error  !== undefined;
+
+    // Check only result or error is defined, not both or none
+    if(result_defined && error_defined)
+      throw new TypeError("Both result and error are defined: "
+                         +JSON.stringify(message));
+
+    if(!result_defined && !error_defined)
+      throw new TypeError("No result or error is defined: "
+                         +JSON.stringify(message));
+  }
+
+  // Return unpacked message
+  return message;
+};
+
+
+exports.pack   = pack;
+exports.unpack = unpack;
+
+},{}],21:[function(require,module,exports){
+function pack(message)
+{
+  throw new TypeError("Not yet implemented");
+};
+
+function unpack(message)
+{
+  throw new TypeError("Not yet implemented");
+};
+
+
+exports.pack   = pack;
+exports.unpack = unpack;
+
+},{}],22:[function(require,module,exports){
+var JsonRPC = require('./JsonRPC');
+var XmlRPC  = require('./XmlRPC');
+
+
+exports.JsonRPC = JsonRPC;
+exports.XmlRPC  = XmlRPC;
+
+},{"./JsonRPC":20,"./XmlRPC":21}],23:[function(require,module,exports){
 var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};
 var rng;
 
@@ -3847,7 +3845,7 @@ if (!rng) {
 module.exports = rng;
 
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer");//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -4036,7 +4034,7 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":24,"__browserify_Buffer":20}],26:[function(require,module,exports){
+},{"./rng":23,"__browserify_Buffer":14}],25:[function(require,module,exports){
 var RTCIceCandidate       = window.mozRTCIceCandidate       || window.webkitRTCIceCandidate       || window.RTCIceCandidate;
 var RTCPeerConnection     = window.mozRTCPeerConnection     || window.webkitRTCPeerConnection     || window.RTCPeerConnection;
 var RTCSessionDescription = window.mozRTCSessionDescription || window.webkitRTCSessionDescription || window.RTCSessionDescription;
@@ -4045,7 +4043,7 @@ exports.RTCIceCandidate       = RTCIceCandidate;
 exports.RTCPeerConnection     = RTCPeerConnection;
 exports.RTCSessionDescription = RTCSessionDescription;
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 // Version: 3.6.2
 var NOW             = 1
 ,   READY           = false
