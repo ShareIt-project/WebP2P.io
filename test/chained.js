@@ -107,7 +107,7 @@ function createPeer_connect(conns, index, lastIndex)
       {
         ok(true, conn.sessionID+' connected to '+peerconnection.sessionID);
 
-        var peers = Object.keys(conns[3].peers);
+        var peers = Object.keys(conns[index].peers);
         equal(peers.length, 2, conn.sessionID+' peers: '+peers);
 
         tearDown(conns)

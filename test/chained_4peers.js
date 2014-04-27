@@ -19,29 +19,25 @@ var handshake_servers =
   }
 ];
 
-var options1 =
-{
-  handshake_servers: handshake_servers,
-  sessionID: "Peer 1"
-};
-
-var options2 =
-{
-  handshake_servers: handshake_servers,
-  sessionID: "Peer 2"
-};
-
-var options3 =
-{
-  handshake_servers: handshake_servers,
-  sessionID: "Peer 3"
-};
-
-var options4 =
-{
-  handshake_servers: handshake_servers,
-  sessionID: "Peer 4"
-};
+var options =
+[
+  {
+    handshake_servers: handshake_servers,
+    sessionID: "Peer 1"
+  },
+  {
+    handshake_servers: handshake_servers,
+    sessionID: "Peer 2"
+  },
+  {
+    handshake_servers: handshake_servers,
+    sessionID: "Peer 3"
+  },
+  {
+    handshake_servers: handshake_servers,
+    sessionID: "Peer 4"
+  }
+];
 
 
 asyncTest("Connect two peers using another two as intermediaries",
@@ -54,7 +50,7 @@ function()
 
   // Conn 1
 
-  conn1 = new WebP2P(options1);
+  conn1 = new WebP2P(options[0]);
 
   conn1.on('error', function(error)
   {
@@ -71,7 +67,7 @@ function()
 
     // Conn 2
 
-    conn2 = new WebP2P(options2);
+    conn2 = new WebP2P(options[1]);
 
     conn2.on('error', function(error)
     {
@@ -111,7 +107,7 @@ function()
 
       // Conn 3
 
-      conn3 = new WebP2P(options3);
+      conn3 = new WebP2P(options[2]);
 
       conn3.on('error', function(error)
       {
@@ -163,7 +159,7 @@ function()
 
         // Conn 4
 
-        conn4 = new WebP2P(options4);
+        conn4 = new WebP2P(options[3]);
 
         conn4.on('error', function(error)
         {
@@ -276,17 +272,17 @@ function()
 {
   expect(21);
 
-  options1.commonLabels = ['test'];
-  options2.commonLabels = ['test'];
-  options3.commonLabels = ['test'];
-  options4.commonLabels = ['test'];
+  options[0].commonLabels = ['test'];
+  options[1].commonLabels = ['test'];
+  options[2].commonLabels = ['test'];
+  options[3].commonLabels = ['test'];
 
   var conn1, conn2, conn3, conn4;
 
 
   // Conn 1
 
-  conn1 = new WebP2P(options1);
+  conn1 = new WebP2P(options[0]);
 
   conn1.on('error', function(error)
   {
@@ -303,7 +299,7 @@ function()
 
     // Conn 2
 
-    conn2 = new WebP2P(options2);
+    conn2 = new WebP2P(options[1]);
 
     conn2.on('error', function(error)
     {
@@ -328,7 +324,7 @@ function()
 
       // Conn 3
 
-      conn3 = new WebP2P(options3);
+      conn3 = new WebP2P(options[2]);
 
       conn3.on('error', function(error)
       {
@@ -355,7 +351,7 @@ function()
 
         // Conn 4
 
-        conn4 = new WebP2P(options4);
+        conn4 = new WebP2P(options[3]);
 
         conn4.on('error', function(error)
         {

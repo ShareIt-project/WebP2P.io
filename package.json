@@ -34,9 +34,9 @@
     "process-events-shim": "~0.1.0",
     "pubnub": "latest",
     "pusher": "latest",
+    "rpc-builder": "~0.1.0",
     "uuid": "~1.4.1",
-    "wrtc": "~0.0.7",
-    "grunt-cli": "~0.1.13"
+    "wrtc": "0.0.15"
   },
   "devDependencies": {
     "browserify": "~3.4.1",

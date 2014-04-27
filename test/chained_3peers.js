@@ -19,179 +19,173 @@ var handshake_servers =
   }
 ];
 
-var options1 =
-{
-  handshake_servers: handshake_servers,
-  sessionID: "Peer 1"
-};
-
-var options2 =
-{
-  handshake_servers: handshake_servers,
-  sessionID: "Peer 2"
-};
-
-var options3 =
-{
-  handshake_servers: handshake_servers,
-  sessionID: "Peer 3"
-};
+var options =
+[
+  {
+    handshake_servers: handshake_servers,
+    sessionID: "Peer 1"
+  },
+  {
+    handshake_servers: handshake_servers,
+    sessionID: "Peer 2"
+  },
+  {
+    handshake_servers: handshake_servers,
+    sessionID: "Peer 3"
+  }
+];
 
 
-asyncTest("Connect two peers using a third one as intermediary",
+asyncTest("connect two peers using a third one as intermediaries",
 function()
 {
-  expect(24);
+  expect(27);
 
-  var conn1, conn2, conn3;
-
-
-  // Conn 1
-
-  conn1 = new WebP2P(options1);
-
-  conn1.on('error', function(error)
-  {
-    ok(false, "Conn1 error: "+error);
-
-    conn1.close();
-    start();
-  });
-
-  conn1.on('peerconnection', function(peerconnection)
-  {
-    ok(true, "Conn1 PeerConnection: "+peerconnection.sessionID);
-
-    if(conn3 && conn3.sessionID == peerconnection.sessionID)
-    {
-      ok(true, 'Conn1 connected to Conn3');
-
-      var peers = Object.keys(conn1.peers);
-      equal(peers.length, 2, "Conn1 peers: "+peers);
-    };
-  });
-
-  conn1.on('handshakeManager.connected', function()
-  {
-    ok(true, "Conn1 handshakeManager.connected. SessionID: "+conn1.sessionID);
-
-
-    // Conn 2
-
-    conn2 = new WebP2P(options2);
-
-    conn2.on('error', function(error)
-    {
-      ok(false, "Conn2 error: "+error);
-
-      conn1.close();
-      conn2.close();
-      start();
-    });
-
-    conn2.on('peerconnection', function(peerconnection)
-    {
-      ok(true, "Conn2 PeerConnection: "+peerconnection.sessionID);
-    });
-
-    conn2.on('handshakeManager.connected', function()
-    {
-      ok(true, "Conn2 handshakeManager.connected. SessionID: "+conn2.sessionID);
-    });
-
-    conn2.on('handshakeManager.disconnected', function()
-    {
-      ok(true, 'Conn2 handshakeManager.disconnected');
-    });
-
-    conn2.on('peersManager.connected', function(_peersManager)
-    {
-      ok(true, 'Conn2 peersManager.connected');
-
-      var peers = Object.keys(conn2.peers);
-      equal(peers.length, 1, "Conn2 peers: "+peers);
-
-      var _connectors = _peersManager._connectors;
-      equal(_connectors.length, 1, "Conn2 _connectors: "+_connectors.length);
-      console.log(_connectors);
-    });
-  });
-
-  conn1.on('handshakeManager.disconnected', function()
-  {
-    ok(true, 'Conn1 handshakeManager.disconnected');
-  });
-
-  conn1.on('peersManager.connected', function(_peersManager)
-  {
-    ok(true, 'Conn1 peersManager.connected');
-
-    var peers = Object.keys(conn1.peers);
-    equal(peers.length, 1, "Conn1 peers: "+peers);
-
-    var _connectors = _peersManager._connectors;
-    equal(_connectors.length, 1, "Conn1 _connectors: "+_connectors.length);
-    console.log(_connectors);
-
-
-    // Conn 3
-
-    conn3 = new WebP2P(options3);
-
-    conn3.on('error', function(error)
-    {
-      ok(false, "Conn3 error: "+error.message);
-      console.error(error);
-
-      conn1.close();
-      conn2.close();
-      conn3.close();
-      start();
-    });
-
-    conn3.on('peerconnection', function(peerconnection)
-    {
-      ok(true, "Conn3 PeerConnection: "+peerconnection.sessionID);
-
-      if(conn1.sessionID == peerconnection.sessionID)
-      {
-        conn1.close();
-        conn2.close();
-        conn3.close();
-        start();
-      }
-    });
-
-    conn3.on('handshakeManager.connected', function()
-    {
-      ok(true, "Conn3 handshakeManager.connected. SessionID: "+conn3.sessionID);
-    });
-
-    conn3.on('peersManager.connected', function(_peersManager)
-    {
-      ok(true, 'Conn3 peersManager.connected');
-
-      var peers = Object.keys(conn3.peers);
-      equal(peers.length, 1, "Conn3 peers: "+peers);
-
-      var _connectors = _peersManager._connectors;
-      equal(_connectors.length, 1, "Conn3 _connectors: "+_connectors.length);
-      console.log(_connectors);
-
-
-      conn3.connectTo(conn1.sessionID, function(error, peer)
-      {
-        if(error) return ok(false, error);
-
-        equal(conn1.sessionID, peer.sessionID,
-              'Conn3 connected to Conn1: '+peer.sessionID);
-
-        var peers = Object.keys(conn3.peers);
-        equal(peers.length, 2, "Conn3 peers: "+peers);
-      });
-    });
-  });
+  createPeer_connect([], 0, 2)
 });
+
+
+//asyncTest("connect two peers using a third one as intermediary",
+//function()
+//{
+//  expect(24);
+
+//  var conns = new Array(3);
+
+
+//  conns[0] = new WebP2P(options[0]);
+
+//  conns[0].on('error', function(error)
+//  {
+//    ok(false, "conns[0] error: "+error);
+
+//    tearDown(conns);
+//  });
+
+//  conns[0].on('peerconnection', function(peerconnection)
+//  {
+//    ok(true, "conns[0] Peerconnection: "+peerconnection.sessionID);
+
+//    if(conns[2] && conns[2].sessionID == peerconnection.sessionID)
+//    {
+//      ok(true, 'conns[0] connected to conns[2]');
+
+//      var peers = Object.keys(conns[0].peers);
+//      equal(peers.length, 2, "conns[0] peers: "+peers);
+//    };
+//  });
+
+//  conns[0].on('handshakeManager.connected', function()
+//  {
+//    ok(true, "conns[0] handshakeManager.connected. SessionID: "+conns[0].sessionID);
+
+
+//    conns[1] = new WebP2P(options[1]);
+
+//    conns[1].on('error', function(error)
+//    {
+//      ok(false, "conns[1] error: "+error);
+
+//      tearDown(conns);
+//    });
+
+//    conns[1].on('peerconnection', function(peerconnection)
+//    {
+//      ok(true, "conns[1] Peerconnection: "+peerconnection.sessionID);
+//    });
+
+//    conns[1].on('handshakeManager.connected', function()
+//    {
+//      ok(true, "conns[1] handshakeManager.connected. SessionID: "+conns[1].sessionID);
+//    });
+
+//    conns[1].on('handshakeManager.disconnected', function()
+//    {
+//      ok(true, 'conns[1] handshakeManager.disconnected');
+//    });
+
+//    conns[1].on('peersManager.connected', function(_peersManager)
+//    {
+//      ok(true, 'conns[1] peersManager.connected');
+
+//      var peers = Object.keys(conns[1].peers);
+//      equal(peers.length, 1, "conns[1] peers: "+peers);
+
+//      var _connectors = _peersManager._connectors;
+//      equal(_connectors.length, 1, "conns[1] _connectors: "+_connectors.length);
+//      console.log(_connectors);
+//    });
+//  });
+
+//  conns[0].on('handshakeManager.disconnected', function()
+//  {
+//    ok(true, 'conns[0] handshakeManager.disconnected');
+//  });
+
+//  conns[0].on('peersManager.connected', function(_peersManager)
+//  {
+//    ok(true, 'conns[0] peersManager.connected');
+
+//    var peers = Object.keys(conns[0].peers);
+//    equal(peers.length, 1, "conns[0] peers: "+peers);
+
+//    var _connectors = _peersManager._connectors;
+//    equal(_connectors.length, 1, "conns[0] _connectors: "+_connectors.length);
+//    console.log(_connectors);
+
+
+//    conns[2] = new WebP2P(options[2]);
+
+//    conns[2].on('error', function(error)
+//    {
+//      ok(false, "conns[2] error: "+error.message);
+//      console.error(error);
+
+//      tearDown(conns);
+//    });
+
+//    conns[2].on('peerconnection', function(peerconnection)
+//    {
+//      ok(true, "conns[2] Peerconnection: "+peerconnection.sessionID);
+
+//      if(conns[0].sessionID == peerconnection.sessionID)
+//      {
+//        // Test successful
+//        console.info('* Success *');
+//        tearDown(conns);
+//      }
+//    });
+
+//    conns[2].on('handshakeManager.connected', function()
+//    {
+//      ok(true, "conns[2] handshakeManager.connected. SessionID: "+conns[2].sessionID);
+//    });
+
+//    conns[2].on('peersManager.connected', function(_peersManager)
+//    {
+//      ok(true, 'conns[2] peersManager.connected');
+
+//      var peers = Object.keys(conns[2].peers);
+//      equal(peers.length, 1, "conns[2] peers: "+peers);
+
+//      var _connectors = _peersManager._connectors;
+//      equal(_connectors.length, 1, "conns[2] _connectors: "+_connectors.length);
+//      console.log(_connectors);
+
+
+//      conns[2].connectTo(conns[0].sessionID, function(error, peer)
+//      {
+//        if(error) return ok(false, error);
+
+//        equal(conns[0].sessionID, peer.sessionID,
+//              'conns[2] connected to conns[0]: '+peer.sessionID);
+
+//        var peers = Object.keys(conns[2].peers);
+//        equal(peers.length, 2, "conns[2] peers: "+peers);
+//      });
+//    });
+//  });
+//});
 
 
 asyncTest("Exchange data between two peers connected using a another one as intermediary",
@@ -199,38 +193,37 @@ function()
 {
   expect(15);
 
-  options1.commonLabels = ['test'];
-  options2.commonLabels = ['test'];
-  options3.commonLabels = ['test'];
+  options[0].commonLabels = ['test'];
+  options[1].commonLabels = ['test'];
+  options[2].commonLabels = ['test'];
 
-  var conn1, conn2, conn3;
+  var conns = new Array(3);
 
 
-  // Conn 1
+  // conns 1
 
-  conn1 = new WebP2P(options1);
+  conns[0] = new WebP2P(options[0]);
 
-  conn1.on('error', function(error)
+  conns[0].on('error', function(error)
   {
-    ok(false, "Conn1 error: "+error);
+    ok(false, "conns[0] error: "+error);
 
-    conn1.close();
-    start();
+    tearDown(conns);
   });
 
-  conn1.on('peerconnection', function(peerconnection, channels)
+  conns[0].on('peerconnection', function(peerconnection, channels)
   {
-    ok(true, "Conn1 PeerConnection: "+peerconnection.sessionID);
+    ok(true, "conns[0] Peerconnection: "+peerconnection.sessionID);
 
-    if(conn3 && conn3.sessionID == peerconnection.sessionID)
+    if(conns[2] && conns[2].sessionID == peerconnection.sessionID)
     {
-      ok(true, 'Conn1 connected to Conn3');
+      ok(true, 'conns[0] connected to conns[2]');
 
-      var peers = Object.keys(conn1.peers);
-      equal(peers.length, 2, "Conn1 peers: "+peers);
+      var peers = Object.keys(conns[0].peers);
+      equal(peers.length, 2, "conns[0] peers: "+peers);
 
 
-      // Answer message from conn3
+      // Answer message from conns[2]
 
       function initDataChannel(channel)
       {
@@ -256,88 +249,83 @@ function()
     };
   });
 
-  conn1.on('handshakeManager.connected', function()
+  conns[0].on('handshakeManager.connected', function()
   {
-    ok(true, "Conn1 handshakeManager.connected. SessionID: "+conn1.sessionID);
+    ok(true, "conns[0] handshakeManager.connected. SessionID: "+conns[0].sessionID);
 
 
-    // Conn 2
+    // conns 2
 
-    conn2 = new WebP2P(options2);
+    conns[1] = new WebP2P(options[1]);
 
-    conn2.on('error', function(error)
+    conns[1].on('error', function(error)
     {
-      ok(false, "Conn2 error: "+error);
+      ok(false, "conns[1] error: "+error);
 
-      conn1.close();
-      conn2.close();
-      start();
+      tearDown(conns);
     });
 
-//    conn2.on('peersManager.connected', function(_peersManager)
+//    conns[1].on('peersManager.connected', function(_peersManager)
 //    {
-//      ok(true, 'Conn2 peersManager.connected');
+//      ok(true, 'conns[1] peersManager.connected');
 //
-//      var peers = Object.keys(conn2.peers);
-//      equal(peers.length, 1, "Conn2 peers: "+peers);
+//      var peers = Object.keys(conns[1].peers);
+//      equal(peers.length, 1, "conns[1] peers: "+peers);
 //
 //      var _connectors = _peersManager._connectors;
-//      equal(_connectors.length, 1, "Conn2 _connectors: "+_connectors.length);
+//      equal(_connectors.length, 1, "conns[1] _connectors: "+_connectors.length);
 //      console.log(_connectors);
 //    });
   });
 
-  conn1.on('peersManager.connected', function(_peersManager)
+  conns[0].on('peersManager.connected', function(_peersManager)
   {
-    ok(true, 'Conn1 peersManager.connected');
+    ok(true, 'conns[0] peersManager.connected');
 
-    var peers = Object.keys(conn1.peers);
-    equal(peers.length, 1, "Conn1 peers: "+peers);
+    var peers = Object.keys(conns[0].peers);
+    equal(peers.length, 1, "conns[0] peers: "+peers);
 
     var _connectors = _peersManager._connectors;
-    equal(_connectors.length, 1, "Conn1 _connectors: "+_connectors.length);
+    equal(_connectors.length, 1, "conns[0] _connectors: "+_connectors.length);
     console.log(_connectors);
 
 
-    // Conn 3
+    // conns 3
 
-    conn3 = new WebP2P(options3);
+    conns[2] = new WebP2P(options[2]);
 
-    conn3.on('error', function(error)
+    conns[2].on('error', function(error)
     {
-      ok(false, "Conn3 error: "+error.message);
+      ok(false, "conns[2] error: "+error.message);
       console.error(error);
 
-      conn1.close();
-      conn2.close();
-      conn3.close();
-      start();
+      tearDown(conns);
     });
 
-    conn3.on('peersManager.connected', function(_peersManager)
+    conns[2].on('peersManager.connected', function(_peersManager)
     {
-      ok(true, 'Conn3 peersManager.connected');
+      ok(true, 'conns[2] peersManager.connected');
 
-      var peers = Object.keys(conn3.peers);
-      equal(peers.length, 1, "Conn3 peers: "+peers);
+      var peers = Object.keys(conns[2].peers);
+      equal(peers.length, 1, "conns[2] peers: "+peers);
 
       var _connectors = _peersManager._connectors;
-      equal(_connectors.length, 1, "Conn3 _connectors: "+_connectors.length);
+      equal(_connectors.length, 1, "conns[2] _connectors: "+_connectors.length);
       console.log(_connectors);
 
 
-      conn3.connectTo(conn1.sessionID, function(error, peerconnection, channels)
+      conns[2].connectTo(conns[0].sessionID, function(error, peerconnection, channels)
       {
         if(error) return ok(false, error);
 
-        equal(conn1.sessionID, peerconnection.sessionID,
-              'Conn3 connected to Conn1: '+peerconnection.sessionID);
+        equal(conns[0].sessionID, peerconnection.sessionID,
+              'conns[2] connected to conns[0]: '+peerconnection.sessionID);
 
-        var peers = Object.keys(conn3.peers);
-        equal(peers.length, 2, "Conn3 peers: "+peers);
+        var peers = Object.keys(conns[2].peers);
+        equal(peers.length, 2, "conns[2] peers: "+peers);
 
 
-        // Send message to conn1
+        // Send message to conns[0]
 
         function initDataChannel(channel)
         {
@@ -361,10 +349,8 @@ function()
               if(message == 'pong')
               {
                 // Test successful
-                conn1.close();
-                conn2.close();
-                conn3.close();
-                start();
+                console.info('* Success *');
+                tearDown(conns);
               }
             });
           }
