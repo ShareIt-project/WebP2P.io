@@ -1,4 +1,4 @@
-QUnit.module("4 peers chained",
+QUnit.module("2 peers chained",
 {
   setup: function()
   {
@@ -31,16 +31,6 @@ QUnit.module("4 peers chained",
         handshake_servers: handshake_servers,
         commonLabels: ['test'],
         sessionID: "Peer 2"
-      },
-      {
-        handshake_servers: handshake_servers,
-        commonLabels: ['test'],
-        sessionID: "Peer 3"
-      },
-      {
-        handshake_servers: handshake_servers,
-        commonLabels: ['test'],
-        sessionID: "Peer 4"
       }
     ];
 
@@ -57,19 +47,19 @@ QUnit.module("4 peers chained",
 });
 
 
-asyncTest("Connect two peers using another two as intermediaries",
+asyncTest("Connect two peers with no intermediaries",
 function()
 {
-  expect(34);
+  expect(18);
 
-  createPeer_connect.call(this, 0, 3)
+  createPeer_connect.call(this, 0, 1)
 });
 
 
-asyncTest("Exchange data between two peers connected using a another two as intermediaries",
+asyncTest("Exchange data between two peers with no intermediaries",
 function()
 {
-  expect(30);
+  expect(16);
 
-  createPeer_exchange.call(this, 0, 3)
+  createPeer_exchange.call(this, 0, 1)
 });

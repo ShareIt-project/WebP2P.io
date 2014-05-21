@@ -29,26 +29,27 @@
     "WebRTC"
   ],
   "dependencies": {
+    "freeice": "^0.2.2",
     "inherits": "^2.0.1",
-    "node-xmpp": "~0.12.0",
+    "node-xmpp": "^1.0.0-alpha1",
     "process-events-shim": "~0.1.0",
     "pubnub": "latest",
     "pusher": "latest",
-    "rpc-builder": "~0.1.0",
+    "rpc-builder": "~0.1.1",
     "uuid": "~1.4.1",
-    "wrtc": "0.0.15"
+    "wrtc": "0.0.20"
   },
   "devDependencies": {
-    "browserify": "~3.4.1",
-    "grunt": "~0.4.2",
-    "grunt-browserify": "~1.3.0",
+    "browserify": "^4.1.5",
+    "grunt": "^0.4.5",
+    "grunt-browserify": "^2.1.0",
     "grunt-cli": "~0.1.13",
     "grunt-contrib-clean": "~0.5.0",
-    "grunt-contrib-jshint": "~0.7.2",
-    "grunt-jsdoc": "~0.4.2",
-    "minifyify": "~1.1.2",
-    "qunitjs": "~1.13.0",
-    "qunit-cli": "ShareIt-project/qunit-cli"
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-jsdoc": "^0.5.4",
+    "minifyify": "^3.0.4",
+    "qunit-cli": "git://github.com/ShareIt-project/qunit-cli",
+    "qunitjs": "^1.14.0"
   },
   "browser": {
     "pubnub": "./shim/pubnub.js"

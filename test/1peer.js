@@ -3,7 +3,7 @@ if(typeof require === 'function')
   if(typeof QUnit === 'undefined')
     QUnit = require('qunit-cli');
 
-  var WebP2P = require('../lib/index.js');
+  var WebP2P = require('..');
 };
 
 
