@@ -1,19 +1,3 @@
-/*
- * (C) Copyright 2013 Kurento (http://kurento.org/)
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the GNU Lesser General Public License
- * (LGPL) version 2.1 which accompanies this distribution, and is available at
- * http://www.gnu.org/licenses/lgpl-2.1.html
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- */
-
-
 module.exports = function(grunt)
 {
   var DIST_DIR = 'dist';
@@ -26,7 +10,7 @@ module.exports = function(grunt)
     // Plugins configuration
     clean:
     {
-      generated_code: [DIST_DIR, 'src'],
+      generated_code: DIST_DIR,
 
       generated_doc: '<%= jsdoc.all.dest %>'
     },
@@ -35,7 +19,7 @@ module.exports = function(grunt)
     {
       all:
       {
-        src: ['README.md', 'lib/*.js', 'test/*.js'], 
+        src: ['README.md', 'lib/**/*.js', 'test/*.js'], 
         dest: 'doc/jsdoc'
       }
     },
@@ -61,7 +45,7 @@ module.exports = function(grunt)
         }
       },
 
-      require_sourcemap:
+      'require minified':
       {
         src:  '<%= pkg.main %>',
         dest: DIST_DIR+'/<%= pkg.name %>_require.min.js',
@@ -73,13 +57,13 @@ module.exports = function(grunt)
             ['minifyify',
              {
                compressPath: DIST_DIR,
-               map: DIST_DIR+'/<%= pkg.name %>.map'
+               map: '<%= pkg.name %>.map'
              }]
           ]
         }
       },
 
-      standalone_sourcemap:
+      'standalone minified':
       {
         src:  '<%= pkg.main %>',
         dest: DIST_DIR+'/<%= pkg.name %>.min.js',
@@ -94,7 +78,8 @@ module.exports = function(grunt)
             ['minifyify',
              {
                compressPath: DIST_DIR,
-               map: DIST_DIR+'/<%= pkg.name %>.map'
+               map: '<%= pkg.name %>.map',
+               output: DIST_DIR+'/<%= pkg.name %>.map'
              }]
           ]
         }
@@ -110,5 +95,5 @@ module.exports = function(grunt)
 
   // Alias tasks
   grunt.registerTask('default', ['clean', 'browserify']);
-//  grunt.registerTask('default', ['clean', 'jsdoc', 'browserify']);
+  grunt.registerTask('publish', ['clean', 'jsdoc', 'browserify']);
 };

@@ -1,70 +1,4 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var RpcBuilder = require('rpc-builder');
-
-var packer = require('./packer');
-
-
-const MAX_TTL_DEFAULT = 5;
-
-
-function MessagePacker(sessionID)
-{
-  var options =
-  {
-    max_retries: 3,
-    peerID: sessionID
-  };
-
-  var rpcBuilder = new RpcBuilder(packer, options);
-
-
-  this.unpack = function(message)
-  {
-    return rpcBuilder.decode(message);
-  };
-
-  this.cancel = function(message)
-  {
-    rpcBuilder.cancel(message);
-  }
-
-
-  //
-  // WebP2P.io requests
-  //
-
-  this.presence = function()
-  {
-    return rpcBuilder.encode('presence');
-  };
-
-  this.offer = function(dest, sdp, ttl, callback)
-  {
-    if(ttl instanceof Function)
-    {
-      if(callback)
-        throw new SyntaxError("Nothing can be defined after the callback");
-
-      callback = ttl;
-      ttl = undefined;
-    };
-
-    var message =
-    {
-      dest: dest,
-      sdp:  sdp,
-      ttl:  Math.min(ttl || MAX_TTL_DEFAULT, MAX_TTL_DEFAULT)
-    };
-
-    // Return the packed message
-    return rpcBuilder.encode('offer', message, dest, callback);
-  };
-};
-
-
-module.exports = MessagePacker;
-
-},{"./packer":12,"rpc-builder":23}],2:[function(require,module,exports){
 (function (process){
 var EventEmitter = require("events").EventEmitter;
 
@@ -78,10 +12,12 @@ var RTCSessionDescription = wrtc.RTCSessionDescription;
 
 require("process-events-shim");
 
+var RpcBuilder = require('rpc-builder');
+
 var HandshakeManager = require('./managers/HandshakeManager');
 var PeersManager     = require('./managers/PeersManager');
 
-var MessagePacker = require('./MessagePacker');
+var packer = require('./packer');
 
 
 const MAX_TTL_DEFAULT = 5;
@@ -122,10 +58,16 @@ function WebP2P(options)
   });
 
 
-  var messagepacker = new MessagePacker(this.sessionID);
+  var options =
+  {
+    max_retries: 3,
+    peerID: this.sessionID
+  };
 
-  var handshakeManager = new HandshakeManager(messagepacker, handshake_servers);
-  var peersManager     = new PeersManager(messagepacker, self.routingLabel);
+  var rpcBuilder = new RpcBuilder(packer, options);
+
+  var handshakeManager = new HandshakeManager(rpcBuilder, handshake_servers);
+  var peersManager     = new PeersManager(rpcBuilder, self.routingLabel);
 
   this.__defineGetter__('status', function()
   {
@@ -398,7 +340,7 @@ function WebP2P(options)
       // incoming one with the previous callback
       delete offers[from];
 
-      messagepacker.cancel(offer.message);
+      rpcBuilder.cancel(offer.message);
       offer.peerConnection.close();
 
       console.debug("["+self.sessionID+"] Lower precedence than "+from+", request canceled");
@@ -496,8 +438,6 @@ function WebP2P(options)
       {
         var channel = event.channel;
 
-        console.info('datachannel', from, channel);
-
         var channels = pc._channels || [];
 
         channels.push(channel);
@@ -516,11 +456,16 @@ function WebP2P(options)
   {
     var pc = createPeerConnection(dest, "offer", function(offer)
     {
-      var ttl = callback ? 5 : 1;
+      var message =
+      {
+        sdp: offer,
+        ttl: callback ? MAX_TTL_DEFAULT : 1
+      };
 
       callback = callback || noop;
 
-      var request = messagepacker.offer(dest, offer, ttl, function(error, result)
+      var request = rpcBuilder.encode('offer', message, dest,
+      function(error, result)
       {
         if(error) return callback(error);
 
@@ -646,7 +591,7 @@ function WebP2P(options)
     handshakeManager.close();
     peersManager.close();
 
-    messagepacker.cancel();
+    rpcBuilder.cancel();
   };
 
   // Close all connections when user goes out of the page or app is clossed
@@ -661,7 +606,7 @@ inherits(WebP2P, EventEmitter);
 module.exports = WebP2P;
 
 }).call(this,require("FWaASH"))
-},{"./MessagePacker":1,"./managers/HandshakeManager":9,"./managers/PeersManager":11,"FWaASH":17,"events":16,"freeice":18,"inherits":20,"process-events-shim":21,"uuid":29,"wrtc":30}],3:[function(require,module,exports){
+},{"./managers/HandshakeManager":8,"./managers/PeersManager":10,"./packer":11,"FWaASH":16,"events":15,"freeice":17,"inherits":19,"process-events-shim":20,"rpc-builder":22,"uuid":28,"wrtc":29}],2:[function(require,module,exports){
 var inherits = require("inherits");
 
 var HandshakeConnector = require("./core/HandshakeConnector");
@@ -742,7 +687,7 @@ Object.defineProperty(Connector_PubNub.prototype, 'max_chars', {value: 1800});
 
 module.exports = Connector_PubNub;
 
-},{"./core/HandshakeConnector":6,"inherits":20,"pubnub":31}],4:[function(require,module,exports){
+},{"./core/HandshakeConnector":5,"inherits":19,"pubnub":30}],3:[function(require,module,exports){
 var inherits = require("inherits");
 
 var EventEmitter = require("events").EventEmitter;
@@ -793,7 +738,7 @@ Connector.prototype.send = function(message)
 
 module.exports = Connector;
 
-},{"events":16,"inherits":20}],5:[function(require,module,exports){
+},{"events":15,"inherits":19}],4:[function(require,module,exports){
 var inherits = require("inherits");
 
 var Connector = require("./Connector");
@@ -838,7 +783,7 @@ inherits(Connector_DataChannel, Connector);
 
 module.exports = Connector_DataChannel;
 
-},{"./Connector":4,"inherits":20}],6:[function(require,module,exports){
+},{"./Connector":3,"inherits":19}],5:[function(require,module,exports){
 var inherits = require("inherits");
 
 var Connector = require("./Connector");
@@ -890,7 +835,7 @@ HandshakeConnector.prototype.max_connections = Number.POSITIVE_INFINITY;
 
 module.exports = HandshakeConnector;
 
-},{"./Connector":4,"inherits":20}],7:[function(require,module,exports){
+},{"./Connector":3,"inherits":19}],6:[function(require,module,exports){
 const ERROR_NETWORK_UNKNOWN = {id: 0, msg: 'Unable to fetch handshake servers configuration'};
 const ERROR_NETWORK_OFFLINE = {id: 1, msg: "There's no available network"};
 const ERROR_REQUEST_FAILURE = {id: 2, msg: 'Unable to fetch handshake servers configuration'};
@@ -904,7 +849,7 @@ exports.ERROR_NETWORK_OFFLINE = ERROR_NETWORK_OFFLINE;
 exports.ERROR_REQUEST_FAILURE = ERROR_REQUEST_FAILURE;
 exports.ERROR_REQUEST_EMPTY   = ERROR_REQUEST_EMPTY;
 exports.ERROR_NO_PEERS        = ERROR_NO_PEERS;
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /**
  * New node file
  */
@@ -914,7 +859,7 @@ var WebP2P             = require('./WebP2P');
 
 module.exports = WebP2P;
 module.exports.HandshakeConnector = HandshakeConnector;
-},{"./WebP2P":2,"./connectors/core/HandshakeConnector":6}],9:[function(require,module,exports){
+},{"./WebP2P":1,"./connectors/core/HandshakeConnector":5}],8:[function(require,module,exports){
 var inherits = require('inherits');
 
 var Manager = require('./Manager');
@@ -931,9 +876,9 @@ var Connector_PubNub = require('../connectors/PubNub');
  * @constructor
  * @param {String} json_uri URI of the handshake servers configuration.
  */
-function HandshakeManager(messagepacker, handshake_servers)
+function HandshakeManager(rpcBuilder, handshake_servers)
 {
-  Manager.call(this, messagepacker);
+  Manager.call(this, rpcBuilder);
 
   var self = this;
 
@@ -969,7 +914,7 @@ function HandshakeManager(messagepacker, handshake_servers)
     connector.on('open', function()
     {
       // Notify our presence to the other peers
-      connector.send(messagepacker.presence());
+      connector.send(rpcBuilder.encode('presence'));
     });
 
     var _messageUnpacked = connector._messageUnpacked;
@@ -1118,13 +1063,13 @@ HandshakeManager.prototype.addConfigs_byUri = function(json_uri)
 
 module.exports = HandshakeManager;
 
-},{"../connectors/PubNub":3,"../errors":7,"./Manager":10,"inherits":20}],10:[function(require,module,exports){
+},{"../connectors/PubNub":2,"../errors":6,"./Manager":9,"inherits":19}],9:[function(require,module,exports){
 var EventEmitter = require("events").EventEmitter;
 
 var inherits = require('inherits');
 
 
-function Manager(messagepacker)
+function Manager(rpcBuilder)
 {
   EventEmitter.call(this);
 
@@ -1197,7 +1142,7 @@ function Manager(messagepacker)
 
     connector.on('message', function(message)
     {
-      message = messagepacker.unpack(message);
+      message = rpcBuilder.decode(message);
       if(message)
       {
         // Response was previously stored, send it directly
@@ -1242,7 +1187,7 @@ Manager.prototype.send = function(message, incomingConnector)
 
 module.exports = Manager;
 
-},{"events":16,"inherits":20}],11:[function(require,module,exports){
+},{"events":15,"inherits":19}],10:[function(require,module,exports){
 var inherits = require('inherits');
 
 var Manager = require('./Manager');
@@ -1255,9 +1200,9 @@ var Connector_DataChannel = require('../connectors/core/DataChannel');
  *
  * @constructor
  */
-function PeersManager(messagepacker, routingLabel)
+function PeersManager(rpcBuilder, routingLabel)
 {
-  Manager.call(this, messagepacker);
+  Manager.call(this, rpcBuilder);
 
   var self = this;
 
@@ -1347,7 +1292,7 @@ inherits(PeersManager, Manager);
 
 module.exports = PeersManager;
 
-},{"../connectors/core/DataChannel":5,"./Manager":10,"inherits":20}],12:[function(require,module,exports){
+},{"../connectors/core/DataChannel":4,"./Manager":9,"inherits":19}],11:[function(require,module,exports){
 const ERROR    = 0;
 const PRESENCE = 1;
 const OFFER    = 2;
@@ -1433,7 +1378,7 @@ function unpack(message)
 
     default:
     {
-      var error = Error("Unknown message method '"+method+"'");
+      var error = new Error("Unknown message method '"+method+"'");
           error.message = message;
 
       throw error;
@@ -1486,7 +1431,7 @@ exports.unpack = unpack;
 
 exports.responseMethods = responseMethods;
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -2636,7 +2581,7 @@ function assert (test, message) {
   if (!test) throw new Error(message || 'Failed assertion')
 }
 
-},{"base64-js":14,"ieee754":15}],14:[function(require,module,exports){
+},{"base64-js":13,"ieee754":14}],13:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -2759,7 +2704,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	module.exports.fromByteArray = uint8ToBase64
 }())
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 exports.read = function(buffer, offset, isLE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
@@ -2845,7 +2790,7 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3150,7 +3095,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -3215,7 +3160,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /* jshint node: true */
 'use strict';
 
@@ -3303,7 +3248,7 @@ var freeice = module.exports = function(opts) {
 
   return selected;
 };
-},{"./servers":19}],19:[function(require,module,exports){
+},{"./servers":18}],18:[function(require,module,exports){
 // STUN servers
 exports.stun = [
   'stun.l.google.com:19302',
@@ -3329,7 +3274,7 @@ exports.stun = [
 exports.turn = [
 ];
 
-},{}],20:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -3354,7 +3299,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 (function (process,global){
 // Generated by CoffeeScript 1.6.2
 (function() {
@@ -3416,11 +3361,22 @@ if (typeof Object.create === 'function') {
 */
 
 }).call(this,require("FWaASH"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"FWaASH":17,"events":16}],22:[function(require,module,exports){
+},{"FWaASH":16,"events":15}],21:[function(require,module,exports){
 function Mapper()
 {
   var sources = {};
 
+
+  this.forEach = function(callback)
+  {
+    for(var key in sources)
+    {
+      var source = sources[key];
+
+      for(var key2 in source)
+        callback(source[key2]);
+    };
+  };
 
   this.get = function(id, source)
   {
@@ -3471,7 +3427,7 @@ Mapper.prototype.pop = function(id, source)
 
 module.exports = Mapper;
 
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 /*
  * (C) Copyright 2014 Kurento (http://kurento.org/)
  *
@@ -3550,6 +3506,8 @@ function RpcNotification(method, params)
  */
 function RpcBuilder(packer, options, transport)
 {
+  var self = this;
+
   if(!packer)
     throw new SyntaxError('Packer is not defined');
 
@@ -3580,16 +3538,16 @@ function RpcBuilder(packer, options, transport)
 
   this.transport = transport;
 
-  const request_timeout  = options.request_timeout  || BASE_TIMEOUT;
-  const response_timeout = options.response_timeout || BASE_TIMEOUT;
+  const request_timeout    = options.request_timeout    || BASE_TIMEOUT;
+  const response_timeout   = options.response_timeout   || BASE_TIMEOUT;
+  const duplicates_timeout = options.duplicates_timeout || BASE_TIMEOUT;
 
-
-  var self = this;
 
   var requestID = 0;
 
   var requests  = new Mapper();
   var responses = new Mapper();
+  var processedResponses = new Mapper();
 
   var message2Key = {};
 
@@ -3611,6 +3569,20 @@ function RpcBuilder(packer, options, transport)
     };
 
     responses.set(response, id, dest);
+  };
+
+  /**
+   * Store the response to ignore duplicated messages later
+   */
+  function storeProcessedResponse(ack, from)
+  {
+    var timeout = setTimeout(function()
+    {
+      processedResponses.remove(ack, from);
+    },
+    duplicates_timeout);
+
+    processedResponses.set(timeout, ack, from);
   };
 
 
@@ -3780,6 +3752,9 @@ function RpcBuilder(packer, options, transport)
     if(!request) return;
 
     clearTimeout(request.timeout);
+
+    // Start duplicated responses timeout
+    storeProcessedResponse(key.id, key.dest);
   };
 
   /**
@@ -3793,6 +3768,28 @@ function RpcBuilder(packer, options, transport)
 
     for(var message in message2Key)
       cancel(message);
+  };
+
+
+  this.close = function()
+  {
+    // Prevent to receive new messages
+    if(transport && transport.close)
+       transport.close();
+
+    // Request & processed responses
+    this.cancel();
+
+    processedResponses.forEach(function(timeout)
+    {
+      clearTimeout(timeout);
+    });
+
+    // Responses
+    responses.forEach(function(response)
+    {
+      clearTimeout(response.timeout);
+    });
   };
 
 
@@ -3843,12 +3840,15 @@ function RpcBuilder(packer, options, transport)
 
     var encode_transport = transport;
 
-    if(self.peerID)
+    if(self.peerID != undefined)
     {
       params = params || {};
 
       params.from = self.peerID;
     };
+
+    if(dest != undefined)
+      params.dest = dest;
 
     // Encode message
     var message =
@@ -3901,13 +3901,16 @@ function RpcBuilder(packer, options, transport)
       {
         console.warn(retried+' retry for request message:',message);
 
+        var timeout = processedResponses.pop(id, dest);
+        clearTimeout(timeout);
+
         return sendRequest(transport);
       };
 
       function timeout()
       {
         if(retried < max_retries)
-          return retry(transport)
+          return retry(transport);
 
         var error = new Error('Request has timed out');
             error.request = message;
@@ -3957,10 +3960,34 @@ function RpcBuilder(packer, options, transport)
     if(id == undefined && ack == undefined)
       return new RpcNotification(method, params);
 
+
+    function processRequest()
+    {
+      checkValidTransport(transport);
+
+      var idAck = (id != undefined) ? id : ack;
+      return new RpcRequest(method, params, idAck, from, transport);
+    };
+
+    function processResponse(request, error, result)
+    {
+      request.callback(error, result);
+    };
+
+    function duplicatedResponse(timeout)
+    {
+      console.warn("Response already processed", message);
+
+      // Update duplicated responses timeout
+      clearTimeout(timeout);
+      storeProcessedResponse(ack, from);
+    };
+
+
     // Request, or response with own method
     if(method)
     {
-      // Response with own method
+      // Check if it's a response with own method
       if(dest == undefined || dest == self.peerID)
       {
         var request = requests.get(ack, from);
@@ -3969,27 +3996,22 @@ function RpcBuilder(packer, options, transport)
           var responseMethods = request.responseMethods;
 
           if(method == responseMethods.error)
-          {
-            request.callback(params);
-
-            return requests.remove(ack, from);
-          };
+            return processResponse(request, params);
 
           if(method == responseMethods.response)
-          {
-            request.callback(null, params);
+            return processResponse(request, null, params);
 
-            return requests.remove(ack, from);
-          };
-        };
+          return processRequest();
+        }
+
+        var processed = processedResponses.get(ack, from);
+        if(processed)
+          return duplicatedResponse(processed);
       }
 
       // Request
-      checkValidTransport(transport);
-
-      var idAck = (id != undefined) ? id : ack;
-      return new RpcRequest(method, params, idAck, from, transport);
-    }
+      return processRequest();
+    };
 
     var error  = message.error;
     var result = message.result;
@@ -4000,16 +4022,20 @@ function RpcBuilder(packer, options, transport)
 
     // Response
     var request = requests.get(ack, from);
-    if(request == undefined)
-      return console.warn("No callback was defined for this message", message);
+    if(!request)
+    {
+      var processed = processedResponses.get(ack, from);
+      if(processed)
+        return duplicatedResponse(processed);
 
-    this.cancel(request);
+      return console.warn("No callback was defined for this message", message);
+    };
 
     // Process response
     if(error)
       error = new RpcError(error, transport);
 
-    request.callback(error, result);
+    processResponse(request, error, result);
   };
 };
 
@@ -4021,7 +4047,7 @@ module.exports = RpcBuilder;
 
 RpcBuilder.packers = packers;
 
-},{"./Mapper":22,"./packers":26,"inherits":27}],24:[function(require,module,exports){
+},{"./Mapper":21,"./packers":25,"inherits":26}],23:[function(require,module,exports){
 /**
  * JsonRPC 2.0 packer
  */
@@ -4125,7 +4151,7 @@ function unpack(message)
 exports.pack   = pack;
 exports.unpack = unpack;
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 function pack(message)
 {
   throw new TypeError("Not yet implemented");
@@ -4140,7 +4166,7 @@ function unpack(message)
 exports.pack   = pack;
 exports.unpack = unpack;
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 var JsonRPC = require('./JsonRPC');
 var XmlRPC  = require('./XmlRPC');
 
@@ -4148,9 +4174,9 @@ var XmlRPC  = require('./XmlRPC');
 exports.JsonRPC = JsonRPC;
 exports.XmlRPC  = XmlRPC;
 
-},{"./JsonRPC":24,"./XmlRPC":25}],27:[function(require,module,exports){
-module.exports=require(20)
-},{}],28:[function(require,module,exports){
+},{"./JsonRPC":23,"./XmlRPC":24}],26:[function(require,module,exports){
+module.exports=require(19)
+},{}],27:[function(require,module,exports){
 (function (global){
 
 var rng;
@@ -4185,7 +4211,7 @@ module.exports = rng;
 
 
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (Buffer){
 //     uuid.js
 //
@@ -4376,7 +4402,7 @@ uuid.BufferClass = BufferClass;
 module.exports = uuid;
 
 }).call(this,require("buffer").Buffer)
-},{"./rng":28,"buffer":13}],30:[function(require,module,exports){
+},{"./rng":27,"buffer":12}],29:[function(require,module,exports){
 var RTCIceCandidate       = window.mozRTCIceCandidate       || window.webkitRTCIceCandidate       || window.RTCIceCandidate;
 var RTCPeerConnection     = window.mozRTCPeerConnection     || window.webkitRTCPeerConnection     || window.RTCPeerConnection;
 var RTCSessionDescription = window.mozRTCSessionDescription || window.webkitRTCSessionDescription || window.RTCSessionDescription;
@@ -4385,7 +4411,7 @@ exports.RTCIceCandidate       = RTCIceCandidate;
 exports.RTCPeerConnection     = RTCPeerConnection;
 exports.RTCSessionDescription = RTCSessionDescription;
 
-},{}],31:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 // Version: 3.6.2
 var NOW             = 1
 ,   READY           = false
@@ -7291,4 +7317,4 @@ WS.prototype.close = function() {
 
 })();
 
-},{}]},{},[8])
+},{}]},{},[7])

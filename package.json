@@ -47,7 +47,7 @@
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-jshint": "^0.10.0",
     "grunt-jsdoc": "^0.5.4",
-    "minifyify": "^3.0.4",
+    "minifyify": "^3.0.6",
     "qunit-cli": "git://github.com/ShareIt-project/qunit-cli",
     "qunitjs": "^1.14.0"
   },
