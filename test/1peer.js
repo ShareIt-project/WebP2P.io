@@ -19,7 +19,9 @@ QUnit.module("1 peer");
 
 QUnit.test("No options", function()
 {
-  new WebP2P();
+  var conn = new WebP2P();
+
+  conn.close();
 
   QUnit.ok(true, "Passed!");
 });
