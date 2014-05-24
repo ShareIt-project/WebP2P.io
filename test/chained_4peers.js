@@ -60,7 +60,7 @@ QUnit.module("4 peers chained",
 asyncTest("Connect two peers using another two as intermediaries",
 function()
 {
-  expect(34);
+  expect(26);
 
   createPeer_connect.call(this, 0, 3)
 });
@@ -69,7 +69,7 @@ function()
 asyncTest("Exchange data between two peers connected using a another two as intermediaries",
 function()
 {
-  expect(30);
+  expect(22);
 
   createPeer_exchange.call(this, 0, 3)
 });

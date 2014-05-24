@@ -21,11 +21,6 @@ createPeer_connect = function createPeer_connect(index, lastIndex)
     ok(true, conn.sessionID+' handshakeManager.connected');
   });
 
-  conn.on('peerconnection', function(peerconnection, channels)
-  {
-    ok(true, conn.sessionID+' peerconnection: '+peerconnection.sessionID+' '+channels);
-  });
-
   conn.on('handshakeManager.disconnected', function()
   {
     ok(true, conn.sessionID+' handshakeManager.disconnected');
@@ -193,11 +188,6 @@ createPeer_exchange = function createPeer_exchange(index, lastIndex)
   conn.on('handshakeManager.connected', function()
   {
     ok(true, conn.sessionID+' handshakeManager.connected.');
-  });
-
-  conn.on('peerconnection', function(peerconnection, channels)
-  {
-    ok(true, conn.sessionID+' Peerconnection: '+peerconnection.sessionID+' '+channels);
   });
 
   conn.on('peersManager.connected', function(_peersManager)
