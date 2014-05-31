@@ -2,25 +2,71 @@
 
 Jesús Leganés Combarro "Piranna" - [piranna@gmail.com]
 
-WebP2P is a "Peer to Peer" filesharing framework written in pure Javascript
-mainly focused on the development of P2P filesharing applications. This project
-is also candidate for the [Universitary Free Software Championship]
-(http://www.concursosoftwarelibre.org/1213).
+[![NPM](https://nodei.co/npm/webp2p.png?downloads=true&stars=true)](https://nodei.co/npm/webp2p/)
 
-If you will fork the project (specially if you want to do modifications) please
+[WebP2P](http://webp2p.io) is a Peer-to-Peer signaling channel framework mainly focused on the easy development of P2P applications in pure Javascript. This code was formerly part of [ShareIt!](https://github.com/ShareIt-project/ShareIt) pure Javascript P2P filesharing application, winner of the [Universitary Free Software Championship 2013](http://www.concursosoftwarelibre.org/1213), and now it's part as a standalone library of the [ShareIt project](http://shareit.es).
+
+If you fork the project (specially if you want to do modifications) please
 send me an email just to let me know about your progress :-)
 
 ## About
 
-File transfers in WebP2P is build over WebRTC PeerConnection [DataChannels]
-(http://dev.w3.org/2011/webrtc/editor/webrtc.html#rtcdatachannel) so they could
-be transfered directly between peers, but since currently they are not available
-natively it's necesary to use a [DataChannel polyfill]
-(https://github.com/piranna/DataChannel-polyfill). This makes it perfect for
-anonymity.
+[WebRTC](http://www.webrtc.org) specification lacks of a signaling channel to interconnect two peers, leaving up to the developer what to use instead, being this an intermediary web server via Ajax or WebSockets, a chat room, or also [pigeons](http://en.wikipedia.org/wiki/IP_over_Avian_Carriers).
 
-Let's make a purely browser based, ad-free, Free and Open Source private and
-anonymous distributed filesharing system!
+WebP2P abstract all this signaling channels used to connect two peers ("handshake" channels), leaving only a simple API that just give you a WebRTC PeerConnection object connected with the other desired peer ready to use. Also, its protocol is capable to connect two peers using another ones as intermediary handshake channels using WebRTC [DataChannels]
+(http://dev.w3.org/2011/webrtc/editor/webrtc.html#rtcdatachannel), leaving to you to only need to think what your P2P application will do.
+
+## How to download it
+
+Code is distributed as a [NPM package](https://www.npmjs.org/package/webp2p). You can download it just executing ```npm install webp2p``` from your command line. After that, WebP2P and all its dependencies will be installed. You can also build a browser specific version using [Grunt](http://gruntjs.com), just exec from the root folder ```node_modules/.bin/grunt``` and it will generate a browser ready version on the ```/dist``` folder.
+
+## Basic usage
+
+Using ```require()``` just returns a WebP2P constructor. Calling this one creates a new object that will manage the connections with all the handshake channels and with other peers. For the most basic usage, you'll only need the ```connectTo()``` method and the ```peerconnection``` event. On success, both will give you a connected WebRTC PeerConnection object.
+
+```Javascript
+var WebP2p = require('webp2p');
+
+var handshake_servers = <server connection data>;
+
+// Peer 1
+var options1 =
+{
+  sessionID: 'peer 1',
+  handshake_servers: handshake_servers
+};
+
+var peer1 = new WebP2P(options1);
+
+peer1.on('peerconnection', function(peerConnection)
+{
+  console.log('Connected to peer 2');
+});
+
+// Peer 2
+var options2 =
+{
+  sessionID: 'peer 2',
+  handshake_servers: handshake_servers
+};
+
+var peer2 = new WebP2P(options2);
+
+peer2.on('connected', function()
+{
+  peer2.connectTo('peer 1', function(peerConnection)
+  {
+    console.log('Connected to peer 1');
+  });
+});
+
+```
+
+## How to test it
+
+WebP2P is heavily tested using [QUnit](http://qunitjs.com). Once you have downloaded all its dependencies and generated the browser version, just open the file ```test/index.html``` on a WebRTC enabled browser connected to internet. This last requeriment is due because tests run against external handshake servers. Currently is being used primarily [PubNub](http://www.pubnub.com), it's being researched to use some more standard and distributed handshake protocols in an annonimous way so this single-point-of-failure could be dropped.
+
+Alternatively, you can test it from command line using ```npm test``` thanks to the [node-webrtc](http://js-platform.github.io/node-webrtc) package, but due to their alpha status, it's not guaranted to work. Node.js support is maintained up to date as future proof, through.
 
 ## Mailing List
 
@@ -31,51 +77,13 @@ If you'd like to discuss P2P web applications further, send an email to
 and you'll be part of the discussion mailing list! ([Archives here]
 (http://librelist.com/browser/webp2p/)).
 
-## How to test it
-
-This library is part of the [ShareIt!](http://github.com/piranna/ShareIt)
-project, so maybe you would interested in go directly there.
-
-The peer connections are managed by an external handshake channel. Currently is
-being used primarily [PubNub](http://www.pubnub.com) and [SimpleSignaling]
-(https://github.com/piranna/SimpleSignaling) using a test server hosted on
-Nodejitsu, but it's being researched to use some more standard and distributed
-handshake protocols in an annonimous way so this single-point-of-failure could
-be dropped.
-
-Regarding to the browser, it's recomended to use a high edge one. Test are being
-done on Chromium v24 at this moment and currently it's the only officially
-supported (news about it being used sucesfully on other browser are greatly
-accepted!!! :-D ). You can test it locally opening two browser tabs, but it
-should work also if used between several machines (it was succesfully tested
-to transfer files through the wild Internet from Findland to Spain... :-) ).
-
-## External libraries
-### Handshake
-
-* [SimpleSignaling](https://github.com/piranna/SimpleSignaling)
-* [PubNub](http://www.pubnub.com)
-
-### Random utilities
-
-* [BoolArray.js](https://github.com/piranna/BoolArray.js)
-* [DataChannel-polyfill](https://github.com/piranna/DataChannel-polyfill)
-* [EventTarget.js](https://github.com/piranna/EventTarget.js)
-* [jsSHA](https://github.com/Caligatio/jsSHA)
-
 ## Some related project
 
 * [WebRTC.io](https://github.com/webRTC/webRTC.io)
-* [bonevalue](https://github.com/theninj4/bonevalue)
-* [QuickShare](https://github.com/orefalo/QuickShare)
-* [ShareFest](https://github.com/Peer5/ShareFest)
+* [PeerJS](http://peerjs.com)
 
 ## License
 
-All this code is under the Affero GNU General Public License. Regarding to the
-core of the application at js/webp2p (that I'll distribute as an independent
-library/framework some date in the future) I am willing to relicense it under
-the BSD/MIT/Apache license, I simply ask that you email me and tell me why. I'll
-almost certainly agree.
+All this code is under the Affero GNU General Public License. I am willing to relicense it under the BSD/MIT/Apache license, I simply ask that you email me and tell me why. I'll almost certainly agree.
 
 Patches graciously accepted!
