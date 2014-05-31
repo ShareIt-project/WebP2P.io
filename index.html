@@ -20,7 +20,7 @@
     <header>
       <div class="inner">
         <h1>WebP2P</h1>
-        <h2>The server-less signaling channel for WebRTC</h2>
+        <h2>The missing signaling channel for WebRTC</h2>
         <a href="https://github.com/ShareIt-project/WebP2P.io" class="button"><small>View project on</small>GitHub</a>
       </div>
     </header>
@@ -33,23 +33,73 @@
 
 <p>Jesús Leganés Combarro "Piranna" - [<a href="mailto:piranna@gmail.com">piranna@gmail.com</a>]</p>
 
-<p>WebP2P is a "Peer to Peer" filesharing framework written in pure Javascript
-mainly focused on the development of P2P filesharing applications. This project
-is also candidate for the <a href="http://www.concursosoftwarelibre.org/1213">Universitary Free Software Championship</a>.</p>
+<p><a href="https://nodei.co/npm/webp2p/"><img src="https://nodei.co/npm/webp2p.png?downloads=true&amp;stars=true" alt="NPM"></a></p>
 
-<p>If you will fork the project (specially if you want to do modifications) please
+<p><a href="http://webp2p.io">WebP2P</a> is a Peer-to-Peer signaling channel framework mainly focused on the easy development of P2P applications in pure Javascript. This code was formerly part of <a href="https://github.com/ShareIt-project/ShareIt">ShareIt!</a> pure Javascript P2P filesharing application, winner of the <a href="http://www.concursosoftwarelibre.org/1213">Universitary Free Software Championship 2013</a>, and now it's part as a standalone library of the <a href="http://shareit.es">ShareIt project</a>.</p>
+
+<p>If you fork the project (specially if you want to do modifications) please
 send me an email just to let me know about your progress :-)</p>
 
 <h2>
 <a name="about" class="anchor" href="#about"><span class="octicon octicon-link"></span></a>About</h2>
 
-<p>File transfers in WebP2P is build over WebRTC PeerConnection <a href="http://dev.w3.org/2011/webrtc/editor/webrtc.html#rtcdatachannel">DataChannels</a> so they could
-be transfered directly between peers, but since currently they are not available
-natively it's necesary to use a <a href="https://github.com/piranna/DataChannel-polyfill">DataChannel polyfill</a>. This makes it perfect for
-anonymity.</p>
+<p><a href="http://www.webrtc.org">WebRTC</a> specification lacks of a signaling channel to interconnect two peers, leaving up to the developer what to use instead, being this an intermediary web server via Ajax or WebSockets, a chat room, or also <a href="http://en.wikipedia.org/wiki/IP_over_Avian_Carriers">pigeons</a>.</p>
 
-<p>Let's make a purely browser based, ad-free, Free and Open Source private and
-anonymous distributed filesharing system!</p>
+<p>WebP2P abstract all this signaling channels used to connect two peers ("handshake" channels), leaving only a simple API that just give you a WebRTC PeerConnection object connected with the other desired peer ready to use. Also, its protocol is capable to connect two peers using another ones as intermediary handshake channels using WebRTC <a href="http://dev.w3.org/2011/webrtc/editor/webrtc.html#rtcdatachannel">DataChannels</a>, leaving to you to only need to think what your P2P application will do.</p>
+
+<h2>
+<a name="how-to-download-it" class="anchor" href="#how-to-download-it"><span class="octicon octicon-link"></span></a>How to download it</h2>
+
+<p>Code is distributed as a <a href="https://www.npmjs.org/package/webp2p">NPM package</a>. You can download it just executing <code>npm install webp2p</code> from your command line. After that, WebP2P and all its dependencies will be installed. You can also build a browser specific version using <a href="http://gruntjs.com">Grunt</a>, just exec from the root folder <code>node_modules/.bin/grunt</code> and it will generate a browser ready version on the <code>/dist</code> folder.</p>
+
+<h2>
+<a name="basic-usage" class="anchor" href="#basic-usage"><span class="octicon octicon-link"></span></a>Basic usage</h2>
+
+<p>Using <code>require()</code> just returns a WebP2P constructor. Calling this one creates a new object that will manage the connections with all the handshake channels and with other peers. For the most basic usage, you'll only need the <code>connectTo()</code> method and the <code>peerconnection</code> event. On success, both will give you a connected WebRTC PeerConnection object.</p>
+
+<div class="highlight highlight-Javascript"><pre><span class="kd">var</span> <span class="nx">WebP2p</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'webp2p'</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">handshake_servers</span> <span class="o">=</span> <span class="o">&lt;</span><span class="nx">server</span> <span class="nx">connection</span> <span class="nx">data</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="c1">// Peer 1</span>
+<span class="kd">var</span> <span class="nx">options1</span> <span class="o">=</span>
+<span class="p">{</span>
+  <span class="nx">sessionID</span><span class="o">:</span> <span class="s1">'peer 1'</span><span class="p">,</span>
+  <span class="nx">handshake_servers</span><span class="o">:</span> <span class="nx">handshake_servers</span>
+<span class="p">};</span>
+
+<span class="kd">var</span> <span class="nx">peer1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">WebP2P</span><span class="p">(</span><span class="nx">options1</span><span class="p">);</span>
+
+<span class="nx">peer1</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'peerconnection'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">peerConnection</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'Connected to peer 2'</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="c1">// Peer 2</span>
+<span class="kd">var</span> <span class="nx">options2</span> <span class="o">=</span>
+<span class="p">{</span>
+  <span class="nx">sessionID</span><span class="o">:</span> <span class="s1">'peer 2'</span><span class="p">,</span>
+  <span class="nx">handshake_servers</span><span class="o">:</span> <span class="nx">handshake_servers</span>
+<span class="p">};</span>
+
+<span class="kd">var</span> <span class="nx">peer2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">WebP2P</span><span class="p">(</span><span class="nx">options2</span><span class="p">);</span>
+
+<span class="nx">peer2</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'connected'</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="nx">peer2</span><span class="p">.</span><span class="nx">connectTo</span><span class="p">(</span><span class="s1">'peer 1'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">peerConnection</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'Connected to peer 1'</span><span class="p">);</span>
+  <span class="p">});</span>
+<span class="p">});</span>
+
+</pre></div>
+
+<h2>
+<a name="how-to-test-it" class="anchor" href="#how-to-test-it"><span class="octicon octicon-link"></span></a>How to test it</h2>
+
+<p>WebP2P is heavily tested using <a href="http://qunitjs.com">QUnit</a>. Once you have downloaded all its dependencies and generated the browser version, just open the file <code>test/index.html</code> on a WebRTC enabled browser connected to internet. This last requeriment is due because tests run against external handshake servers. Currently is being used primarily <a href="http://www.pubnub.com">PubNub</a>, it's being researched to use some more standard and distributed handshake protocols in an annonimous way so this single-point-of-failure could be dropped.</p>
+
+<p>Alternatively, you can test it from command line using <code>npm test</code> thanks to the <a href="http://js-platform.github.io/node-webrtc">node-webrtc</a> package, but due to their alpha status, it's not guaranted to work. Node.js support is maintained up to date as future proof, through.</p>
 
 <h2>
 <a name="mailing-list" class="anchor" href="#mailing-list"><span class="octicon octicon-link"></span></a>Mailing List</h2>
@@ -63,57 +113,15 @@ anonymous distributed filesharing system!</p>
 <p>and you'll be part of the discussion mailing list! (<a href="http://librelist.com/browser/webp2p/">Archives here</a>).</p>
 
 <h2>
-<a name="how-to-test-it" class="anchor" href="#how-to-test-it"><span class="octicon octicon-link"></span></a>How to test it</h2>
-
-<p>This library is part of the <a href="http://github.com/piranna/ShareIt">ShareIt!</a>
-project, so maybe you would interested in go directly there.</p>
-
-<p>The peer connections are managed by an external handshake channel. Currently is
-being used primarily <a href="http://www.pubnub.com">PubNub</a> and <a href="https://github.com/piranna/SimpleSignaling">SimpleSignaling</a> using a test server hosted on
-Nodejitsu, but it's being researched to use some more standard and distributed
-handshake protocols in an annonimous way so this single-point-of-failure could
-be dropped.</p>
-
-<p>Regarding to the browser, it's recomended to use a high edge one. Test are being
-done on Chromium v24 at this moment and currently it's the only officially
-supported (news about it being used sucesfully on other browser are greatly
-accepted!!! :-D ). You can test it locally opening two browser tabs, but it
-should work also if used between several machines (it was succesfully tested
-to transfer files through the wild Internet from Findland to Spain... :-) ).</p>
-
-<h2>
-<a name="external-libraries" class="anchor" href="#external-libraries"><span class="octicon octicon-link"></span></a>External libraries</h2>
-
-<h3>
-<a name="handshake" class="anchor" href="#handshake"><span class="octicon octicon-link"></span></a>Handshake</h3>
-
-<ul>
-<li><a href="https://github.com/piranna/SimpleSignaling">SimpleSignaling</a></li>
-<li><a href="http://www.pubnub.com">PubNub</a></li>
-</ul><h3>
-<a name="random-utilities" class="anchor" href="#random-utilities"><span class="octicon octicon-link"></span></a>Random utilities</h3>
-
-<ul>
-<li><a href="https://github.com/piranna/BoolArray.js">BoolArray.js</a></li>
-<li><a href="https://github.com/piranna/DataChannel-polyfill">DataChannel-polyfill</a></li>
-<li><a href="https://github.com/piranna/EventTarget.js">EventTarget.js</a></li>
-<li><a href="https://github.com/Caligatio/jsSHA">jsSHA</a></li>
-</ul><h2>
 <a name="some-related-project" class="anchor" href="#some-related-project"><span class="octicon octicon-link"></span></a>Some related project</h2>
 
 <ul>
 <li><a href="https://github.com/webRTC/webRTC.io">WebRTC.io</a></li>
-<li><a href="https://github.com/theninj4/bonevalue">bonevalue</a></li>
-<li><a href="https://github.com/orefalo/QuickShare">QuickShare</a></li>
-<li><a href="https://github.com/Peer5/ShareFest">ShareFest</a></li>
+<li><a href="http://peerjs.com">PeerJS</a></li>
 </ul><h2>
 <a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
 
-<p>All this code is under the Affero GNU General Public License. Regarding to the
-core of the application at js/webp2p (that I'll distribute as an independent
-library/framework some date in the future) I am willing to relicense it under
-the BSD/MIT/Apache license, I simply ask that you email me and tell me why. I'll
-almost certainly agree.</p>
+<p>All this code is under the Affero GNU General Public License. I am willing to relicense it under the BSD/MIT/Apache license, I simply ask that you email me and tell me why. I'll almost certainly agree.</p>
 
 <p>Patches graciously accepted!</p>
         </section>
@@ -130,7 +138,7 @@ almost certainly agree.</p>
 
           <p class="repo-owner"><a href="https://github.com/ShareIt-project/WebP2P.io"></a> is maintained by <a href="https://github.com/ShareIt-project">ShareIt-project</a>.</p>
 
-          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
         </aside>
       </div>
     </div>
