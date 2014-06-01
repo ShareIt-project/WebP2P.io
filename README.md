@@ -11,7 +11,7 @@ send me an email just to let me know about your progress :-)
 
 ## About
 
-[WebRTC](http://www.webrtc.org) specification lacks of a signaling channel to interconnect two peers, leaving up to the developer what to use instead, being this an intermediary web server via Ajax or WebSockets, a chat room, or also [pigeons](http://en.wikipedia.org/wiki/IP_over_Avian_Carriers).
+[WebRTC](http://www.webrtc.org) specification lacks of a signaling channel to interconnect two peers, leaving up to the developer what to use instead, being this an intermediary web server via Ajax or WebSockets, a chat room, or also [pigeons](http://en.wikipedia.org/wiki/IP_over_Avian_Carriers). It needs a signaling channel, it lacks a signaling channel: WebP2P is that missing signaling channel.
 
 WebP2P abstract all this signaling channels used to connect two peers ("handshake" channels), leaving only a simple API that just give you a WebRTC PeerConnection object connected with the other desired peer ready to use. Also, its protocol is capable to connect two peers using another ones as intermediary handshake channels using WebRTC [DataChannels]
 (http://dev.w3.org/2011/webrtc/editor/webrtc.html#rtcdatachannel), leaving to you to only need to think what your P2P application will do.
