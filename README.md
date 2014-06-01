@@ -1,6 +1,6 @@
 # WebP2P - Pure Javascript framework for Peer to Peer applications over WebRTC
 
-Jesús Leganés Combarro "Piranna" - [piranna@gmail.com]
+Jesús Leganés Combarro "[piranna](https://github.com/piranna)" - [piranna@gmail.com]
 
 [![NPM](https://nodei.co/npm/webp2p.png?downloads=true&stars=true)](https://nodei.co/npm/webp2p/)
 
