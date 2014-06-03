@@ -1,7 +1,7 @@
 {
-  "name": "WebP2P",
-  "version": "0.1.0",
-  "description": "The server-less signaling channel for WebRTC",
+  "name": "webp2p",
+  "version": "0.1.0-0",
+  "description": "The missing signaling channel for WebRTC",
   "homepage": "http://webp2p.io",
   "license": "Affero-GPL",
   "contributors": [
@@ -30,17 +30,20 @@
   ],
   "dependencies": {
     "freeice": "^0.2.2",
+    "ibtrealtimesjnode": "^2.1.16",
     "inherits": "^2.0.1",
-    "node-xmpp": "^1.0.0-alpha1",
+    "ltx": "^0.5.0",
+    "node-xmpp-client": "^1.0.0-alpha2",
     "process-events-shim": "~0.1.0",
     "pubnub": "latest",
     "pusher": "latest",
-    "rpc-builder": "~0.1.1",
+    "pusher-node-client": "0.0.8",
+    "rpc-builder": "~0.1.2",
     "uuid": "~1.4.1",
     "wrtc": "0.0.20"
   },
   "devDependencies": {
-    "browserify": "^4.1.5",
+    "browserify": "^4.1.6",
     "grunt": "^0.4.5",
     "grunt-browserify": "^2.1.0",
     "grunt-cli": "~0.1.13",

@@ -11,30 +11,9 @@ no minimized and/or production ready version, being the original source code
 files untouched.
 
 
-### DataChannel-polyfill
-
-* https://github.com/piranna/DataChannel-polyfill
-
-
-### EventTarget.js
-
-* https://github.com/ShareIt-project/EventTarget.js
-
-
 ### JsJaC
 
 * https://github.com/sstrigler/JSJaC
-
-
-### PubNub
-
-* https://github.com/pubnub/javascript
-
-
-### reliable
-
-* https://github.com/michellebu/reliable
-* Standar onmessage event: https://github.com/ShareIt-project/reliable
 
 
 ### SimpleSignaling
