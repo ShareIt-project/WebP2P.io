@@ -7,7 +7,18 @@ if(typeof require === 'function')
 };
 
 
-QUnit.module("1 peer");
+QUnit.module("1 peer",
+{
+  setup: function()
+  {
+//    console.debug('***'+QUnit.config.current.testNumber+'. '+QUnit.config.current.testName+'***');
+  },
+
+  teardown: function()
+  {
+//    console.debug('***'+QUnit.config.current.testNumber+'. '+QUnit.config.current.testName+'***');
+  }
+});
 
 
 //test("Internet is connected", function()
@@ -61,6 +72,114 @@ QUnit.asyncTest("Connect to PubNub", function()
         config_mess:
         {
           channel: "ShareIt"
+        }
+      }
+    ]
+  };
+
+  var conn = new WebP2P(options);
+
+  conn.on('connected', function()
+  {
+    QUnit.ok(true, "SessionID: "+conn.sessionID);
+
+    conn.close();
+  });
+
+  conn.on('disconnected', function()
+  {
+    QUnit.ok(true, "Disconnected");
+
+    QUnit.start();
+  });
+
+  conn.on('error', function(error)
+  {
+    QUnit.ok(false, "Error: "+error);
+
+    conn.close();
+
+    QUnit.start();
+  });
+});
+
+QUnit.asyncTest("Connect to xRTML", function()
+{
+  QUnit.expect(2);
+
+  var options =
+  {
+    handshake_servers:
+    [
+      {
+        type: "xRTML",
+        config_init:
+        {
+          application_key     : 'ESqhZz',
+          authentication_token: 'be3501d2896f4b76bd631981896ccb03'
+        },
+        config_mess:
+        {
+          channel: "ShareIt"
+        }
+      }
+    ]
+  };
+
+  var conn = new WebP2P(options);
+
+  conn.on('connected', function()
+  {
+    QUnit.ok(true, "SessionID: "+conn.sessionID);
+
+    conn.close();
+  });
+
+  conn.on('disconnected', function()
+  {
+    QUnit.ok(true, "Disconnected");
+
+    QUnit.start();
+  });
+
+  conn.on('error', function(error)
+  {
+    QUnit.ok(false, "Error: "+error);
+
+    conn.close();
+
+    QUnit.start();
+  });
+});
+
+QUnit.asyncTest("Connect to XMPP", function()
+{
+  QUnit.expect(2);
+
+  var options =
+  {
+    handshake_servers:
+    [
+      {
+        type: "XMPP",
+        config_init:
+        {
+          jid: 'anonymous.chatme.im',
+//          credentials: true,
+          preferred: 'ANONYMOUS',
+          bosh:
+          {
+            url: 'http://bosh.metajack.im:5280/xmpp-httpbind'  // Open BoSH server
+          },
+      //    websockets:
+      //    {
+      //      url:
+      //    }
+        },
+        config_mess:
+        {
+          channel: 'webp2p',
+          muc_server: 'conference.chatme.im'  // muc.jappix.org
         }
       }
     ]

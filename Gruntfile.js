@@ -40,7 +40,7 @@ module.exports = function(grunt)
         options:
         {
           bundleOptions: {
-            standalone: '<%= pkg.name %>'
+            standalone: 'WebP2P'
           }
         }
       },
@@ -72,7 +72,7 @@ module.exports = function(grunt)
         {
           debug: true,
           bundleOptions: {
-            standalone: '<%= pkg.name %>'
+            standalone: 'WebP2P'
           },
           plugin: [
             ['minifyify',

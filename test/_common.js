@@ -6,4 +6,4 @@ QUnit.log(function(details)
     console.warn("Log: ", details.message);
 });
 
-QUnit.config.testTimeout = 20000;
+QUnit.config.testTimeout = 40000;
